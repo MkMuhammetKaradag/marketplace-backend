@@ -11,20 +11,15 @@ func main() {
 	router.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Apı get request received")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello  ı am api user service "))
-	})
-	router.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Apı get request received")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello  ı am api user service -profile"))
+		w.Write([]byte("Hello  ı am api test service "))
 	})
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Apı get request received ")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello  ı am api user service "))
+		w.Write([]byte("Hello  ı am api test service "))
 	})
-	log.Println("Starting server on :8081")
-	if err := http.ListenAndServe(":8081", router); err != nil {
+	log.Println("Starting server on :8082")
+	if err := http.ListenAndServe(":8082", router); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }
