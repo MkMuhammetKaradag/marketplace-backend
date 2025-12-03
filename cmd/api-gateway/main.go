@@ -507,7 +507,7 @@ func (g *Gateway) rateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 				// X-RateLimit-Limit başlıklarını buraya taşıyın (Allow() kullanınca Reserve() yok)
 				w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%.0f", config.UserLimit*60))
-				w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", limiter.Tokens()))
+				w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%.0f", limiter.Tokens()))
 
 				// Not: Allow() kullanırken Retry-After hesaplamak zordur.
 				respondJSON(w, http.StatusTooManyRequests, map[string]string{
@@ -518,7 +518,7 @@ func (g *Gateway) rateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			}
 			// İstek başarılı olduysa, X-RateLimit başlıklarını burada ayarlayın
 			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%.0f", config.UserLimit*60))
-			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", limiter.Tokens()))
+			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%.0f", limiter.Tokens()))
 		}
 
 		// 3. GLOBAL LİMİT (Global path limit) - Allow() kullanılıyordu, doğru.

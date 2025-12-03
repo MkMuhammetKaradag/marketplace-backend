@@ -1,30 +1,14 @@
 package main
 
 import (
-	"log"
-	"net/http"
+	application "marketplace/internal/user-service/app"
+	"marketplace/internal/user-service/config"
 )
 
 func main() {
+	appConfig := config.Read()
 
-	router := http.NewServeMux()
-	router.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Apı get request received")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello  ı am api user service "))
-	})
-	router.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Apı get request received")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello  ı am api user service -profile"))
-	})
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Apı get request received ")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello  ı am api user service "))
-	})
-	log.Println("Starting server on :8081")
-	if err := http.ListenAndServe(":8081", router); err != nil {
-		log.Fatalf("failed to start server: %v", err)
-	}
+	app := application.NewApp(appConfig)
+
+	app.Start()
 }

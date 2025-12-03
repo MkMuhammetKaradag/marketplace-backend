@@ -1,0 +1,5 @@
+*test.go 
+.env
+*.txt
+
+**/init/
