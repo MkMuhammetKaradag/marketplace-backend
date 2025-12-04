@@ -5,12 +5,11 @@ import (
 	"log"
 	"marketplace/internal/user-service/domain"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
 
 type UserActivateUseCase interface {
-	Execute(ctx context.Context, activationID uuid.UUID, activationCode string) (int, error)
+	Execute(ctx context.Context, activationID uuid.UUID, activationCode string) error
 }
 type UseractivateUseCase struct {
 	userRepository domain.UserRepository
@@ -22,13 +21,13 @@ func NewUserActivateUseCase(repository domain.UserRepository) UserActivateUseCas
 	}
 }
 
-func (u *UseractivateUseCase) Execute(ctx context.Context, activationID uuid.UUID, activationCode string) (int, error) {
+func (u *UseractivateUseCase) Execute(ctx context.Context, activationID uuid.UUID, activationCode string) error {
 
 	user, err := u.userRepository.UserActivate(ctx, activationID, activationCode)
 	if err != nil {
-		return fiber.StatusInternalServerError, err
+		return err
 	}
 	log.Printf("Activated user: %+v\n", user)
 
-	return fiber.StatusOK, nil
+	return nil
 }

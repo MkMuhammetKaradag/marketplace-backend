@@ -1,3 +1,4 @@
+// internal/user-service/transport/http/controller/signup.go
 package controller
 
 import (
@@ -25,15 +26,15 @@ func NewSignUpController(usecase usecase.SignUpUseCase) *SignUpController {
 	}
 }
 
-func (h *SignUpController) Handle(ctx context.Context, req *SignUpRequest) (*SignUpResponse, int, error) {
-	status, err := h.usecase.Execute(ctx, &domain.User{
+func (h *SignUpController) Handle(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error) {
+	err := h.usecase.Execute(ctx, &domain.User{
 		Username: req.Username,
 		Email:    req.Email,
 		Password: req.Password,
 	})
 	if err != nil {
-		return nil, status, err
+		return nil, err
 	}
 
-	return &SignUpResponse{Message: " Please check your email"}, status, nil
+	return &SignUpResponse{Message: " Please check your email"}, nil
 }

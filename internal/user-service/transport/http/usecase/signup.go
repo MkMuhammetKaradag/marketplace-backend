@@ -1,15 +1,14 @@
+// internal/user-service/transport/http/usecase/signup.go
 package usecase
 
 import (
 	"context"
 	"fmt"
 	"marketplace/internal/user-service/domain"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type SignUpUseCase interface {
-	Execute(ctx context.Context, user *domain.User) (int, error)
+	Execute(ctx context.Context, user *domain.User) error
 }
 type signUpUseCase struct {
 	userRepository domain.UserRepository
@@ -27,14 +26,14 @@ func NewSignUpUseCase(repository domain.UserRepository) SignUpUseCase {
 	}
 }
 
-func (u *signUpUseCase) Execute(ctx context.Context, user *domain.User) (int, error) {
+func (u *signUpUseCase) Execute(ctx context.Context, user *domain.User) error {
 
 	id, code, err := u.userRepository.SignUp(ctx, user)
 	if err != nil {
-		return fiber.StatusInternalServerError, err
+		return err
 	}
 
 	fmt.Printf("id:%v ,    code:%v \n", id, code)
 
-	return fiber.StatusOK, nil
+	return nil
 }

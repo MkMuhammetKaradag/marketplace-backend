@@ -1,3 +1,4 @@
+// internal/user-service/transport/http/handlers.go
 package http
 
 import (

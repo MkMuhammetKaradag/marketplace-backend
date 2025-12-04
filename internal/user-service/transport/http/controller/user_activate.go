@@ -4,7 +4,6 @@ import (
 	"context"
 	"marketplace/internal/user-service/transport/http/usecase"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
 
@@ -26,11 +25,11 @@ func NewUserActivateController(usecase usecase.UserActivateUseCase) *UserActivat
 	}
 }
 
-func (h *UserActivateController) Handle(ctx context.Context, req *UserActivateRequest) (*UserActivateResponse, int, error) {
-	status, err := h.usecase.Execute(ctx, req.ActivationID, req.ActivationCode)
+func (h *UserActivateController) Handle(ctx context.Context, req *UserActivateRequest) (*UserActivateResponse, error) {
+	err := h.usecase.Execute(ctx, req.ActivationID, req.ActivationCode)
 	if err != nil {
-		return nil, status, err
+		return nil, err
 	}
 
-	return &UserActivateResponse{Message: "user Useractivate"}, fiber.StatusOK, nil
+	return &UserActivateResponse{Message: "user Useractivate"}, nil
 }

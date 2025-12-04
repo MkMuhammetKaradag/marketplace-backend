@@ -1,11 +1,13 @@
+// internal/user-service/handler/middleware.go
 package handler
 
 import (
 	"errors"
+	"marketplace/internal/user-service/domain"
+	"marketplace/internal/user-service/repository/postgres"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-
 )
 
 var validate = validator.New()
@@ -23,14 +25,15 @@ func HandleBasic[R Request, Res Response](handler BasicHandler[R, Res]) fiber.Ha
 		}
 
 		ctx := c.UserContext()
-		res, status, err := handler.Handle(ctx, &req)
+		res, err := handler.Handle(ctx, &req)
 
 		if err != nil {
-			
-
+			status := getStatusCodeFromError(err)
 			return c.Status(status).JSON(fiber.Map{"error": err.Error()})
 		}
-
+		if c.Method() == fiber.MethodPost {
+			return c.Status(fiber.StatusCreated).JSON(res)
+		}
 		return c.JSON(res)
 	}
 }
@@ -47,11 +50,14 @@ func HandleWithFiber[R Request, Res Response](handler FiberHandler[R, Res]) fibe
 		}
 
 		ctx := c.UserContext()
-		res, status, err := handler.Handle(c, ctx, &req)
+		res, err := handler.Handle(c, ctx, &req)
 
 		if err != nil {
-			
+			status := getStatusCodeFromError(err)
 			return c.Status(status).JSON(fiber.Map{"error": err.Error()})
+		}
+		if c.Method() == fiber.MethodPost {
+			return c.Status(fiber.StatusCreated).JSON(res)
 		}
 		return c.JSON(res)
 	}
@@ -74,4 +80,21 @@ func parseRequest[R any](c *fiber.Ctx, req *R) error {
 	}
 
 	return nil
+}
+func getStatusCodeFromError(err error) int {
+	switch {
+	// Hata spesifik ise (Duplicate, Not Found, vb.)
+	case errors.Is(err, postgres.ErrDuplicateResource):
+		return fiber.StatusConflict // 409
+	case errors.Is(err, postgres.ErrUserNotFound):
+		return fiber.StatusNotFound // 404
+	case errors.Is(err, postgres.ErrInvalidCredentials):
+		return fiber.StatusBadRequest // 400
+	case errors.Is(err, domain.ErrUnauthorized):
+		return fiber.StatusUnauthorized // 401
+
+	// Default: Beklenmedik veya sunucu hatası
+	default:
+		return fiber.StatusInternalServerError // 500
+	}
 }
