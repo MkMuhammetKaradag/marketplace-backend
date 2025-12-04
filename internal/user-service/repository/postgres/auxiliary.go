@@ -1,4 +1,3 @@
-// internal/user-service/database/postgres/auxiliary.go
 package postgres
 
 import (
@@ -18,13 +17,14 @@ func (r *Repository) startCleanupJob(interval time.Duration) {
 		}
 	}
 }
+
 func (r *Repository) cleanupExpiredActivations() error {
 	const query = `DELETE FROM users WHERE is_active = false AND activation_expiry < NOW()`
 	_, err := r.db.Exec(query)
 	return err
 }
-func (r *Repository) hashPassword(password string) (string, error) {
 
+func (r *Repository) hashPassword(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hashed), err
 }
@@ -32,7 +32,6 @@ func (r *Repository) hashPassword(password string) (string, error) {
 func (r *Repository) isDuplicateKeyError(err error) bool {
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) {
-		// PostgreSQL error code for unique_violation
 		return pqErr.Code == "23505"
 	}
 

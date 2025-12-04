@@ -1,14 +1,14 @@
-// internal/user-service/database/postgres/repository.go
 package postgres
 
 import (
 	"database/sql"
 	"errors"
-	"marketplace/internal/user-service/config"
-	"marketplace/internal/user-service/domain"
 	"time"
 
 	_ "github.com/lib/pq"
+
+	"marketplace/internal/user-service/config"
+	"marketplace/internal/user-service/domain"
 )
 
 var (
@@ -27,13 +27,13 @@ type Repository struct {
 	db *sql.DB
 }
 
-func NewRepository(cfg config.Config) (domain.PostgresRepository, error) {
-	db, err := NewPostgresDB(cfg)
+func NewRepository(cfg config.Config) (domain.UserRepository, error) {
+	db, err := newPostgresDB(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := RunMigrations(db); err != nil {
+	if err := runMigrations(db); err != nil {
 		return nil, err
 	}
 

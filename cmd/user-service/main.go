@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	application "marketplace/internal/user-service/app"
 	"marketplace/internal/user-service/config"
 )
@@ -8,7 +10,12 @@ import (
 func main() {
 	appConfig := config.Read()
 
-	app := application.NewApp(appConfig)
+	app, err := application.NewApp(appConfig)
+	if err != nil {
+		log.Fatalf("failed to initialise app: %v", err)
+	}
 
-	app.Start()
+	if err := app.Start(); err != nil {
+		log.Fatalf("server stopped with error: %v", err)
+	}
 }

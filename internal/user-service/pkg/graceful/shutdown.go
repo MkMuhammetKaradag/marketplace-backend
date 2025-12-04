@@ -3,7 +3,6 @@ package graceful
 import (
 	"context"
 	"fmt"
-
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,8 +20,7 @@ func WaitForShutdown(app *fiber.App, timeout time.Duration, ctx context.Context)
 
 	if err := app.ShutdownWithTimeout(timeout); err != nil {
 		fmt.Println("Error during server shutdown:", err)
-
 	}
-	fmt.Println("Server gracefully stopped")
 
+	fmt.Println("Server gracefully stopped")
 }

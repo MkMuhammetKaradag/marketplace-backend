@@ -1,16 +1,15 @@
-// internal/user-service/database/postgres/connection.go
-
 package postgres
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
-	"marketplace/internal/user-service/config"
 	"time"
+
+	"marketplace/internal/user-service/config"
 )
 
-func NewPostgresDB(cfg config.Config) (*sql.DB, error) {
+func newPostgresDB(cfg config.Config) (*sql.DB, error) {
 	conn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.Database.User,
