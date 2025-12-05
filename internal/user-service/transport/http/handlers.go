@@ -34,6 +34,10 @@ func (h *Handlers) UserActivate() *controller.UserActivateController {
 	userActivateUseCase := usecase.NewUserActivateUseCase(h.userRepository)
 	return controller.NewUserActivateController(userActivateUseCase)
 }
+func (h *Handlers) SignIn() *controller.SignInController {
+	userActivateUseCase := usecase.NewSignInUseCase(h.userRepository)
+	return controller.NewSignInController(userActivateUseCase)
+}
 
 type HelloResponse struct {
 	Message string `json:"message"`

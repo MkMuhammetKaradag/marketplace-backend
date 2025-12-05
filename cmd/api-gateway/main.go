@@ -366,8 +366,8 @@ func NewGateway() *Gateway {
 		routeConfigs: map[string]RouteConfig{
 			// /users servisi için genel kural (prefix eşleşmesi)
 			"/users": {
-				GlobalLimit: 10.0 / 60, GlobalBurst: 10, // Max 200 istek/dakika
-				UserLimit: 3.0 / 60, UserBurst: 3, // Kullanıcı max 20 istek/dakika
+				GlobalLimit: 50.0 / 60, GlobalBurst: 50, // Max 200 istek/dakika
+				UserLimit: 20.0 / 60, UserBurst: 20, // Kullanıcı max 20 istek/dakika
 			},
 			// /test servisi için genel kural
 			"/test": {
@@ -748,7 +748,7 @@ func main() {
 
 	// Servisleri kaydet (Yük dengeleme simülasyonu için birden fazla adres)
 	// Not: Bu adreslerde gerçek servislerin çalışıyor olması gerekir.
-	gateway.registry.Register("user-service", []string{"http://localhost:8081", "http://localhost:8083"}, "/users")
+	gateway.registry.Register("user-service", []string{"http://localhost:8081", "http://localhost:8081"}, "/users")
 	gateway.registry.Register("auth-service", []string{"http://localhost:8084"}, "/auth")
 	gateway.registry.Register("test-service", []string{"http://localhost:8082"}, "/test")
 	gateway.registry.Register("chat-service", []string{"http://localhost:8085"}, "/chat")

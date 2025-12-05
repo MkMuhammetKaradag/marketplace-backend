@@ -20,7 +20,9 @@ func (r *Router) Register(app *fiber.App) {
 	//api := app.Group("/api/v1")
 	siginUpHandler := r.handlers.SignUp()
 	userActivateHandler := r.handlers.UserActivate()
+	signInHandler := r.handlers.SignIn()
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/signup", handler.HandleBasic[controller.SignUpRequest, controller.SignUpResponse](siginUpHandler))
 	app.Post("/user-activate", handler.HandleBasic[controller.UserActivateRequest, controller.UserActivateResponse](userActivateHandler))
+	app.Post("/signin",handler.HandleWithFiber[controller.SignInRequest,controller.SignInResponse](signInHandler))
 }

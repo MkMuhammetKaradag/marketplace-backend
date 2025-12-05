@@ -49,8 +49,8 @@ func HandleWithFiber[R Request, Res Response](handler FiberHandler[R, Res]) fibe
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "validation failed", "details": err.Error()})
 		}
 
-		ctx := c.UserContext()
-		res, err := handler.Handle(c, ctx, &req)
+		// ctx := c.UserContext()
+		res, err := handler.Handle(c, &req)
 
 		if err != nil {
 			status := getStatusCodeFromError(err)
