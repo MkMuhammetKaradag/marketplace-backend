@@ -4,3 +4,9 @@ database:
   password: 'mypassword'
   db: 'userdb'
   host: 'localhost'
+
+redisSession:
+  host: 'localhost'
+  port: '6379'
+  password: ''
+  db: 0

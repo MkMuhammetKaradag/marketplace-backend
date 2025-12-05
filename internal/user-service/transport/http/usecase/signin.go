@@ -4,20 +4,24 @@ package usecase
 import (
 	"fmt"
 	"marketplace/internal/user-service/domain"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type SignInUseCase interface {
 	Execute(fiberCtx *fiber.Ctx, identifier, password string) error
 }
 type signInUseCase struct {
-	userRepository domain.UserRepository
+	userRepository    domain.UserRepository
+	sessionRepository domain.SessionRepository
 }
 
-func NewSignInUseCase(repository domain.UserRepository) SignInUseCase {
+func NewSignInUseCase(repository domain.UserRepository, sessionRepo domain.SessionRepository) SignInUseCase {
 	return &signInUseCase{
-		userRepository: repository,
+		userRepository:    repository,
+		sessionRepository: sessionRepo,
 	}
 }
 
@@ -27,9 +31,24 @@ func (u *signInUseCase) Execute(fiberCtx *fiber.Ctx, identifier, password string
 	if err != nil {
 		return err
 	}
+
+	sessionToken := uuid.New().String()
+	device := fiberCtx.Get("User-Agent")
+	ip := fiberCtx.IP()
+
+	userData := &domain.SessionData{
+		UserID:    user.ID,
+		Device:    device,
+		Username:  "boş",
+		Ip:        ip,
+		CreatedAt: time.Now(),
+	}
+	if err := u.sessionRepository.CreateSession(fiberCtx.UserContext(), sessionToken, 24*time.Hour, userData); err != nil {
+		return err
+	}
 	fiberCtx.Cookie(&fiber.Cookie{
 		Name:     "Session",
-		Value:    user.ID,
+		Value:    sessionToken,
 		Path:     "/",
 		MaxAge:   60 * 60 * 24,
 		HTTPOnly: true,

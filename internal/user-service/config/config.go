@@ -25,9 +25,16 @@ type ServerConfig struct {
 	Description string `mapstructure:"description"`
 }
 
+type RedisSessionConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+}
+
 type Config struct {
-	Database DatabaseConfig `mapstructure:"database"`
-	Server   ServerConfig   `mapstructure:"server"`
+	Database     DatabaseConfig     `mapstructure:"database"`
+	Server       ServerConfig       `mapstructure:"server"`
+	RedisSession RedisSessionConfig `mapstructure:"redisSession"`
 }
 
 func Read() Config {

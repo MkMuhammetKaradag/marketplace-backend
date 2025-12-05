@@ -12,10 +12,11 @@ import (
 type Handlers struct {
 	userService    domain.UserService
 	userRepository domain.UserRepository
+	sessionRepository domain.SessionRepository
 }
 
-func NewHandlers(userService domain.UserService, repository domain.UserRepository) *Handlers {
-	return &Handlers{userService: userService, userRepository: repository}
+func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository) *Handlers {
+	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -35,7 +36,7 @@ func (h *Handlers) UserActivate() *controller.UserActivateController {
 	return controller.NewUserActivateController(userActivateUseCase)
 }
 func (h *Handlers) SignIn() *controller.SignInController {
-	userActivateUseCase := usecase.NewSignInUseCase(h.userRepository)
+	userActivateUseCase := usecase.NewSignInUseCase(h.userRepository, h.sessionRepository)
 	return controller.NewSignInController(userActivateUseCase)
 }
 

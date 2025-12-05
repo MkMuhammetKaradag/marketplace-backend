@@ -9,15 +9,17 @@ import (
 	"marketplace/internal/user-service/domain"
 	"marketplace/internal/user-service/pkg/graceful"
 	"marketplace/internal/user-service/repository/postgres"
+	"marketplace/internal/user-service/repository/session"
 	"marketplace/internal/user-service/server"
 	httptransport "marketplace/internal/user-service/transport/http"
 	"time"
 )
 
 type App struct {
-	cfg        config.Config
-	server     *server.Server
-	repository domain.UserRepository
+	cfg         config.Config
+	server      *server.Server
+	repository  domain.UserRepository
+	sessionRepo domain.SessionRepository
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -27,9 +29,10 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 
 	return &App{
-		cfg:        cfg,
-		server:     container.server,
-		repository: container.repo,
+		cfg:         cfg,
+		server:      container.server,
+		repository:  container.repo,
+		sessionRepo: container.sessionRepo,
 	}, nil
 }
 
@@ -49,8 +52,9 @@ func (a *App) Start() error {
 }
 
 type container struct {
-	repo   domain.UserRepository
-	server *server.Server
+	repo        domain.UserRepository
+	sessionRepo domain.SessionRepository
+	server      *server.Server
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -58,9 +62,13 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init postgres repository: %w", err)
 	}
+	sessionRepo, err := session.NewSessionRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("init redis session manager: %w", err)
+	}
 
 	userService := domain.NewUserService(repo)
-	httpHandlers := httptransport.NewHandlers(userService, repo)
+	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
@@ -73,7 +81,8 @@ func buildContainer(cfg config.Config) (*container, error) {
 	httpServer := server.New(serverCfg, router)
 
 	return &container{
-		repo:   repo,
-		server: httpServer,
+		repo:        repo,
+		server:      httpServer,
+		sessionRepo: sessionRepo,
 	}, nil
 }
