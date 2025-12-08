@@ -22,5 +22,5 @@ type SessionData struct {
 
 type SessionRepository interface {
 	CreateSession(ctx context.Context, token string, duration time.Duration, data *SessionData) error
-	
+	DeleteSession(ctx context.Context, token string) error
 }

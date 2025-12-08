@@ -10,8 +10,8 @@ import (
 )
 
 type Handlers struct {
-	userService    domain.UserService
-	userRepository domain.UserRepository
+	userService       domain.UserService
+	userRepository    domain.UserRepository
 	sessionRepository domain.SessionRepository
 }
 
@@ -38,6 +38,10 @@ func (h *Handlers) UserActivate() *controller.UserActivateController {
 func (h *Handlers) SignIn() *controller.SignInController {
 	userActivateUseCase := usecase.NewSignInUseCase(h.userRepository, h.sessionRepository)
 	return controller.NewSignInController(userActivateUseCase)
+}
+func (h *Handlers) SignOut() *controller.SignOutController {
+	logoutUseCase := usecase.NewSignOutUseCase(h.sessionRepository)
+	return controller.NewSignOutController(logoutUseCase)
 }
 
 type HelloResponse struct {
