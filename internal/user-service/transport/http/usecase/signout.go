@@ -22,11 +22,10 @@ func NewSignOutUseCase(repository domain.SessionRepository) SignOutUseCase {
 
 func (u *signOutUseCase) Execute(ctx *fiber.Ctx) error {
 	token := ctx.Cookies("Session")
-	if err := u.sessionRepository.DeleteSession(ctx.UserContext(), token); err != nil {
-		return err
+	// Öncelikle DB'den silmeyi dene
+	err := u.sessionRepository.DeleteSession(ctx.UserContext(), token)
 
-	}
-
+	// Hata olsa bile tarayıcıdaki çerezi temizle
 	ctx.Cookie(&fiber.Cookie{
 		Name:     "Session",
 		Value:    "",
@@ -36,5 +35,11 @@ func (u *signOutUseCase) Execute(ctx *fiber.Ctx) error {
 		Secure:   false,
 		SameSite: "Lax",
 	})
+
+	// Varsa DB hatasını şimdi döndür
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

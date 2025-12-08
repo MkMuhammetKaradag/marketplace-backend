@@ -28,7 +28,7 @@ const (
 	// os.Getenv ile çevresel değişkenden alınmalı. Varsayılan (default) değer.
 	InternalGatewaySecret = "GATEWAY_SECRET_KEY"
 
-	SessionCookieName = "session_id"
+	SessionCookieName = "Session"
 	DefaultTimeout    = 30 * time.Second
 	GatewayPort       = ":8080"
 )
@@ -394,6 +394,7 @@ func NewGateway() *Gateway {
 			"/users/profile": true,
 			"/users/list":    true,
 			"/test/hello":    true,
+			"/users/signout": true,
 		},
 	}
 }
@@ -433,11 +434,13 @@ func (g *Gateway) loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 func (g *Gateway) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Sadece korumalı yollar için kontrol yap
+
 		if g.protected[r.URL.Path] {
+
 			isAuthenticated := false
 
 			// 1. Çerez Kontrolü
-			if _, err := r.Cookie(SessionCookieName); err == nil {
+			if token, err := r.Cookie(SessionCookieName); err == nil && token.Value != "" {
 				isAuthenticated = true
 			}
 
