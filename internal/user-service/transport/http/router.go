@@ -29,4 +29,7 @@ func (r *Router) Register(app *fiber.App) {
 	app.Post("/signin", handler.HandleWithFiber[controller.SignInRequest, controller.SignInResponse](signInHandler))
 	app.Post("/signout", handler.HandleWithFiber[controller.SignOutRequest, controller.SignOutResponse](signOutHandler))
 	app.Post("/all-signout", handler.HandleWithFiber[controller.AllSignOutRequest, controller.AllSignOutResponse](allSignOutHandler))
+	app.Get("/profile", func(c *fiber.Ctx) error {
+		return c.SendString("Hello World")
+	})
 }
