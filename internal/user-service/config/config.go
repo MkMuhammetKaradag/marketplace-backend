@@ -21,6 +21,7 @@ type DatabaseConfig struct {
 
 type ServerConfig struct {
 	Port        string `mapstructure:"port"`
+	GrpcPort    string `mapstructure:"grpcPort"`
 	Host        string `mapstructure:"host"`
 	Description string `mapstructure:"description"`
 }

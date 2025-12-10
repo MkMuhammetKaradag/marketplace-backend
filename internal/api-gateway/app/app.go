@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
 	"marketplace/internal/api-gateway/config"
+	"marketplace/internal/api-gateway/grpc_client"
 	"marketplace/internal/api-gateway/handlers"
 	"marketplace/internal/api-gateway/limiter"
 	"marketplace/internal/api-gateway/metrics"
@@ -82,6 +84,11 @@ func New() *App {
 }
 
 func (a *App) Run(addr string) error {
+	grpcAddress := "localhost:3001" // Docker'da ise servis adı, yerelde ise localhost:50051
+
+	if err := grpc_client.InitAuthClient(grpcAddress); err != nil {
+		log.Fatalf("gRPC istemcisi başlatılamadı: %v", err)
+	}
 	return a.Fiber.Listen(addr)
 }
 

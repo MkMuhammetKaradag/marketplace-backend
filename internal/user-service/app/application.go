@@ -11,7 +11,9 @@ import (
 	"marketplace/internal/user-service/repository/postgres"
 	"marketplace/internal/user-service/repository/session"
 	"marketplace/internal/user-service/server"
+	grpctransport "marketplace/internal/user-service/transport/grpc"
 	httptransport "marketplace/internal/user-service/transport/http"
+
 	"time"
 )
 
@@ -76,9 +78,11 @@ func buildContainer(cfg config.Config) (*container, error) {
 		IdleTimeout:  5 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
+		GrpcPort:     cfg.Server.GrpcPort,
 	}
 
-	httpServer := server.New(serverCfg, router)
+	grpcHandler := grpctransport.NewAuthGrpcHandler(sessionRepo)
+	httpServer := server.New(serverCfg, router, grpcHandler)
 
 	return &container{
 		repo:        repo,

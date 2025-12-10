@@ -2,11 +2,15 @@ package server
 
 import (
 	"fmt"
+	"log"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"google.golang.org/grpc"
 )
 
 type RouteRegistrar interface {
@@ -14,6 +18,7 @@ type RouteRegistrar interface {
 }
 
 type Config struct {
+	GrpcPort     string
 	Port         string
 	IdleTimeout  time.Duration
 	ReadTimeout  time.Duration
@@ -21,11 +26,15 @@ type Config struct {
 }
 
 type Server struct {
-	app *fiber.App
-	cfg Config
+	app        *fiber.App
+	cfg        Config
+	grpcServer *grpc.Server
+}
+type GrpcServerRegistrar interface {
+	Register(server *grpc.Server)
 }
 
-func New(cfg Config, registrar RouteRegistrar) *Server {
+func New(cfg Config, registrar RouteRegistrar, grpcRegistrar GrpcServerRegistrar) *Server {
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  cfg.IdleTimeout,
 		ReadTimeout:  cfg.ReadTimeout,
@@ -49,17 +58,45 @@ func New(cfg Config, registrar RouteRegistrar) *Server {
 		registrar.Register(app)
 	}
 
+	grpcSrv := grpc.NewServer()
+
+	// GrpcRegistrar varsa, implementasyonları kaydet
+	if grpcRegistrar != nil {
+		grpcRegistrar.Register(grpcSrv)
+	}
+
 	return &Server{
-		app: app,
-		cfg: cfg,
+		app:        app,
+		cfg:        cfg,
+		grpcServer: grpcSrv,
 	}
 }
-
+func (s *Server) startGrpc() error {
+	listen, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", s.cfg.GrpcPort))
+	if err != nil {
+		return fmt.Errorf("gRPC dinlemede hata: %w", err)
+	}
+	log.Printf("👂 gRPC sunucusu %s adresinde dinliyor...", s.cfg.GrpcPort)
+	// Bloklayan çağrı: Sunucu çalışmaya başlar
+	return s.grpcServer.Serve(listen)
+}
 func (s *Server) Start() error {
+	// 1. gRPC sunucusunu bir goroutine içinde başlatın
+	// Fiber'in Listen() çağrısı bloklayıcı olduğu için bunu yapmalıyız.
+	go func() {
+		if err := s.startGrpc(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("gRPC sunucusu hatası: %v", err)
+		}
+	}()
+
+	// 2. HTTP Fiber sunucusunu başlatın (Bu çağrı bloklayıcıdır)
+	log.Printf("🌐 HTTP sunucusu %s adresinde dinliyor...", s.cfg.Port)
 	return s.app.Listen(s.Address())
 }
 
 func (s *Server) Shutdown(timeout time.Duration) error {
+	s.grpcServer.GracefulStop()
+	log.Println("gRPC sunucusu durduruldu.")
 	return s.app.ShutdownWithTimeout(timeout)
 }
 

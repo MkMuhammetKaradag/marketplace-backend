@@ -1,0 +1,28 @@
+// auth.proto
+syntax = "proto3";
+
+// Eğer farklı bir pakette kullanacaksanız
+option go_package = "./auth"; 
+
+package auth;
+
+// 1. Servis Tanımı: User Servisinde çalışacak olan doğrulama servisini tanımlarız.
+service AuthValidator {
+  // Gateway, bu metodu çağırarak token'ın geçerliliğini kontrol edecek.
+  rpc ValidateToken (TokenRequest) returns (ValidationResponse);
+}
+
+// 2. İstek Mesajı: Gateway'in göndereceği veriyi tanımlarız.
+message TokenRequest {
+  string token = 1; // Cookie veya Authorization Header'dan gelen token/session ID
+}
+
+// 3. Yanıt Mesajı: User Servisinin geri döndüreceği veriyi tanımlarız.
+message ValidationResponse {
+  // Token geçerli mi?
+  bool is_valid = 1;
+  // Geçerliyse, hangi kullanıcıya ait (Gateway bunu X-User-ID olarak iletecek)
+  string user_id = 2; 
+  // Opsiyonel: Hata mesajı
+  string message = 3;
+}
