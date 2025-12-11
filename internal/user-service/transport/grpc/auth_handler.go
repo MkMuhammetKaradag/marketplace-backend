@@ -5,6 +5,7 @@ import (
 	"log"
 	"marketplace/internal/user-service/domain"
 	pb "marketplace/pkg/proto/auth"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -27,6 +28,9 @@ func (h *AuthGrpcHandler) Register(gRPCServer *grpc.Server) {
 	pb.RegisterAuthValidatorServer(gRPCServer, h)
 }
 
+const SessionDuration = 3 * time.Minute
+const MaxSessionLifetime = 3 * 3 * time.Minute
+
 // *** ASIL DOĞRULAMA MANTIĞI BURASI ***
 func (h *AuthGrpcHandler) ValidateToken(ctx context.Context, req *pb.TokenRequest) (*pb.ValidationResponse, error) {
 	token := req.GetToken()
@@ -43,6 +47,33 @@ func (h *AuthGrpcHandler) ValidateToken(ctx context.Context, req *pb.TokenReques
 			IsValid: false,
 			Message: "Geçersiz veya süresi dolmuş oturum.",
 		}, nil
+	}
+
+	if time.Since(session.CreatedAt) > MaxSessionLifetime {
+		log.Printf("Token Maksimum Süreyi Aştı. UserID: %s", session.UserID)
+
+		_ = h.SessionRepo.DeleteSession(ctx, token)
+
+		return &pb.ValidationResponse{
+			IsValid: false,
+			Message: "Maksimum oturum süresi doldu, lütfen tekrar giriş yapın.",
+		}, nil
+	}
+
+	refreshThreshold := SessionDuration / 5
+	ttl, err := h.SessionRepo.GetTTL(ctx, token) // Bu metodu SessionRepo'ya eklemelisiniz.
+	if err != nil {
+		log.Printf("TTL alma hatası (devam ediliyor): %v", err)
+		// Hata olsa bile oturum şu an geçerli, devam edebiliriz.
+	} else if ttl > 0 && ttl < refreshThreshold {
+		// Kalan süre eşikten azsa, süreyi yenile
+		refreshErr := h.SessionRepo.RefreshSession(ctx, token, SessionDuration)
+		if refreshErr != nil {
+			// Yenileme başarısız olsa bile kullanıcıyı engelleme, sadece logla.
+			log.Printf("Oturum yenileme başarısız: %v", refreshErr)
+		} else {
+			log.Printf("Oturum yenilendi. UserID: %s", session.UserID)
+		}
 	}
 
 	// Oturum geçerli, kullanıcı ID'sini dön

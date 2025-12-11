@@ -25,4 +25,6 @@ type SessionRepository interface {
 	DeleteSession(ctx context.Context, token string) error
 	DeleteUserAllSession(ctx context.Context, token string) error
 	GetSessionData(ctx context.Context, token string) (*SessionData, error)
+	RefreshSession(ctx context.Context, token string, duration time.Duration) error
+	GetTTL(ctx context.Context, token string) (time.Duration, error)
 }

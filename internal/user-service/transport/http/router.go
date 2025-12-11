@@ -2,6 +2,7 @@
 package http
 
 import (
+	"fmt"
 	"marketplace/internal/user-service/handler"
 	"marketplace/internal/user-service/transport/http/controller"
 
@@ -30,6 +31,12 @@ func (r *Router) Register(app *fiber.App) {
 	app.Post("/signout", handler.HandleWithFiber[controller.SignOutRequest, controller.SignOutResponse](signOutHandler))
 	app.Post("/all-signout", handler.HandleWithFiber[controller.AllSignOutRequest, controller.AllSignOutResponse](allSignOutHandler))
 	app.Get("/profile", func(c *fiber.Ctx) error {
-		return c.SendString("Hello World")
+		userIDStr := c.Get("X-User-ID")
+		if userIDStr == "" {
+
+			return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
+		}
+		fmt.Println("user id : " + userIDStr)
+		return c.SendString("Hello World " + userIDStr)
 	})
 }
