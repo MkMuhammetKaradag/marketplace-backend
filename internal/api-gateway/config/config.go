@@ -35,9 +35,9 @@ func GetDefaultRouteConfigs() map[string]RouteConfig {
 		// 	GlobalLimit: 10.0 / 60, GlobalBurst: 10,
 		// 	UserLimit: 2.0 / 60, UserBurst: 2,
 		// },
-		"/test": {
-			GlobalLimit: 20.0 / 60, GlobalBurst: 5,
-			UserLimit: 3.0 / 60, UserBurst: 2,
+		"/sellers": {
+			GlobalLimit: 50.0 / 60, GlobalBurst: 50,
+			UserLimit: 20.0 / 60, UserBurst: 20,
 		},
 		"/test/hello": {
 			GlobalLimit: 2.0 / 60, GlobalBurst: 2,
@@ -57,9 +57,10 @@ func GetDefaultRouteConfigs() map[string]RouteConfig {
 // GetProtectedRoutes returns the set of routes that require authentication
 func GetProtectedRoutes() map[string]bool {
 	return map[string]bool{
-		"/users/profile": true,
-		"/users/list":    true,
-		"/test/hello":    true,
-		"/users/signout": true,
+		"/users/profile":   true,
+		"/users/list":      true,
+		"/test/hello":      true,
+		"/users/signout":   true,
+		"/sellers/onboard": true,
 	}
 }

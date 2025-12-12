@@ -2,6 +2,9 @@
 package http
 
 import (
+	"marketplace/internal/seller-service/handler"
+	"marketplace/internal/seller-service/transport/http/controller"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,7 +18,8 @@ func NewRouter(handlers *Handlers) *Router {
 
 func (r *Router) Register(app *fiber.App) {
 	//api := app.Group("/api/v1")
-
+	createSellerHandler := r.handlers.CreateSeller()
 	app.Get("/hello", r.handlers.Hello)
+	app.Post("/onboard", handler.HandleWithFiber[controller.CreateSellerRequest, controller.CreateSellerResponse](createSellerHandler))
 
 }

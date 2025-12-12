@@ -14,7 +14,7 @@ func main() {
 	// Register Services (In a real scenario, this might be dynamic or loaded from config)
 	// Important: Ensure these URLs match your actual service ports or docker-compose
 	application.RegisterService("user-service", []string{"http://localhost:8081", "http://localhost:8081"}, "/users")
-	application.RegisterService("seller-service", []string{"http://localhost:8083"}, "/seller")
+	application.RegisterService("seller-service", []string{"http://localhost:8083"}, "/sellers")
 	application.RegisterService("auth-service", []string{"http://localhost:8084"}, "/auth")
 	application.RegisterService("test-service", []string{"http://localhost:8082"}, "/test")
 	application.RegisterService("chat-service", []string{"http://localhost:8085"}, "/chat")

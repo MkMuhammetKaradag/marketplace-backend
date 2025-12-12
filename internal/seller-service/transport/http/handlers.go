@@ -5,6 +5,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"marketplace/internal/seller-service/domain"
+	"marketplace/internal/seller-service/transport/http/controller"
+	"marketplace/internal/seller-service/transport/http/usecase"
 )
 
 type Handlers struct {
@@ -22,6 +24,11 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 		Info:    "Fiber handler connected to domain layer",
 	}
 	return c.JSON(resp)
+}
+
+func (h *Handlers) CreateSeller() *controller.CreateSellerController {
+	createSellerUseCase := usecase.NewCreateSellerUseCase(h.sellerRepository)
+	return controller.NewCreateSellerController(createSellerUseCase)
 }
 
 type HelloResponse struct {

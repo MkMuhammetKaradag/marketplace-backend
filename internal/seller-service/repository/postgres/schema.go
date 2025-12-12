@@ -2,24 +2,40 @@ package postgres
 
 const (
 	createSellersTable = `
-		CREATE TABLE IF NOT EXISTS sellers (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			
-			user_id UUID NOT NULL UNIQUE, 
-			store_name VARCHAR(100) NOT NULL UNIQUE,
-			store_slug VARCHAR(100) NOT NULL UNIQUE, 
-			tax_number VARCHAR(20) UNIQUE, 
-			is_approved BOOLEAN DEFAULT false, 
-			default_shipping_country VARCHAR(50),
-			store_description TEXT,
-			
-			bank_account_iban VARCHAR(34), 
-			
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-			
-		
-			rating NUMERIC(2, 1) DEFAULT 0.0, 
-			total_sales INT DEFAULT 0
-		)`
+        CREATE TABLE IF NOT EXISTS sellers (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            
+            user_id UUID NOT NULL UNIQUE, 
+            
+            store_name VARCHAR(100) NOT NULL UNIQUE,
+            store_slug VARCHAR(100) NOT NULL UNIQUE, 
+            store_description TEXT,
+            rating NUMERIC(2, 1) DEFAULT 0.0, 
+            total_sales INT DEFAULT 0,
+            legal_business_name VARCHAR(255) NOT NULL,
+            tax_number VARCHAR(20) UNIQUE, 
+            tax_office VARCHAR(100) NOT NULL,
+            is_approved BOOLEAN DEFAULT false, 
+
+            phone_number VARCHAR(20) NOT NULL,
+            email VARCHAR(100) UNIQUE, 
+            
+            address_line_1 VARCHAR(255) NOT NULL, 
+            city VARCHAR(100) NOT NULL,
+            country VARCHAR(50) NOT NULL,
+            default_shipping_country VARCHAR(50),	
+
+            bank_account_iban VARCHAR(34) UNIQUE, 
+            bank_account_holder_name VARCHAR(255) NOT NULL,
+            bank_account_bic VARCHAR(11), 
+            
+   	
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            
+           	
+            CONSTRAINT check_tax_number_format CHECK (
+                 tax_number ~ '^[0-9]{10,20}$' 	
+            )
+        )`
 )
