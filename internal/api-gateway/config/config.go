@@ -54,13 +54,24 @@ func GetDefaultRouteConfigs() map[string]RouteConfig {
 	}
 }
 
+type RoutePolicy struct {
+	Roles []string
+}
+
 // GetProtectedRoutes returns the set of routes that require authentication
-func GetProtectedRoutes() map[string]bool {
-	return map[string]bool{
-		"/users/profile":   true,
-		"/users/list":      true,
-		"/test/hello":      true,
-		"/users/signout":   true,
-		"/sellers/onboard": true,
+func GetProtectedRoutes() map[string]RoutePolicy {
+	return map[string]RoutePolicy{
+		"/users/profile": {
+			Roles: []string{"buyer", "seller", "admin"},
+		},
+		"/sellers/onboard": {
+			Roles: []string{"buyer", "admin"},
+		},
+		"/sellers/approve/:seller_id": {
+			Roles: []string{"admin"},
+		},
+		"/sellers/reject/:seller_id": {
+			Roles: []string{"admin"},
+		},
 	}
 }

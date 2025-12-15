@@ -43,7 +43,7 @@ func (u *signInUseCase) Execute(fiberCtx *fiber.Ctx, identifier, password string
 		Ip:        ip,
 		CreatedAt: time.Now(),
 	}
-	if err := u.sessionRepository.CreateSession(fiberCtx.UserContext(), sessionToken, 3*time.Minute, userData); err != nil {
+	if err := u.sessionRepository.CreateSession(fiberCtx.UserContext(), sessionToken, 24*time.Hour, userData); err != nil {
 		return err
 	}
 	fiberCtx.Cookie(&fiber.Cookie{

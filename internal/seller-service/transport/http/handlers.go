@@ -31,6 +31,16 @@ func (h *Handlers) CreateSeller() *controller.CreateSellerController {
 	return controller.NewCreateSellerController(createSellerUseCase)
 }
 
+func (h *Handlers) RejectSeller() *controller.RejectSellerController {
+	rejectSellerUseCase := usecase.NewRejectSellerUseCase(h.sellerRepository)
+	return controller.NewRejectSellerController(rejectSellerUseCase)
+}
+
+func (h *Handlers) ApproveSeller() *controller.ApproveSellerController {
+	approveSellerUseCase := usecase.NewApproveSellerUseCase(h.sellerRepository)
+	return controller.NewApproveSellerController(approveSellerUseCase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

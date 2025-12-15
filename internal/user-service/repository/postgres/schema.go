@@ -18,8 +18,22 @@ const (
 			account_locked BOOLEAN DEFAULT false,
 			lock_until TIMESTAMP WITH TIME ZONE,
 			last_login TIMESTAMP WITH TIME ZONE,
+			user_role user_role NOT NULL DEFAULT 'buyer',
 			CONSTRAINT check_activation_code CHECK (
 				activation_code ~ '^[0-9]{6}$'
 			)
 		)`
+
+	createUserRolesEnum = `
+		 DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_type WHERE typname = 'user_role'
+            ) THEN
+                CREATE TYPE user_role AS ENUM ('buyer', 'seller','admin');
+            END IF;
+        END$$;
+		
+		
+		`
 )

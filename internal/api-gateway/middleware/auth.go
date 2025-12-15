@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"fmt"
-	"log"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,52 +11,102 @@ import (
 )
 
 // AuthMiddleware checks for session cookie or authorization header
-func AuthMiddleware(protectedPaths map[string]bool) fiber.Handler {
+func AuthMiddleware(policies map[string]config.RoutePolicy) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		path := c.Path()
 
-		// Check if path is protected
-		if protectedPaths[path] {
-			var authValue string // Cookie veya Token değeri
+		routePath := c.Route().Path
+		requestPath := c.Path()
 
-			// 1. Cookie Check
-			cookie := c.Cookies(config.SessionCookieName)
-			if cookie != "" {
-				authValue = cookie
-			}
+		policy, isProtected := policies[routePath]
 
-			// 2. Authorization Header Check (Bearer Token)
-			authHeader := c.Get("Authorization")
-			if strings.HasPrefix(authHeader, "Bearer ") && len(authHeader) > 7 {
-				authValue = strings.TrimPrefix(authHeader, "Bearer ")
-			}
-
-			// Eğer bir token/cookie bulunduysa, gRPC ile User Servisine sor
-			isAuthenticated := false
-			var userID string
-
-			if authValue != "" {
-				isValid, id := grpc_client.ValidateToken(authValue)
-				fmt.Println("isValid", isValid)
-				fmt.Println("id", id)
-
-				if isValid {
-					isAuthenticated = true
-					userID = id
-				}
-			}
-
-			if !isAuthenticated {
-				log.Printf("🔒 Unauthorized access: %s", path)
-				// Token/Cookie vardı ama User Servisi geçersiz dedi.
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Authentication (Session/Token) required or invalid",
-				})
-			}
-
-			c.Request().Header.Set("X-User-ID", userID)
+		if !isProtected {
+			isProtected, policy = findParametrizedRoute(requestPath, policies)
 		}
+
+		if !isProtected {
+			return c.Next()
+		}
+
+		var authValue string
+		if cookie := c.Cookies(config.SessionCookieName); cookie != "" {
+			authValue = cookie
+		}
+		if authHeader := c.Get("Authorization"); strings.HasPrefix(authHeader, "Bearer ") {
+			authValue = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+
+		if authValue == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Authentication required",
+			})
+		}
+
+		var userID string
+		var role string
+		var isValid bool
+
+		isValid, userID = grpc_client.ValidateToken(authValue)
+		role = "admin"
+
+		if !isValid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid session/token",
+			})
+		}
+
+		if !contains(policy.Roles, role) {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "You do not have permission to access this resource",
+			})
+		}
+
+		c.Locals("userID", userID)
+		c.Locals("role", role)
+		c.Request().Header.Set("X-User-ID", userID)
+		c.Request().Header.Set("X-User-Role", role)
 
 		return c.Next()
 	}
+}
+
+// findParametrizedRoute, isteği haritadaki parametreli şablonlarla eşleştirmeye çalışır
+func findParametrizedRoute(requestPath string, policies map[string]config.RoutePolicy) (bool, config.RoutePolicy) {
+	requestParts := strings.Split(requestPath, "/")
+
+	for policyPath, policy := range policies {
+		policyParts := strings.Split(policyPath, "/")
+
+		if len(policyParts) != len(requestParts) {
+			continue
+		}
+
+		isMatch := true
+		for i := 0; i < len(policyParts); i++ {
+			policyPart := policyParts[i]
+			requestPart := requestParts[i]
+
+			if strings.HasPrefix(policyPart, ":") || policyPart == "" {
+				continue
+			}
+
+			if policyPart != requestPart {
+				isMatch = false
+				break
+			}
+		}
+
+		if isMatch {
+			return true, policy
+		}
+	}
+	return false, config.RoutePolicy{}
+}
+
+func contains(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }

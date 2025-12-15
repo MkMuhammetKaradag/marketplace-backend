@@ -1,6 +1,16 @@
 package postgres
 
 const (
+	createSellerStatusEnum = `
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_type WHERE typname = 'seller_status'
+            ) THEN
+                CREATE TYPE seller_status AS ENUM ('pending', 'approved', 'rejected');
+            END IF;
+        END$$;
+    `
 	createSellersTable = `
         CREATE TABLE IF NOT EXISTS sellers (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -28,8 +38,14 @@ const (
             bank_account_iban VARCHAR(34) UNIQUE, 
             bank_account_holder_name VARCHAR(255) NOT NULL,
             bank_account_bic VARCHAR(11), 
-            
-   	
+            status seller_status DEFAULT 'pending',
+            approved_at TIMESTAMP WITH TIME ZONE,
+            rejected_at TIMESTAMP WITH TIME ZONE,
+            rejection_reason TEXT,
+            approved_by UUID,
+            rejected_by UUID,
+
+    
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             

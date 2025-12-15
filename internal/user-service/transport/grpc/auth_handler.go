@@ -28,8 +28,8 @@ func (h *AuthGrpcHandler) Register(gRPCServer *grpc.Server) {
 	pb.RegisterAuthValidatorServer(gRPCServer, h)
 }
 
-const SessionDuration = 3 * time.Minute
-const MaxSessionLifetime = 3 * 3 * time.Minute
+const SessionDuration = 24 * time.Hour
+const MaxSessionLifetime = 30 * 24 * time.Hour
 
 // *** ASIL DOĞRULAMA MANTIĞI BURASI ***
 func (h *AuthGrpcHandler) ValidateToken(ctx context.Context, req *pb.TokenRequest) (*pb.ValidationResponse, error) {
