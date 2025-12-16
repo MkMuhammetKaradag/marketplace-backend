@@ -11,6 +11,7 @@ import (
 	"marketplace/internal/seller-service/repository/postgres"
 	"marketplace/internal/seller-service/server"
 	httptransport "marketplace/internal/seller-service/transport/http"
+	"marketplace/pkg/messaging"
 
 	"time"
 )
@@ -19,6 +20,7 @@ type App struct {
 	cfg        config.Config
 	server     *server.Server
 	repository domain.SellerRepository
+	messaging  domain.Messaging
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -31,6 +33,7 @@ func NewApp(cfg config.Config) (*App, error) {
 		cfg:        cfg,
 		server:     container.server,
 		repository: container.repo,
+		messaging:  container.messaging,
 	}, nil
 }
 
@@ -50,14 +53,41 @@ func (a *App) Start() error {
 }
 
 type container struct {
-	repo   domain.SellerRepository
-	server *server.Server
+	repo      domain.SellerRepository
+	server    *server.Server
+	messaging domain.Messaging
+}
+
+func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
+	broker := cfg.Brokers[0]
+	if broker == "" {
+		broker = "localhost:29092"
+	}
+	kafkaBrokers := []string{broker}
+	return messaging.KafkaConfig{
+		Brokers:              kafkaBrokers,
+		Topic:                "main-events", // Ana olay topic'i
+		RetryTopic:           "main-events-retry",
+		DLQTopic:             "main-events-dlq",
+		ServiceType:          messaging.ServiceType_SELLER_SERVICE,
+		EnableRetry:          true,
+		MaxRetries:           3,
+		ConnectionTimeout:    10 * time.Second,
+		CriticalMessageTypes: []messaging.MessageType{messaging.MessageType_SELLER_APPROVED},
+	}
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
 	repo, err := postgres.NewRepository(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("init postgres repository: %w", err)
+	}
+
+	messagingConfig := createMessagingConfig(cfg.Messaging)
+	
+	messaging, err := messaging.NewKafkaClient(messagingConfig)
+	if err != nil {
+		return nil, fmt.Errorf("init kafka messaging: %w", err)
 	}
 
 	httpHandlers := httptransport.NewHandlers(repo)
@@ -73,7 +103,8 @@ func buildContainer(cfg config.Config) (*container, error) {
 	httpServer := server.New(serverCfg, router)
 
 	return &container{
-		repo:   repo,
-		server: httpServer,
+		repo:      repo,
+		server:    httpServer,
+		messaging: messaging,
 	}, nil
 }
