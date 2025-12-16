@@ -1,12 +1,14 @@
 package messaging
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -15,13 +17,13 @@ type KafkaClient struct {
 	producer    *kafka.Writer
 	mu          sync.Mutex
 	closed      bool
-	ServiceType ServiceType
+	serviceType ServiceType
 }
 
 func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
 	kc := &KafkaClient{
 		config:      config,
-		ServiceType: config.ServiceType,
+		serviceType: config.ServiceType,
 	}
 
 	if err := kc.createTopicsIfNotExists(); err != nil {
@@ -122,4 +124,71 @@ func (kc *KafkaClient) Close() error {
 	}
 	log.Println("Kafka Client closed.")
 	return nil
+}
+
+func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *Message) error {
+	if msg.Id == "" {
+		msg.Id = uuid.New().String()
+	}
+	if msg.Created.IsZero() {
+		msg.Created = time.Now()
+	}
+	isCritical := kc.isCriticalMessageType(msg.Type)
+	if isCritical {
+		msg.Critical = true
+	}
+	msg.FromService = kc.serviceType
+
+	// Birden fazla servise gönderim simülasyonu
+	// Kafka'da "routing key" olmadığı için, mesajı ana topice gönderip
+	// tüketicilerin kendi filtrelemesini yapmasını bekleriz.
+	// Ancak kritik mesajlar için farklı topic'lere yönlendirme yapılabilir.
+
+	// Eğer mesaj belirli servislere gitmeli ise, bu bilgiyi mesajın kendisinde taşırız.
+	// Tek bir topic'e gönderip, tüketicinin mesajı alıp almayacağına karar vermesi daha basittir.
+
+	// Eğer hiç ToServices belirtilmemişse veya birden fazla servise gitmesi bekleniyorsa,
+	// ana topic'e göndeririz.
+	targetTopic := kc.config.Topic // Varsayılan olarak ana topic
+
+	// Eğer mesaj sadece tek bir servise özel ve bu servis kritik bir mesaj bekliyorsa,
+	// veya retry/DLQ senaryoları için, farklı topic'ler kullanılabilir.
+	// Bu karmaşıklık genelde Kafka'da basit bir topic yapısıyla giderilir.
+	// Bu örnekte, basitlik adına tüm mesajları ana topice gönderip tüketicinin filtrelemesini sağlıyoruz.
+	// Kritik mesajlar için bir `critical-events` topic'i veya retry için `retry-events` topic'i olabilir.
+	fmt.Println("Publishing message: ", msg)
+	messageBytes, err := msg.MarshalJSON()
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	kafkaMsg := kafka.Message{
+		Key:   []byte(msg.Id), // Mesaj anahtarı, aynı anahtara sahip mesajlar aynı bölüme gider
+		Value: messageBytes,
+		Headers: []kafka.Header{
+			{Key: "EventType", Value: []byte(msg.Type.String())},
+			{Key: "FromService", Value: []byte(msg.FromService.String())},
+			// Diğer header'ları buraya ekleyebilirsiniz
+		},
+	}
+
+	err = kc.producer.WriteMessages(ctx, kafkaMsg)
+	if err != nil {
+		if isCritical {
+			log.Printf("Failed to publish critical message to Kafka for ID %s. Saving to storage. Error: %v", msg.Id, err)
+
+		}
+		return fmt.Errorf("failed to write message to Kafka topic %s: %w", targetTopic, err)
+	}
+
+	log.Printf("Published message [ID: %s, Type: %s] to topic %s", msg.Id, msg.Type.String(), targetTopic)
+	return nil
+}
+func (kc *KafkaClient) isCriticalMessageType(msgType MessageType) bool {
+	for _, t := range kc.config.CriticalMessageTypes {
+		if t == msgType {
+			return true
+		}
+	}
+	return false
 }

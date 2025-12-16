@@ -1,5 +1,11 @@
 package messaging
 
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
 type ServiceType int32
 
 const (
@@ -42,14 +48,53 @@ const (
 	// MessageType_USER_CREATED MessageType = 6
 )
 
-type Message struct {
-	Id   string
-	Type MessageType
+var messageTypeToString = map[MessageType]string{
+	MessageType_UNKNOWN_MESSAGE_TYPE: "unknown",
+	MessageType_USER_CREATED:         "user-created",
+	MessageType_USER_DELETED:         "user-deleted",
+	MessageType_USER_UPDATED:         "user-updated",
+	MessageType_SELLER_APPROVED:      "seller-approved",
+	MessageType_SELLER_REJECTED:      "seller-rejected",
+}
 
-	FromService ServiceType
-	ToServices  []ServiceType
-	Priority    int32
-	Headers     map[string]string
-	Critical    bool
-	RetryCount  int32
+func (x MessageType) String() string {
+	if s, ok := messageTypeToString[x]; ok {
+		return s
+	}
+	return "unknown"
+}
+
+type Message struct {
+	Id          string            `json:"id"`
+	Type        MessageType       `json:"type"`
+	Created     time.Time         `json:"created"`
+	FromService ServiceType       `json:"from_service"`
+	ToServices  []ServiceType     `json:"to_services"`
+	Priority    int32             `json:"priority"`
+	Headers     map[string]string `json:"headers"`
+	Critical    bool              `json:"critical"`
+	RetryCount  int32             `json:"retry_count"`
+
+	Payload interface{} `json:"payload"`
+}
+
+func (m *Message) MarshalJSON() ([]byte, error) {
+
+	// 1. Alias (Takma Ad) Tipi Tanımlama
+	// Orijinal Message struct'ının tüm alanlarını kopyalar, metotlarını değil.
+	type Alias Message
+
+	// 2. Alias'ı kullanarak JSON'a dönüştürme
+	// Bu, Go'nun json.Marshal fonksiyonunun Alias tipini (yani Message'ın verisini)
+	// MarshalJSON metodunu tekrar çağırmadan işlemesini sağlar.
+
+	// NOT: Payload'ın interface{} olması sorun yaratmaz,
+	// içerdiği gerçek veri (örneğin SellerApprovedEvent) JSON'a çevrilir.
+	messageBytes, err := json.Marshal((*Alias)(m))
+
+	if err != nil {
+		return nil, fmt.Errorf("messaging.Message JSON'a çevrilemedi (Marshal hatası): %w", err)
+	}
+
+	return messageBytes, nil
 }

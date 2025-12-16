@@ -84,13 +84,13 @@ func buildContainer(cfg config.Config) (*container, error) {
 	}
 
 	messagingConfig := createMessagingConfig(cfg.Messaging)
-	
+
 	messaging, err := messaging.NewKafkaClient(messagingConfig)
 	if err != nil {
 		return nil, fmt.Errorf("init kafka messaging: %w", err)
 	}
 
-	httpHandlers := httptransport.NewHandlers(repo)
+	httpHandlers := httptransport.NewHandlers(repo, messaging)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{

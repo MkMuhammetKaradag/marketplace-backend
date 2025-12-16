@@ -11,10 +11,11 @@ import (
 
 type Handlers struct {
 	sellerRepository domain.SellerRepository
+	kafkaMessaging   domain.Messaging
 }
 
-func NewHandlers(repository domain.SellerRepository) *Handlers {
-	return &Handlers{sellerRepository: repository}
+func NewHandlers(repository domain.SellerRepository, messaging domain.Messaging) *Handlers {
+	return &Handlers{sellerRepository: repository, kafkaMessaging: messaging}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -37,7 +38,7 @@ func (h *Handlers) RejectSeller() *controller.RejectSellerController {
 }
 
 func (h *Handlers) ApproveSeller() *controller.ApproveSellerController {
-	approveSellerUseCase := usecase.NewApproveSellerUseCase(h.sellerRepository)
+	approveSellerUseCase := usecase.NewApproveSellerUseCase(h.sellerRepository, h.kafkaMessaging)
 	return controller.NewApproveSellerController(approveSellerUseCase)
 }
 
