@@ -13,6 +13,7 @@ import (
 	"marketplace/internal/user-service/server"
 	grpctransport "marketplace/internal/user-service/transport/grpc"
 	httptransport "marketplace/internal/user-service/transport/http"
+	messaginghandler "marketplace/internal/user-service/transport/messaging"
 
 	"time"
 )
@@ -22,6 +23,7 @@ type App struct {
 	server      *server.Server
 	repository  domain.UserRepository
 	sessionRepo domain.SessionRepository
+	messaging   domain.Messaging
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -35,6 +37,7 @@ func NewApp(cfg config.Config) (*App, error) {
 		server:      container.server,
 		repository:  container.repo,
 		sessionRepo: container.sessionRepo,
+		messaging:   container.messaging,
 	}, nil
 }
 
@@ -57,6 +60,7 @@ type container struct {
 	repo        domain.UserRepository
 	sessionRepo domain.SessionRepository
 	server      *server.Server
+	messaging   domain.Messaging
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -69,8 +73,15 @@ func buildContainer(cfg config.Config) (*container, error) {
 		return nil, fmt.Errorf("init redis session manager: %w", err)
 	}
 
+	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
+	messaging, err := SetupMessaging(messsagingHnadlers, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("init messaging: %w", err)
+	}
+
 	userService := domain.NewUserService(repo)
 	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo)
+
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
@@ -88,5 +99,6 @@ func buildContainer(cfg config.Config) (*container, error) {
 		repo:        repo,
 		server:      httpServer,
 		sessionRepo: sessionRepo,
+		messaging:   messaging,
 	}, nil
 }

@@ -25,7 +25,9 @@ type ServerConfig struct {
 	Host        string `mapstructure:"host"`
 	Description string `mapstructure:"description"`
 }
-
+type MessagingConfig struct {
+	Brokers []string `mapstructure:"brokers"`
+}
 type RedisSessionConfig struct {
 	Addr     string `mapstructure:"addr"`
 	Password string `mapstructure:"password"`
@@ -36,6 +38,7 @@ type Config struct {
 	Database     DatabaseConfig     `mapstructure:"database"`
 	Server       ServerConfig       `mapstructure:"server"`
 	RedisSession RedisSessionConfig `mapstructure:"redisSession"`
+	Messaging    MessagingConfig    `mapstructure:"messaging"`
 }
 
 func Read() Config {
@@ -49,7 +52,7 @@ func Read() Config {
 	v.SetConfigType("yaml")
 
 	// Dosyaları sırayla yükle (varsa)
-	files := []string{"server.yaml", "database.yaml"}
+	files := []string{"server.yaml", "database.yaml", "messasing.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {

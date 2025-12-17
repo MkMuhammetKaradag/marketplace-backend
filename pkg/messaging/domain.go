@@ -98,3 +98,14 @@ func (m *Message) MarshalJSON() ([]byte, error) {
 
 	return messageBytes, nil
 }
+
+type isMessage_Payload interface {
+	isMessage_Payload()
+}
+
+func (x *Message) GetPayload() interface{} {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}

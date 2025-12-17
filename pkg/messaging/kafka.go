@@ -2,6 +2,7 @@ package messaging
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -11,6 +12,25 @@ import (
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 )
+
+type QuietKafkaLogger struct{}
+
+// Printf implements the kafka.LoggerFunc interface
+func (l QuietKafkaLogger) Printf(format string, v ...interface{}) {
+	// Timeout ve request time limit mesajlarını filtrele
+	msg := strings.ToLower(format)
+
+	// Bu log mesajlarını sessizce atla
+	if strings.Contains(msg, "no messages received from kafka") ||
+		strings.Contains(msg, "request timed out") ||
+		strings.Contains(msg, "request exceeded") ||
+		strings.Contains(msg, "allocated time") {
+		return
+	}
+
+	// Diğer log mesajlarını normal şekilde yazdır
+	log.Printf(format, v...)
+}
 
 type KafkaClient struct {
 	config      KafkaConfig
@@ -29,7 +49,9 @@ func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
 	if err := kc.createTopicsIfNotExists(); err != nil {
 		log.Println("Failed to create topics:", err)
 	}
-
+	fmt.Println(config.Brokers)
+	time.Sleep(10 * time.Second)
+	quietLogger := QuietKafkaLogger{}
 	producer := &kafka.Writer{
 		Addr:         kafka.TCP(config.Brokers...),
 		Topic:        config.Topic,
@@ -41,8 +63,8 @@ func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
 		BatchTimeout: 1 * time.Second,
 		MaxAttempts:  3,
 
-		// Logger:      kafka.LoggerFunc(quietLogger.Printf),
-		// ErrorLogger: kafka.LoggerFunc(log.Printf),
+		Logger:      kafka.LoggerFunc(quietLogger.Printf),
+		ErrorLogger: kafka.LoggerFunc(log.Printf),
 	}
 	kc.producer = producer
 
@@ -191,4 +213,278 @@ func (kc *KafkaClient) isCriticalMessageType(msgType MessageType) bool {
 		}
 	}
 	return false
+}
+
+type MessageHandler func(context.Context, *Message) error
+
+func (kc *KafkaClient) ConsumeMessages(ctx context.Context, handler MessageHandler, topic *string, groupID *string) error {
+	// Consumer grubu, RabbitMQ'daki her servisin kendi kuyruğuna karşılık gelir.
+	// Bu sayede her servisin bir kopyası olsa bile, mesajlar grup içinde bir kez işlenir.
+	quietLogger := QuietKafkaLogger{}
+	consumerGroupID := groupID
+	if consumerGroupID == nil {
+		id := kc.serviceType.String() + "-group"
+		consumerGroupID = &id
+	}
+
+	consumerTopic := topic
+	if consumerTopic == nil {
+		consumerTopic = &kc.config.Topic
+	}
+	readerConfig := kafka.ReaderConfig{
+		Brokers:        kc.config.Brokers,
+		GroupID:        *consumerGroupID, // <-- Burayı güncelledik, // Her servisin kendi tüketici grubu
+		Topic:          *consumerTopic,
+		MinBytes:       10e3, // 10KB
+		MaxBytes:       10e6, // 10MB
+		MaxWait:        1 * time.Second,
+		CommitInterval: 1 * time.Second, // Offsetleri otomatik kaydetme aralığı
+		// StartOffset:    kafka.FirstOffset, // Uygulama ilk başladığında nereden başlanacağı
+		//Logger:      kafka.LoggerFunc(log.Printf),
+		//ErrorLogger: kafka.LoggerFunc(log.Printf),
+
+		Logger:      kafka.LoggerFunc(quietLogger.Printf),
+		ErrorLogger: kafka.LoggerFunc(quietLogger.Printf),
+	}
+
+	reader := kafka.NewReader(readerConfig)
+	defer reader.Close()
+
+	log.Printf("Kafka Consumer started for service %s, topic: %s, group: %s",
+		kc.serviceType.String(), kc.config.Topic, readerConfig.GroupID)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Consumer context cancelled, shutting down.")
+			return nil
+		default:
+			m, err := reader.FetchMessage(ctx)
+			if err != nil {
+				if err == context.Canceled {
+					log.Println("Context cancelled during FetchMessage.")
+					return nil
+				}
+				if !strings.Contains(err.Error(), "request timed out") &&
+					!strings.Contains(err.Error(), "no messages received") {
+					log.Printf("Error fetching message: %v", err)
+				}
+				//log.Printf("Error fetching message: %v", err)
+				time.Sleep(time.Second) // Hata durumunda kısa bir bekleme
+				continue
+			}
+
+			var message Message
+			if err := json.Unmarshal(m.Value, &message); err != nil {
+				log.Printf("Failed to unmarshal protobuf message from Kafka: %v", err)
+				// Hatalı mesajı atla, ancak offset'i commit etmeliyiz ki tekrar denemesin
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset for bad message: %v", commitErr)
+				}
+				continue
+			}
+
+			// ToServices mantığını Kafka'da uygulama tarafında yönetiyoruz
+			if len(message.ToServices) > 0 {
+				isForThisService := false
+				for _, svc := range message.ToServices {
+					if svc == kc.serviceType {
+						isForThisService = true
+						break
+					}
+				}
+				if !isForThisService {
+					log.Printf("Message [ID: %s, Type: %s] is not for this service (%s). Skipping.",
+						message.Id, message.Type.String(), kc.serviceType.String())
+					// Mesajı işleme, ancak offset'i commit et
+					if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+						log.Printf("Failed to commit offset for skipped message: %v", commitErr)
+					}
+					continue
+				}
+			}
+
+			// Mesaj tipinin bu servis için izin verilip verilmediğini kontrol et
+			if !kc.isAllowedMessageType(kc.serviceType, message.Type) {
+				log.Printf("Message type '%s' is not allowed for service '%s'. Skipping. ID: %s",
+					message.Type.String(), kc.serviceType.String(), message.Id)
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset for unauthorized message type: %v", commitErr)
+				}
+				continue
+			}
+
+			log.Printf("Processing message [ID: %s, Type: %s, RetryCount: %d] from topic %s, partition %d, offset %d",
+				message.Id, message.Type.String(), message.RetryCount, m.Topic, m.Partition, m.Offset)
+
+			// Handler'ı çağır
+			err = handler(ctx, &message)
+
+			if err != nil {
+				log.Printf("Message processing failed for ID %s: %v", message.Id, err)
+
+				// Kritik mesajlar veya retry mekanizması
+				if kc.isCriticalMessageType(message.Type) || kc.shouldRetry(&message) {
+					// Retry logic
+					fmt.Println("Retry logic")
+				} else {
+					log.Printf("Message failed permanently for ID %s, sending to DLQ topic: %s", message.Id, kc.config.DLQTopic)
+					kc.sendToDLQ(ctx, &message) // DLQ topic'e gönder
+				}
+				// Önemli: Mesaj işleme hatasında orijinal mesajın offset'ini commit etmeliyiz
+				// çünkü retry/DLQ'ya göndererek işini bitirdik. Aksi takdirde aynı mesaj sürekli geri gelir.
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset after processing error: %v", commitErr)
+				}
+			} else {
+				log.Printf("Message processed successfully. ID: %s", message.Id)
+				// Mesaj başarıyla işlendiğinde offset'i commit et
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset: %v", commitErr)
+				}
+			}
+		}
+	}
+}
+func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *Message) {
+	if kc.config.DLQTopic == "" {
+		log.Println("DLQ topic not configured, cannot send message to DLQ.")
+		return
+	}
+
+	dlqProducer := &kafka.Writer{
+		Addr:         kafka.TCP(kc.config.Brokers...),
+		Topic:        kc.config.DLQTopic,
+		Balancer:     &kafka.LeastBytes{},
+		WriteTimeout: 5 * time.Second,
+		RequiredAcks: kafka.RequireNone, // DLQ için daha az sıkı gereksinimler olabilir
+	}
+	defer dlqProducer.Close()
+
+	messageBytes, err := msg.MarshalJSON()
+	if err != nil {
+		log.Printf("Failed to marshal DLQ message: %v", err)
+		return
+	}
+
+	kafkaMsg := kafka.Message{
+		Key:   []byte(msg.Id),
+		Value: messageBytes,
+		Headers: []kafka.Header{
+			{Key: "OriginalTopic", Value: []byte(kc.config.Topic)},
+			{Key: "FailedTimestamp", Value: []byte(time.Now().Format(time.RFC3339))},
+		},
+	}
+
+	if err := dlqProducer.WriteMessages(ctx, kafkaMsg); err != nil {
+		log.Printf("Failed to send message to DLQ topic %s for ID %s: %v", kc.config.DLQTopic, msg.Id, err)
+		// DLQ'ya gönderilemezse kalıcı depolama düşünebilirsiniz
+
+	} else {
+		log.Printf("Message ID %s sent to DLQ topic %s.", msg.Id, kc.config.DLQTopic)
+	}
+}
+func (kc *KafkaClient) isAllowedMessageType(svcType ServiceType, msgType MessageType) bool {
+	allowed, ok := kc.config.AllowedMessageTypes[svcType]
+	if !ok {
+		return false
+	}
+	for _, t := range allowed {
+		if t == msgType {
+			return true
+		}
+	}
+	return false
+}
+func (kc *KafkaClient) shouldRetry(msg *Message) bool {
+	if !kc.config.EnableRetry {
+		return false
+	}
+	// Mesaj tipinin retryable olup olmadığını burada kontrol edebilirsiniz
+	// Veya direkt olarak MaxRetries'ı aşmamışsa denenebilir varsayabilirsiniz
+	return int(msg.RetryCount) < kc.config.MaxRetries
+}
+func (kc *KafkaClient) ConsumeDLQWithRecovery(ctx context.Context, handler MessageHandler) error {
+	if kc.config.DLQTopic == "" {
+		return fmt.Errorf("DLQ topic not configured for recovery consumer")
+	}
+
+	readerConfig := kafka.ReaderConfig{
+		Brokers: kc.config.Brokers,
+		GroupID: kc.serviceType.String() + "-dlq-recovery-group",
+		Topic:   kc.config.DLQTopic,
+		// DLQ için genellikle FirstOffset (en baştan başla) ayarı tercih edilir
+		StartOffset: kafka.FirstOffset,
+		// ... diğer ayarlar ...
+	}
+	reader := kafka.NewReader(readerConfig)
+	defer reader.Close()
+
+	log.Printf("Kafka DLQ Recovery Consumer started for service %s, DLQ topic: %s, group: %s",
+		kc.serviceType.String(), kc.config.DLQTopic, readerConfig.GroupID)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("DLQ Recovery Consumer context cancelled, shutting down.")
+			return nil
+		default:
+			m, err := reader.FetchMessage(ctx)
+			if err != nil {
+				if err == context.Canceled {
+					return nil
+				}
+				log.Printf("Error fetching message from DLQ: %v", err)
+				time.Sleep(time.Second)
+				continue
+			}
+
+			var message Message
+			if err := json.Unmarshal(m.Value, &message); err != nil {
+				log.Printf("Failed to unmarshal protobuf message from DLQ: %v", err)
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset for bad DLQ message: %v", commitErr)
+				}
+				continue
+			}
+
+			log.Printf("Received message from DLQ [ID: %s, Type: %s]. Attempting recovery...",
+				message.Id, message.Type.String())
+
+			if kc.isCriticalMessageType(message.Type) {
+				log.Printf("Critical message from DLQ, resetting retry count and re-publishing: %s", message.Id)
+				message.RetryCount = 0  // Sıfırdan denemek için retry sayısını resetle
+				message.Critical = true // Kritik olarak işaretle (eğer değilse)
+
+				// Mesajı tekrar ana topice veya orijinal servise özel topice gönder
+				// Bu, PublishMessage fonksiyonunun içinde ToServices'a göre doğru topice yönlendirilmesi anlamına gelir.
+				// Bu örnekte PublishMessage ana topice gönderiyor, bu da consumer tarafından tekrar işlenmesini sağlar.
+				if err := kc.PublishMessage(ctx, &message); err != nil {
+					log.Printf("Failed to re-publish critical message from DLQ for ID %s: %v", message.Id, err)
+					// Tekrar yayınlanamazsa, DLQ'da kalmalı veya kalıcı depolamaya kaydedilmeli.
+					// Bu durumda, offset'i commit etmeyiz ve mesaj tekrar gelir.
+					// Ya da Nack + requeue mantığı Kafka'da olmadığı için, manuel olarak DLQ'ya tekrar gönderebiliriz.
+					// Bu basit örnekte, hata durumunda mesajın DLQ'da kalmasına izin veriyoruz.
+					//kc.saveCriticalMessageToStorage(&message) // Ek güvenlik için kaydet
+				} else {
+					log.Printf("Successfully re-published critical message from DLQ for ID %s. Committing offset.", message.Id)
+					if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+						log.Printf("Failed to commit offset for recovered DLQ message: %v", commitErr)
+					}
+				}
+			} else {
+				// Kritik olmayan mesajlar için normal işleme (eğer DLQ handler'ı farklı bir işlem yapacaksa)
+				log.Printf("Non-critical message from DLQ, passing to handler: %s", message.Id)
+				err := handler(ctx, &message)
+				if err != nil {
+					log.Printf("Handler failed for non-critical DLQ message ID %s: %v", message.Id, err)
+					// Hata durumunda commit etmeyebiliriz
+				} else {
+					if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+						log.Printf("Failed to commit offset for handled non-critical DLQ message: %v", commitErr)
+					}
+				}
+			}
+		}
+	}
 }
