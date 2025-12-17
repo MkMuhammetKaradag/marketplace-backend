@@ -13,6 +13,7 @@ import (
 	"marketplace/internal/user-service/server"
 	grpctransport "marketplace/internal/user-service/transport/grpc"
 	httptransport "marketplace/internal/user-service/transport/http"
+	"marketplace/internal/user-service/transport/kafka"
 	messaginghandler "marketplace/internal/user-service/transport/messaging"
 
 	"time"
@@ -24,6 +25,7 @@ type App struct {
 	repository  domain.UserRepository
 	sessionRepo domain.SessionRepository
 	messaging   domain.Messaging
+	consumer    *kafka.Consumer
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -38,12 +40,16 @@ func NewApp(cfg config.Config) (*App, error) {
 		repository:  container.repo,
 		sessionRepo: container.sessionRepo,
 		messaging:   container.messaging,
+		consumer:    container.consumer,
 	}, nil
 }
 
 func (a *App) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Start Kafka consumer
+	a.consumer.Start(ctx)
 
 	go graceful.WaitForShutdown(a.server.FiberApp(), 5*time.Second, ctx)
 
@@ -61,6 +67,7 @@ type container struct {
 	sessionRepo domain.SessionRepository
 	server      *server.Server
 	messaging   domain.Messaging
+	consumer    *kafka.Consumer
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -74,9 +81,10 @@ func buildContainer(cfg config.Config) (*container, error) {
 	}
 
 	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
-	messaging, err := SetupMessaging(messsagingHnadlers, cfg)
+
+	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
 	if err != nil {
-		return nil, fmt.Errorf("init messaging: %w", err)
+		return nil, fmt.Errorf("init kafka consumer: %w", err)
 	}
 
 	userService := domain.NewUserService(repo)
@@ -99,6 +107,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 		repo:        repo,
 		server:      httpServer,
 		sessionRepo: sessionRepo,
-		messaging:   messaging,
+		messaging:   kafkaConsumer.Client(),
+		consumer:    kafkaConsumer,
 	}, nil
 }

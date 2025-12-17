@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"marketplace/internal/seller-service/domain"
-	"marketplace/pkg/messaging"
+	pb "marketplace/pkg/proto/events"
 
 	"github.com/google/uuid"
 )
@@ -33,15 +33,17 @@ func (u *approveSellerUseCase) Execute(ctx context.Context, sellerId, approvedBy
 	fmt.Println("seller user id ", sellerUserId)
 
 	// Publish message to Kafka
-	message := &messaging.Message{
+
+	data := &pb.SellerApprovedData{
+		SellerId:   sellerUserId,
+		ApprovedBy: approvedBy,
+	}
+	message := &pb.Message{
 		Id:          uuid.New().String(),
-		Type:        messaging.MessageType_SELLER_APPROVED,
-		FromService: messaging.ServiceType_SELLER_SERVICE,
-		ToServices:  []messaging.ServiceType{messaging.ServiceType_USER_SERVICE},
-		Payload: map[string]interface{}{
-			"sellerUserId": sellerUserId,
-			"approvedBy":   approvedBy,
-		},
+		Type:        pb.MessageType_SELLER_APPROVED,
+		FromService: pb.ServiceType_SELLER_SERVICE,
+		ToServices:  []pb.ServiceType{pb.ServiceType_USER_SERVICE},
+		Payload:     &pb.Message_SellerApprovedData{SellerApprovedData: data},
 	}
 
 	if err := u.messaging.PublishMessage(ctx, message); err != nil {

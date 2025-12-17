@@ -12,6 +12,7 @@ import (
 	"marketplace/internal/seller-service/server"
 	httptransport "marketplace/internal/seller-service/transport/http"
 	"marketplace/pkg/messaging"
+	pb "marketplace/pkg/proto/events"
 
 	"time"
 )
@@ -69,11 +70,11 @@ func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		Topic:                "main-events", // Ana olay topic'i
 		RetryTopic:           "main-events-retry",
 		DLQTopic:             "main-events-dlq",
-		ServiceType:          messaging.ServiceType_SELLER_SERVICE,
+		ServiceType:          pb.ServiceType_SELLER_SERVICE,
 		EnableRetry:          true,
 		MaxRetries:           3,
 		ConnectionTimeout:    10 * time.Second,
-		CriticalMessageTypes: []messaging.MessageType{messaging.MessageType_SELLER_APPROVED},
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_SELLER_APPROVED},
 	}
 }
 

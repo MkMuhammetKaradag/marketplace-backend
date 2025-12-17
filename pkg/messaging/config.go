@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	pb "marketplace/pkg/proto/events"
 	"time"
 )
 
@@ -16,9 +17,9 @@ type KafkaConfig struct {
 	RetryTopic           string
 	DLQTopic             string
 	ConnectionTimeout    time.Duration
-	ServiceType          ServiceType
-	AllowedMessageTypes  map[ServiceType][]MessageType
-	CriticalMessageTypes []MessageType
+	ServiceType          pb.ServiceType
+	AllowedMessageTypes  map[pb.ServiceType][]pb.MessageType
+	CriticalMessageTypes []pb.MessageType
 }
 
 func NewDefaultConfig(kafkaBrokers []string) KafkaConfig {
@@ -31,10 +32,10 @@ func NewDefaultConfig(kafkaBrokers []string) KafkaConfig {
 		Topic:                "main-events",
 		RetryTopic:           "main-events-retry",
 		DLQTopic:             "main-events-dlq",
-		ServiceType:          ServiceType_UNKNOWN_SERVICE,
+		ServiceType:          pb.ServiceType_UNKNOWN_SERVICE,
 		EnableRetry:          true,
 		MaxRetries:           3,
 		ConnectionTimeout:    10 * time.Second,
-		CriticalMessageTypes: []MessageType{},
+		CriticalMessageTypes: []pb.MessageType{},
 	}
 }

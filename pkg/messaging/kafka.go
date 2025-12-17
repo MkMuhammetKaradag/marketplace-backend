@@ -9,8 +9,12 @@ import (
 	"sync"
 	"time"
 
+	pb "marketplace/pkg/proto/events"
+
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type QuietKafkaLogger struct{}
@@ -37,7 +41,7 @@ type KafkaClient struct {
 	producer    *kafka.Writer
 	mu          sync.Mutex
 	closed      bool
-	serviceType ServiceType
+	serviceType pb.ServiceType
 }
 
 func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
@@ -50,7 +54,7 @@ func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
 		log.Println("Failed to create topics:", err)
 	}
 	fmt.Println(config.Brokers)
-	time.Sleep(10 * time.Second)
+	// time.Sleep(10 * time.Second)
 	quietLogger := QuietKafkaLogger{}
 	producer := &kafka.Writer{
 		Addr:         kafka.TCP(config.Brokers...),
@@ -148,12 +152,12 @@ func (kc *KafkaClient) Close() error {
 	return nil
 }
 
-func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *Message) error {
+func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *pb.Message) error {
 	if msg.Id == "" {
 		msg.Id = uuid.New().String()
 	}
-	if msg.Created.IsZero() {
-		msg.Created = time.Now()
+	if msg.Created == nil {
+		msg.Created = timestamppb.Now()
 	}
 	isCritical := kc.isCriticalMessageType(msg.Type)
 	if isCritical {
@@ -179,7 +183,7 @@ func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *Message) error {
 	// Bu örnekte, basitlik adına tüm mesajları ana topice gönderip tüketicinin filtrelemesini sağlıyoruz.
 	// Kritik mesajlar için bir `critical-events` topic'i veya retry için `retry-events` topic'i olabilir.
 	fmt.Println("Publishing message: ", msg)
-	messageBytes, err := msg.MarshalJSON()
+	messageBytes, err := proto.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
@@ -206,7 +210,7 @@ func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *Message) error {
 	log.Printf("Published message [ID: %s, Type: %s] to topic %s", msg.Id, msg.Type.String(), targetTopic)
 	return nil
 }
-func (kc *KafkaClient) isCriticalMessageType(msgType MessageType) bool {
+func (kc *KafkaClient) isCriticalMessageType(msgType pb.MessageType) bool {
 	for _, t := range kc.config.CriticalMessageTypes {
 		if t == msgType {
 			return true
@@ -215,7 +219,7 @@ func (kc *KafkaClient) isCriticalMessageType(msgType MessageType) bool {
 	return false
 }
 
-type MessageHandler func(context.Context, *Message) error
+type MessageHandler func(context.Context, *pb.Message) error
 
 func (kc *KafkaClient) ConsumeMessages(ctx context.Context, handler MessageHandler, topic *string, groupID *string) error {
 	// Consumer grubu, RabbitMQ'daki her servisin kendi kuyruğuna karşılık gelir.
@@ -274,8 +278,8 @@ func (kc *KafkaClient) ConsumeMessages(ctx context.Context, handler MessageHandl
 				continue
 			}
 
-			var message Message
-			if err := json.Unmarshal(m.Value, &message); err != nil {
+			var message pb.Message
+			if err := proto.Unmarshal(m.Value, &message); err != nil {
 				log.Printf("Failed to unmarshal protobuf message from Kafka: %v", err)
 				// Hatalı mesajı atla, ancak offset'i commit etmeliyiz ki tekrar denemesin
 				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
@@ -346,7 +350,7 @@ func (kc *KafkaClient) ConsumeMessages(ctx context.Context, handler MessageHandl
 		}
 	}
 }
-func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *Message) {
+func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *pb.Message) {
 	if kc.config.DLQTopic == "" {
 		log.Println("DLQ topic not configured, cannot send message to DLQ.")
 		return
@@ -361,7 +365,7 @@ func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *Message) {
 	}
 	defer dlqProducer.Close()
 
-	messageBytes, err := msg.MarshalJSON()
+	messageBytes, err := proto.Marshal(msg)
 	if err != nil {
 		log.Printf("Failed to marshal DLQ message: %v", err)
 		return
@@ -384,7 +388,7 @@ func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *Message) {
 		log.Printf("Message ID %s sent to DLQ topic %s.", msg.Id, kc.config.DLQTopic)
 	}
 }
-func (kc *KafkaClient) isAllowedMessageType(svcType ServiceType, msgType MessageType) bool {
+func (kc *KafkaClient) isAllowedMessageType(svcType pb.ServiceType, msgType pb.MessageType) bool {
 	allowed, ok := kc.config.AllowedMessageTypes[svcType]
 	if !ok {
 		return false
@@ -396,7 +400,7 @@ func (kc *KafkaClient) isAllowedMessageType(svcType ServiceType, msgType Message
 	}
 	return false
 }
-func (kc *KafkaClient) shouldRetry(msg *Message) bool {
+func (kc *KafkaClient) shouldRetry(msg *pb.Message) bool {
 	if !kc.config.EnableRetry {
 		return false
 	}
@@ -439,7 +443,7 @@ func (kc *KafkaClient) ConsumeDLQWithRecovery(ctx context.Context, handler Messa
 				continue
 			}
 
-			var message Message
+			var message pb.Message
 			if err := json.Unmarshal(m.Value, &message); err != nil {
 				log.Printf("Failed to unmarshal protobuf message from DLQ: %v", err)
 				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {

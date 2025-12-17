@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option go_package = "./events";  
+
+package events;
+
+import "google/protobuf/timestamp.proto"; // Timestamp için
+
+// MessageType ve ServiceType enum'ları
+enum MessageType {
+    UNKNOWN_MESSAGE_TYPE = 0;
+    USER_CREATED = 1;
+    USER_DELETED  = 2;
+    USER_UPDATED  = 3;
+    SELLER_APPROVED   = 4;
+    SELLER_REJECTED   = 5;
+    // Diğer mesaj tiplerini buraya ekleyin
+}
+
+enum ServiceType {
+    UNKNOWN_SERVICE = 0;
+    API_GATEWAY_SERVICE = 1;
+    USER_SERVICE = 2;
+    SELLER_SERVICE = 3;
+    PRODUCT_SERVICE = 4;
+    ORDER_SERVICE = 5;
+    RETRY_SERVICE = 6;
+    // Diğer servis tiplerini buraya ekleyin
+}
+
+message Message {
+    string id = 1;
+    MessageType type = 2;
+    google.protobuf.Timestamp created = 3;
+    ServiceType from_service = 4;
+    repeated ServiceType to_services = 5; // Birden fazla hedef servis
+    int32 priority = 6;
+    map<string, string> headers = 7; // Headers for metadata
+    bool critical = 8;
+    int32 retry_count = 9;
+
+    // Payload için bir oneof yapısı kullanabiliriz
+    oneof payload {
+        UserCreatedData user_created_data = 10;
+        SellerApprovedData seller_approved_data = 11;
+        SellerRejectedData seller_rejected_data = 12;
+        // Diğer olay tipleri için buraya payload'lar eklenecek
+       
+
+    }
+}
+
+message UserCreatedData {
+    string user_id = 1;
+    string username = 2;
+    string email = 3;
+    // Diğer ilgili kullanıcı bilgileri
+}
+message SellerApprovedData {
+    string seller_id = 1;
+    string approved_by = 2;
+
+}
+message SellerRejectedData {
+    string seller_id = 1;
+    string rejected_by = 2;
+
+}
+
+
+// protoc komutu:
+// protoc --go_out=. --go_opt=paths=source_relative --go-vtproto_out=. --go-vtproto_opt=paths=source_relative user_events.proto
+// protoc --go_out=events --go_opt=paths=source_relative events.proto
