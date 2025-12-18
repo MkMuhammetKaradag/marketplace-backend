@@ -62,20 +62,21 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 	}
 	kafkaBrokers := []string{broker}
 	return messaging.KafkaConfig{
-		Brokers:           kafkaBrokers,
-		Topic:             "main-events",
-		RetryTopic:        "retry-events",
-		DLQTopic:          "dlq-events",
-		ServiceType:       pb.ServiceType_USER_SERVICE,
-		EnableRetry:       true,
-		MaxRetries:        3,
-		ConnectionTimeout: 10 * time.Second,
+		Brokers:               kafkaBrokers,
+		Topic:                 "main-events",
+		RetryTopic:            "retry-events",
+		DLQTopic:              "dlq-events",
+		ServiceType:           pb.ServiceType_USER_SERVICE,
+		EnableRetry:           true,
+		MaxRetries:            3,
+		ConnectionTimeout:     10 * time.Second,
+		MaxConcurrentHandlers: 10,
 		AllowedMessageTypes: map[pb.ServiceType][]pb.MessageType{
 			pb.ServiceType_USER_SERVICE: {
 				pb.MessageType_SELLER_APPROVED,
 				pb.MessageType_SELLER_REJECTED,
 			},
 		},
-		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_CREATED},
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_CREATED, pb.MessageType_SELLER_APPROVED},
 	}
 }

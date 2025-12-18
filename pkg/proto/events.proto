@@ -38,12 +38,13 @@ message Message {
     map<string, string> headers = 7; // Headers for metadata
     bool critical = 8;
     int32 retry_count = 9;
+    google.protobuf.Timestamp retry_after = 10;
 
     // Payload için bir oneof yapısı kullanabiliriz
     oneof payload {
-        UserCreatedData user_created_data = 10;
-        SellerApprovedData seller_approved_data = 11;
-        SellerRejectedData seller_rejected_data = 12;
+        UserCreatedData user_created_data = 11;
+        SellerApprovedData seller_approved_data = 12;
+        SellerRejectedData seller_rejected_data = 13;
         // Diğer olay tipleri için buraya payload'lar eklenecek
        
 

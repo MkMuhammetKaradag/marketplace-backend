@@ -22,7 +22,11 @@ func NewSellerApprovedUseCase(repository domain.UserRepository) SellerApprovedUs
 }
 
 func (u *sellerApprovedUseCase) Execute(ctx context.Context, userID uuid.UUID) error {
-	fmt.Println("Seller approved use case executed", userID)
+
+	err := u.repository.ChangeUserRole(ctx, userID, domain.Seller)
+	if err != nil {
+		return fmt.Errorf("failed to change user role: %w", err)
+	}
 
 	return nil
 }

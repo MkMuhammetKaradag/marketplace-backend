@@ -2,6 +2,14 @@ package domain
 
 import "time"
 
+type UserRole string
+
+const (
+	Buyer  UserRole = "buyer"
+	Seller UserRole = "seller"
+	Admin  UserRole = "admin"
+)
+
 type User struct {
 	ID                  string    `json:"id"`
 	Username            string    `json:"username"`

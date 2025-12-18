@@ -6,18 +6,20 @@ import (
 )
 
 type KafkaConfig struct {
-	Brokers              []string
-	GroupID              string
-	Topic                string
-	ClientID             string
-	QueueDurable         bool
-	QueueAutoDelete      bool
-	EnableRetry          bool
-	MaxRetries           int
-	RetryTopic           string
-	DLQTopic             string
-	ConnectionTimeout    time.Duration
-	ServiceType          pb.ServiceType
+	Brokers               []string
+	GroupID               string
+	Topic                 string
+	ClientID              string
+	QueueDurable          bool
+	QueueAutoDelete       bool
+	EnableRetry           bool
+	MaxRetries            int
+	MaxConcurrentHandlers int
+	RetryTopic            string
+	DLQTopic              string
+	ConnectionTimeout     time.Duration
+	ServiceType           pb.ServiceType
+
 	AllowedMessageTypes  map[pb.ServiceType][]pb.MessageType
 	CriticalMessageTypes []pb.MessageType
 }

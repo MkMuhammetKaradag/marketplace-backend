@@ -153,6 +153,7 @@ type Message struct {
 	Headers     map[string]string      `protobuf:"bytes,7,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Headers for metadata
 	Critical    bool                   `protobuf:"varint,8,opt,name=critical,proto3" json:"critical,omitempty"`
 	RetryCount  int32                  `protobuf:"varint,9,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
+	RetryAfter  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=retry_after,json=retryAfter,proto3" json:"retry_after,omitempty"`
 	// Payload için bir oneof yapısı kullanabiliriz
 	//
 	// Types that are valid to be assigned to Payload:
@@ -258,6 +259,13 @@ func (x *Message) GetRetryCount() int32 {
 	return 0
 }
 
+func (x *Message) GetRetryAfter() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RetryAfter
+	}
+	return nil
+}
+
 func (x *Message) GetPayload() isMessage_Payload {
 	if x != nil {
 		return x.Payload
@@ -297,15 +305,15 @@ type isMessage_Payload interface {
 }
 
 type Message_UserCreatedData struct {
-	UserCreatedData *UserCreatedData `protobuf:"bytes,10,opt,name=user_created_data,json=userCreatedData,proto3,oneof"`
+	UserCreatedData *UserCreatedData `protobuf:"bytes,11,opt,name=user_created_data,json=userCreatedData,proto3,oneof"`
 }
 
 type Message_SellerApprovedData struct {
-	SellerApprovedData *SellerApprovedData `protobuf:"bytes,11,opt,name=seller_approved_data,json=sellerApprovedData,proto3,oneof"`
+	SellerApprovedData *SellerApprovedData `protobuf:"bytes,12,opt,name=seller_approved_data,json=sellerApprovedData,proto3,oneof"`
 }
 
 type Message_SellerRejectedData struct {
-	SellerRejectedData *SellerRejectedData `protobuf:"bytes,12,opt,name=seller_rejected_data,json=sellerRejectedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
+	SellerRejectedData *SellerRejectedData `protobuf:"bytes,13,opt,name=seller_rejected_data,json=sellerRejectedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
 }
 
 func (*Message_UserCreatedData) isMessage_Payload() {}
@@ -482,7 +490,7 @@ var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x05\n" +
+	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe2\x05\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.events.MessageTypeR\x04type\x124\n" +
@@ -494,11 +502,13 @@ const file_events_proto_rawDesc = "" +
 	"\aheaders\x18\a \x03(\v2\x1c.events.Message.HeadersEntryR\aheaders\x12\x1a\n" +
 	"\bcritical\x18\b \x01(\bR\bcritical\x12\x1f\n" +
 	"\vretry_count\x18\t \x01(\x05R\n" +
-	"retryCount\x12E\n" +
-	"\x11user_created_data\x18\n" +
-	" \x01(\v2\x17.events.UserCreatedDataH\x00R\x0fuserCreatedData\x12N\n" +
-	"\x14seller_approved_data\x18\v \x01(\v2\x1a.events.SellerApprovedDataH\x00R\x12sellerApprovedData\x12N\n" +
-	"\x14seller_rejected_data\x18\f \x01(\v2\x1a.events.SellerRejectedDataH\x00R\x12sellerRejectedData\x1a:\n" +
+	"retryCount\x12;\n" +
+	"\vretry_after\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"retryAfter\x12E\n" +
+	"\x11user_created_data\x18\v \x01(\v2\x17.events.UserCreatedDataH\x00R\x0fuserCreatedData\x12N\n" +
+	"\x14seller_approved_data\x18\f \x01(\v2\x1a.events.SellerApprovedDataH\x00R\x12sellerApprovedData\x12N\n" +
+	"\x14seller_rejected_data\x18\r \x01(\v2\x1a.events.SellerRejectedDataH\x00R\x12sellerRejectedData\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
@@ -562,14 +572,15 @@ var file_events_proto_depIdxs = []int32{
 	1, // 2: events.Message.from_service:type_name -> events.ServiceType
 	1, // 3: events.Message.to_services:type_name -> events.ServiceType
 	6, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
-	3, // 5: events.Message.user_created_data:type_name -> events.UserCreatedData
-	4, // 6: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
-	5, // 7: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	7, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
+	3, // 6: events.Message.user_created_data:type_name -> events.UserCreatedData
+	4, // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
+	5, // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_events_proto_init() }
