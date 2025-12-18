@@ -64,6 +64,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/users/profile": {
 			Roles: []string{"buyer", "seller", "admin"},
 		},
+		"/users/change-user-role/:user_id": {
+			Roles: []string{"admin"},
+		},
 		"/sellers/onboard": {
 			Roles: []string{"buyer", "admin"},
 		},

@@ -25,4 +25,9 @@ message ValidationResponse {
   string user_id = 2; 
   // Opsiyonel: Hata mesajı
   string message = 3;
+  string role = 4;
 }
+
+
+
+//protoc --go_out=. --go-grpc_out=. auth.proto

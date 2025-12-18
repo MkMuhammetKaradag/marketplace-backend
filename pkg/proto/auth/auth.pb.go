@@ -4,7 +4,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v6.30.0
-// source: pkg/proto/auth.proto
+// source: auth.proto
 
 package auth
 
@@ -33,7 +33,7 @@ type TokenRequest struct {
 
 func (x *TokenRequest) Reset() {
 	*x = TokenRequest{}
-	mi := &file_pkg_proto_auth_proto_msgTypes[0]
+	mi := &file_auth_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *TokenRequest) String() string {
 func (*TokenRequest) ProtoMessage() {}
 
 func (x *TokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_auth_proto_msgTypes[0]
+	mi := &file_auth_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *TokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenRequest.ProtoReflect.Descriptor instead.
 func (*TokenRequest) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_auth_proto_rawDescGZIP(), []int{0}
+	return file_auth_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TokenRequest) GetToken() string {
@@ -77,13 +77,14 @@ type ValidationResponse struct {
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// Opsiyonel: Hata mesajı
 	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Role          string `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ValidationResponse) Reset() {
 	*x = ValidationResponse{}
-	mi := &file_pkg_proto_auth_proto_msgTypes[1]
+	mi := &file_auth_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +96,7 @@ func (x *ValidationResponse) String() string {
 func (*ValidationResponse) ProtoMessage() {}
 
 func (x *ValidationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_proto_auth_proto_msgTypes[1]
+	mi := &file_auth_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +109,7 @@ func (x *ValidationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidationResponse.ProtoReflect.Descriptor instead.
 func (*ValidationResponse) Descriptor() ([]byte, []int) {
-	return file_pkg_proto_auth_proto_rawDescGZIP(), []int{1}
+	return file_auth_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ValidationResponse) GetIsValid() bool {
@@ -132,38 +133,47 @@ func (x *ValidationResponse) GetMessage() string {
 	return ""
 }
 
-var File_pkg_proto_auth_proto protoreflect.FileDescriptor
+func (x *ValidationResponse) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
 
-const file_pkg_proto_auth_proto_rawDesc = "" +
+var File_auth_proto protoreflect.FileDescriptor
+
+const file_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x14pkg/proto/auth.proto\x12\x04auth\"$\n" +
+	"\n" +
+	"auth.proto\x12\x04auth\"$\n" +
 	"\fTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"b\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"v\n" +
 	"\x12ValidationResponse\x12\x19\n" +
 	"\bis_valid\x18\x01 \x01(\bR\aisValid\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2N\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x12\n" +
+	"\x04role\x18\x04 \x01(\tR\x04role2N\n" +
 	"\rAuthValidator\x12=\n" +
 	"\rValidateToken\x12\x12.auth.TokenRequest\x1a\x18.auth.ValidationResponseB\bZ\x06./authb\x06proto3"
 
 var (
-	file_pkg_proto_auth_proto_rawDescOnce sync.Once
-	file_pkg_proto_auth_proto_rawDescData []byte
+	file_auth_proto_rawDescOnce sync.Once
+	file_auth_proto_rawDescData []byte
 )
 
-func file_pkg_proto_auth_proto_rawDescGZIP() []byte {
-	file_pkg_proto_auth_proto_rawDescOnce.Do(func() {
-		file_pkg_proto_auth_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_pkg_proto_auth_proto_rawDesc), len(file_pkg_proto_auth_proto_rawDesc)))
+func file_auth_proto_rawDescGZIP() []byte {
+	file_auth_proto_rawDescOnce.Do(func() {
+		file_auth_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)))
 	})
-	return file_pkg_proto_auth_proto_rawDescData
+	return file_auth_proto_rawDescData
 }
 
-var file_pkg_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_pkg_proto_auth_proto_goTypes = []any{
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_auth_proto_goTypes = []any{
 	(*TokenRequest)(nil),       // 0: auth.TokenRequest
 	(*ValidationResponse)(nil), // 1: auth.ValidationResponse
 }
-var file_pkg_proto_auth_proto_depIdxs = []int32{
+var file_auth_proto_depIdxs = []int32{
 	0, // 0: auth.AuthValidator.ValidateToken:input_type -> auth.TokenRequest
 	1, // 1: auth.AuthValidator.ValidateToken:output_type -> auth.ValidationResponse
 	1, // [1:2] is the sub-list for method output_type
@@ -173,26 +183,26 @@ var file_pkg_proto_auth_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_pkg_proto_auth_proto_init() }
-func file_pkg_proto_auth_proto_init() {
-	if File_pkg_proto_auth_proto != nil {
+func init() { file_auth_proto_init() }
+func file_auth_proto_init() {
+	if File_auth_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pkg_proto_auth_proto_rawDesc), len(file_pkg_proto_auth_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_pkg_proto_auth_proto_goTypes,
-		DependencyIndexes: file_pkg_proto_auth_proto_depIdxs,
-		MessageInfos:      file_pkg_proto_auth_proto_msgTypes,
+		GoTypes:           file_auth_proto_goTypes,
+		DependencyIndexes: file_auth_proto_depIdxs,
+		MessageInfos:      file_auth_proto_msgTypes,
 	}.Build()
-	File_pkg_proto_auth_proto = out.File
-	file_pkg_proto_auth_proto_goTypes = nil
-	file_pkg_proto_auth_proto_depIdxs = nil
+	File_auth_proto = out.File
+	file_auth_proto_goTypes = nil
+	file_auth_proto_depIdxs = nil
 }

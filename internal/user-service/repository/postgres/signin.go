@@ -18,7 +18,7 @@ func (r *Repository) SignIn(ctx context.Context, identifier, password string) (*
 
 	user := &domain.User{}
 	query := `
-		SELECT  id,username,email,password,failed_login_attempts,account_locked,lock_until
+		SELECT  id,username,email,password,failed_login_attempts,account_locked,lock_until,user_role
 		FROM    users
 		WHERE   (username = $1 OR email = $1) AND is_active = true`
 
@@ -31,6 +31,7 @@ func (r *Repository) SignIn(ctx context.Context, identifier, password string) (*
 		&user.FailedLoginAttempts,
 		&user.AccountLocked,
 		&lockUntil,
+		&user.Role,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

@@ -43,10 +43,10 @@ func AuthMiddleware(policies map[string]config.RoutePolicy) fiber.Handler {
 
 		var userID string
 		var role string
+		// var userRole string
 		var isValid bool
 
-		isValid, userID = grpc_client.ValidateToken(authValue)
-		role = "admin"
+		isValid, userID, role = grpc_client.ValidateToken(authValue)
 
 		if !isValid {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

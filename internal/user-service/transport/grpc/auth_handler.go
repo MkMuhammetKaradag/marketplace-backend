@@ -82,5 +82,6 @@ func (h *AuthGrpcHandler) ValidateToken(ctx context.Context, req *pb.TokenReques
 		IsValid: true,
 		UserId:  session.UserID,
 		Message: "Oturum aktif.",
+		Role:    string(session.Role),
 	}, nil
 }

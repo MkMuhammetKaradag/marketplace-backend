@@ -48,6 +48,11 @@ func (h *Handlers) AllSignOut() *controller.AllSignOutController {
 	return controller.NewAllSignOutController(logoutUseCase)
 }
 
+func (h *Handlers) ChangeUserRole() *controller.ChangeUserRolerController {
+	changeUserRolerUseCase := usecase.NewChangeUserRolerUseCase(h.userRepository)
+	return controller.NewChangeUserRolerController(changeUserRolerUseCase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

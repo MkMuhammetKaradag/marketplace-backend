@@ -39,7 +39,8 @@ func (u *signInUseCase) Execute(fiberCtx *fiber.Ctx, identifier, password string
 	userData := &domain.SessionData{
 		UserID:    user.ID,
 		Device:    device,
-		Username:  "boş",
+		Username:  user.Username,
+		Role:      user.Role,
 		Ip:        ip,
 		CreatedAt: time.Now(),
 	}
