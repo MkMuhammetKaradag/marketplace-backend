@@ -56,9 +56,9 @@ func HandleWithFiber[R Request, Res Response](handler FiberHandler[R, Res]) fibe
 			status := getStatusCodeFromError(err)
 			return c.Status(status).JSON(fiber.Map{"error": err.Error()})
 		}
-		if c.Method() == fiber.MethodPost {
-			return c.Status(fiber.StatusCreated).JSON(res)
-		}
+		// if c.Method() == fiber.MethodPost {
+		// 	return c.Status(fiber.StatusCreated).JSON(res)
+		// }
 		return c.JSON(res)
 	}
 }

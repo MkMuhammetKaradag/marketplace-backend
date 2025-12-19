@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -8,20 +9,23 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/proxy"
 	"github.com/valyala/fasthttp"
 
+	"marketplace/internal/api-gateway/cache"
 	"marketplace/internal/api-gateway/config"
 	"marketplace/internal/api-gateway/metrics"
 	"marketplace/internal/api-gateway/service"
 )
 
 type ProxyHandler struct {
-	Registry *service.ServiceRegistry
-	Metrics  *metrics.Metrics
+	Registry     *service.ServiceRegistry
+	Metrics      *metrics.Metrics
+	cacheManager *cache.CacheManager
 }
 
-func NewProxyHandler(registry *service.ServiceRegistry, metrics *metrics.Metrics) *ProxyHandler {
+func NewProxyHandler(registry *service.ServiceRegistry, metrics *metrics.Metrics, cacheManager *cache.CacheManager) *ProxyHandler {
 	return &ProxyHandler{
-		Registry: registry,
-		Metrics:  metrics,
+		Registry:     registry,
+		Metrics:      metrics,
+		cacheManager: cacheManager,
 	}
 }
 
@@ -73,7 +77,19 @@ func (h *ProxyHandler) Handle(c *fiber.Ctx) error {
 		log.Printf("❌ Proxy error [%s]: %v", svc.Name, err)
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"error": "Backend service error"})
 	}
+	if strings.HasSuffix(path, "/signout") && c.Response().StatusCode() == fiber.StatusOK {
+		authValue := c.Cookies(config.SessionCookieName)
+		if authValue == "" {
+			authHeader := c.Get("Authorization")
+			authValue = strings.TrimPrefix(authHeader, "Bearer ")
+		}
 
+		if authValue != "" {
+
+			h.cacheManager.InvalidateSession(context.Background(), authValue)
+			log.Printf("İpucu: Logout başarılı, Gateway cache silindi: %s", authValue)
+		}
+	}
 	h.Metrics.IncrementSuccess()
 	return nil
 }

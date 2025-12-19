@@ -59,7 +59,7 @@ func New(cfg config.Config, cacheManager *cache.CacheManager) *Server {
 	f.Use(middleware.RateLimitMiddleware(rateLimiter, metrics, config.GetDefaultRouteConfigs()))
 
 	// Handlers
-	proxyHandler := handlers.NewProxyHandler(registry, metrics)
+	proxyHandler := handlers.NewProxyHandler(registry, metrics, cacheManager)
 	manageHandler := handlers.NewManageHandler(registry, metrics)
 
 	// Management Routes
