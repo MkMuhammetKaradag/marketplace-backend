@@ -1,17 +1,21 @@
 package middleware
 
 import (
+	"context"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
+	"marketplace/internal/api-gateway/cache"
 	"marketplace/internal/api-gateway/config"
 
 	"marketplace/internal/api-gateway/grpc_client"
 )
 
 // AuthMiddleware checks for session cookie or authorization header
-func AuthMiddleware(policies map[string]config.RoutePolicy) fiber.Handler {
+func AuthMiddleware(policies map[string]config.RoutePolicy, cacheManager *cache.CacheManager) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		routePath := c.Route().Path
@@ -45,15 +49,32 @@ func AuthMiddleware(policies map[string]config.RoutePolicy) fiber.Handler {
 		var role string
 		// var userRole string
 		var isValid bool
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
 
-		isValid, userID, role = grpc_client.ValidateToken(authValue)
+		cachedSession, cacheErr := cacheManager.GetSession(ctx, authValue)
 
-		if !isValid {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid session/token",
-			})
+		if cacheErr == nil && cachedSession != nil {
+			// Cache'de bulundu! ✅
+			log.Printf("✅ Cache HIT - UserID: %s", cachedSession.UserID)
+			userID = cachedSession.UserID
+			role = cachedSession.Role
+			isValid = true
+		} else {
+			isValid, userID, role = grpc_client.ValidateToken(authValue)
+
+			if !isValid {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid session/token",
+				})
+			}
+			if err := cacheManager.SetSession(ctx, authValue, userID, role); err != nil {
+				log.Printf("⚠️ Cache save error: %v", err)
+				// Hata olsa bile kullanıcıyı engelleme
+			} else {
+				log.Printf("💾 Cache save success - UserID: %s", userID)
+			}
 		}
-
 		if !contains(policy.Roles, role) {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"error": "You do not have permission to access this resource",

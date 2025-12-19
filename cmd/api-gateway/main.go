@@ -9,7 +9,9 @@ import (
 
 func main() {
 	// Initialize Application
-	application := app.New()
+
+	cfg := config.Read()
+	application := app.New(cfg)
 
 	// Register Services (In a real scenario, this might be dynamic or loaded from config)
 	// Important: Ensure these URLs match your actual service ports or docker-compose
@@ -26,7 +28,11 @@ func main() {
 	log.Printf("  - /simulate/login -> Create test session")
 
 	// Start Server
-	if err := application.Run(config.GatewayPort); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+	// if err := application.Run(config.GatewayPort); err != nil {
+	// 	log.Fatalf("Error starting server: %v", err)
+	// }
+
+	if err := application.Start(); err != nil {
+		log.Fatalf("server stopped with error: %v", err)
 	}
 }

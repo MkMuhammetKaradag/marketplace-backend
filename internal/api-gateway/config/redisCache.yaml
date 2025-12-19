@@ -1,0 +1,5 @@
+redisCache:
+  addr: 'localhost:6379'
+  password: ''
+  db: 1
+  cache_ttl: "5m"

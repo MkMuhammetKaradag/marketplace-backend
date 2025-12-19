@@ -1,7 +1,13 @@
 package config
 
 import (
+	"fmt"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 // Configuration Constants
@@ -22,6 +28,23 @@ type RouteConfig struct {
 	GlobalBurst int
 	UserLimit   float64 // Requests per second
 	UserBurst   int
+}
+type ServerConfig struct {
+	Port        string `mapstructure:"port"`
+	GrpcPort    string `mapstructure:"grpcPort"`
+	Host        string `mapstructure:"host"`
+	Description string `mapstructure:"description"`
+}
+type RedisCacheConfig struct {
+	Addr     string        `mapstructure:"addr"`
+	Password string        `mapstructure:"password"`
+	DB       int           `mapstructure:"db"`
+	CacheTTL time.Duration `mapstructure:"cache_ttl"`
+}
+
+type Config struct {
+	RedisCache RedisCacheConfig `mapstructure:"redisCache"`
+	Server     ServerConfig     `mapstructure:"server"`
 }
 
 // GetDefaultRouteConfigs returns the default rate limit configurations
@@ -77,4 +100,44 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 			Roles: []string{"admin"},
 		},
 	}
+}
+func Read() Config {
+	v := viper.New()
+
+	// Bu dosyanın kendi klasörünü al (internal/user-service/config)
+	configDir := getCurrentConfigDir()
+	fmt.Println(configDir)
+
+	v.AddConfigPath(configDir) // artık kesin doğru yer
+	v.SetConfigType("yaml")
+
+	// Dosyaları sırayla yükle (varsa)
+	files := []string{"server.yaml", "redisCache.yaml"}
+	for _, f := range files {
+		v.SetConfigFile(filepath.Join(configDir, f))
+		if err := v.MergeInConfig(); err == nil {
+			fmt.Printf("Config loaded: %s\n", f)
+		}
+	}
+
+	// ENV override (en son gelir)
+	v.SetEnvPrefix("USER")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		panic("Config unmarshal error: " + err.Error())
+	}
+
+	return cfg
+}
+
+// Bu fonksiyon bu dosyanın bulunduğu klasörü döndürür
+func getCurrentConfigDir() string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("Config folder not found")
+	}
+	return filepath.Dir(file) // ← bu dosyanın olduğu klasör: internal/user-service/config
 }
