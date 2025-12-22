@@ -25,7 +25,7 @@ message ValidationResponse {
   string user_id = 2; 
   // Opsiyonel: Hata mesajı
   string message = 3;
-  string role = 4;
+  int64 permissions = 4;
 }
 
 

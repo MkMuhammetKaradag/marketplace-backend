@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	"marketplace/internal/api-gateway/config"
 
 	"marketplace/internal/api-gateway/grpc_client"
+)
+
+const (
+	PermissionAdministrator int64 = 1 << 62
 )
 
 // AuthMiddleware checks for session cookie or authorization header
@@ -46,7 +51,7 @@ func AuthMiddleware(policies map[string]config.RoutePolicy, cacheManager *cache.
 		}
 
 		var userID string
-		var role string
+		var permissions int64
 		// var userRole string
 		var isValid bool
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -58,33 +63,36 @@ func AuthMiddleware(policies map[string]config.RoutePolicy, cacheManager *cache.
 			// Cache'de bulundu! ✅
 			log.Printf("✅ Cache HIT - UserID: %s", cachedSession.UserID)
 			userID = cachedSession.UserID
-			role = cachedSession.Role
+			permissions = cachedSession.Permissions
 			isValid = true
 		} else {
-			isValid, userID, role = grpc_client.ValidateToken(authValue)
+			isValid, userID, permissions = grpc_client.ValidateToken(authValue)
 
 			if !isValid {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"error": "Invalid session/token",
 				})
 			}
-			if err := cacheManager.SetSession(ctx, authValue, userID, role); err != nil {
+			if err := cacheManager.SetSession(ctx, authValue, userID, permissions); err != nil {
 				log.Printf("⚠️ Cache save error: %v", err)
 				// Hata olsa bile kullanıcıyı engelleme
 			} else {
 				log.Printf("💾 Cache save success - UserID: %s", userID)
 			}
 		}
-		if !contains(policy.Roles, role) {
+		if !contains(policy.Permissions, permissions) {
+			log.Printf("❌ Permission denied - UserID: %s", userID)
+			log.Printf("❌ Permission denied - Permissions: %s", permissions)
+			log.Printf("❌ Permission denied - Required Permissions: %s", policy.Permissions)
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"error": "You do not have permission to access this resource",
 			})
 		}
 
 		c.Locals("userID", userID)
-		c.Locals("role", role)
+		c.Locals("permissions", permissions)
 		c.Request().Header.Set("X-User-ID", userID)
-		c.Request().Header.Set("X-User-Role", role)
+		c.Request().Header.Set("X-User-Permissions", strconv.FormatInt(permissions, 10))
 
 		return c.Next()
 	}
@@ -123,11 +131,9 @@ func findParametrizedRoute(requestPath string, policies map[string]config.RouteP
 	return false, config.RoutePolicy{}
 }
 
-func contains(roles []string, role string) bool {
-	for _, r := range roles {
-		if r == role {
-			return true
-		}
+func contains(requiredPerm int64, userTotalPerms int64) bool {
+	if (userTotalPerms & PermissionAdministrator) == PermissionAdministrator {
+		return true
 	}
-	return false
+	return (userTotalPerms & requiredPerm) == requiredPerm
 }

@@ -78,26 +78,30 @@ func GetDefaultRouteConfigs() map[string]RouteConfig {
 }
 
 type RoutePolicy struct {
-	Roles []string
+	Permissions int64
 }
+
+const (
+	PermissionAdministrator int64 = 1 << 62
+)
 
 // GetProtectedRoutes returns the set of routes that require authentication
 func GetProtectedRoutes() map[string]RoutePolicy {
 	return map[string]RoutePolicy{
 		"/users/profile": {
-			Roles: []string{"buyer", "seller", "admin"},
+			Permissions: 0,
 		},
 		"/users/change-user-role/:user_id": {
-			Roles: []string{"admin"},
+			Permissions: PermissionAdministrator,
 		},
 		"/sellers/onboard": {
-			Roles: []string{"buyer", "admin"},
+			Permissions: PermissionAdministrator,
 		},
 		"/sellers/approve/:seller_id": {
-			Roles: []string{"admin"},
+			Permissions: PermissionAdministrator,
 		},
 		"/sellers/reject/:seller_id": {
-			Roles: []string{"admin"},
+			Permissions: PermissionAdministrator,
 		},
 	}
 }

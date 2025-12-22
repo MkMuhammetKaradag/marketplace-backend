@@ -15,7 +15,7 @@ type Session struct {
 type SessionData struct {
 	UserID    string    `json:"userID"`
 	Username  string    `json:"username"`
-	Role      UserRole  `json:"role"`
+	Permissions int64     `json:"permissions"`
 	Device    string    `json:"device"`
 	Ip        string    `json:"ip"`
 	CreatedAt time.Time `json:"createdAt"`

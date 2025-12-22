@@ -18,9 +18,15 @@ func (r *Repository) SignIn(ctx context.Context, identifier, password string) (*
 
 	user := &domain.User{}
 	query := `
-		SELECT  id,username,email,password,failed_login_attempts,account_locked,lock_until,user_role
-		FROM    users
-		WHERE   (username = $1 OR email = $1) AND is_active = true`
+        SELECT 
+            u.id, u.username, u.email, u.password, u.failed_login_attempts, 
+            u.account_locked, u.lock_until,
+            COALESCE(BIT_OR(r.permissions), 0) as total_permissions
+        FROM users u
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.id
+        WHERE (u.username = $1 OR u.email = $1) AND u.is_active = true
+        GROUP BY u.id`
 
 	var lockUntil sql.NullTime
 	err := r.db.QueryRowContext(ctx, query, identifier).Scan(
@@ -31,7 +37,7 @@ func (r *Repository) SignIn(ctx context.Context, identifier, password string) (*
 		&user.FailedLoginAttempts,
 		&user.AccountLocked,
 		&lockUntil,
-		&user.Role,
+		&user.Permissions,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

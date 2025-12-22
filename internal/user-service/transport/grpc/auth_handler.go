@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+
+
 // AuthGrpcHandler'ı app/application.go'dan buraya taşıyabilirsiniz veya
 // sadece ValidateToken metodunu bu pakette uygulayabilirsiniz.
 type AuthGrpcHandler struct {
@@ -79,9 +81,9 @@ func (h *AuthGrpcHandler) ValidateToken(ctx context.Context, req *pb.TokenReques
 	// Oturum geçerli, kullanıcı ID'sini dön
 	log.Printf("Token doğrulama başarılı. UserID: %s", session.UserID)
 	return &pb.ValidationResponse{
-		IsValid: true,
-		UserId:  session.UserID,
-		Message: "Oturum aktif.",
-		Role:    string(session.Role),
+		IsValid:     true,
+		UserId:      session.UserID,
+		Message:     "Oturum aktif.",
+		Permissions: session.Permissions,
 	}, nil
 }

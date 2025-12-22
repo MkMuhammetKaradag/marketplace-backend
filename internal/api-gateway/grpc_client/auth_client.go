@@ -44,7 +44,7 @@ func CloseAuthClient() {
 }
 
 // AuthMiddleware'in çağıracağı ana doğrulama fonksiyonu
-func ValidateToken(token string) (isValid bool, userID string, userRole string) {
+func ValidateToken(token string) (isValid bool, userID string, permissions int64) {
 	// 3 saniyelik timeout ile bir context oluşturun
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
@@ -56,9 +56,9 @@ func ValidateToken(token string) (isValid bool, userID string, userRole string) 
 
 	if err != nil {
 		log.Printf("🔒 gRPC doğrulama çağrısı başarısız: %v", err)
-		return false, "", ""
+		return false, "", 0
 	}
 
 	// Geri dönen cevabı kontrol edin
-	return resp.GetIsValid(), resp.GetUserId(), resp.GetRole()
+	return resp.GetIsValid(), resp.GetUserId(), resp.GetPermissions()
 }

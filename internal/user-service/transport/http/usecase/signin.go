@@ -40,7 +40,7 @@ func (u *signInUseCase) Execute(fiberCtx *fiber.Ctx, identifier, password string
 		UserID:    user.ID,
 		Device:    device,
 		Username:  user.Username,
-		Role:      user.Role,
+		Permissions:      user.Permissions,
 		Ip:        ip,
 		CreatedAt: time.Now(),
 	}

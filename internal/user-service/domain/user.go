@@ -15,7 +15,7 @@ type User struct {
 	Username            string    `json:"username"`
 	Email               string    `json:"email"`
 	Password            string    `json:"password"`
-	Role                UserRole  `json:"role"`
+	Permissions         int64     `json:"permissions"`
 	ActivationCode      string    `json:"activationCode"`
 	ActivationExpiry    time.Time `json:"activationExpiry"`
 	FailedLoginAttempts int       `json:"failedLoginAttempts"`

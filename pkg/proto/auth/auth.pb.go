@@ -77,7 +77,7 @@ type ValidationResponse struct {
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// Opsiyonel: Hata mesajı
 	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
-	Role          string `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
+	Permissions   int64  `protobuf:"varint,4,opt,name=permissions,proto3" json:"permissions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -133,11 +133,11 @@ func (x *ValidationResponse) GetMessage() string {
 	return ""
 }
 
-func (x *ValidationResponse) GetRole() string {
+func (x *ValidationResponse) GetPermissions() int64 {
 	if x != nil {
-		return x.Role
+		return x.Permissions
 	}
-	return ""
+	return 0
 }
 
 var File_auth_proto protoreflect.FileDescriptor
@@ -147,12 +147,12 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"auth.proto\x12\x04auth\"$\n" +
 	"\fTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"v\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\x84\x01\n" +
 	"\x12ValidationResponse\x12\x19\n" +
 	"\bis_valid\x18\x01 \x01(\bR\aisValid\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\x12\x12\n" +
-	"\x04role\x18\x04 \x01(\tR\x04role2N\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12 \n" +
+	"\vpermissions\x18\x04 \x01(\x03R\vpermissions2N\n" +
 	"\rAuthValidator\x12=\n" +
 	"\rValidateToken\x12\x12.auth.TokenRequest\x1a\x18.auth.ValidationResponseB\bZ\x06./authb\x06proto3"
 

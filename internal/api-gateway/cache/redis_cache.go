@@ -12,7 +12,7 @@ import (
 
 type SessionCache struct {
 	UserID string
-	Role   string
+	Permissions int64
 }
 
 type CacheManager struct {
@@ -42,7 +42,7 @@ func NewCacheManager(redisAddr string, password string, db int, ttl time.Duratio
 }
 
 // GetSession cache'den session bilgisini al
-func (c *CacheManager) GetSession(ctx context.Context, token string) (*SessionCache, error) {
+func (c *CacheManager) 	GetSession(ctx context.Context, token string) (*SessionCache, error) {
 	key := c.sessionKey(token)
 
 	data, err := c.client.Get(ctx, key).Result()
@@ -62,12 +62,12 @@ func (c *CacheManager) GetSession(ctx context.Context, token string) (*SessionCa
 }
 
 // SetSession cache'e session bilgisini kaydet
-func (c *CacheManager) SetSession(ctx context.Context, token string, userID string, role string) error {
+func (c *CacheManager) SetSession(ctx context.Context, token string, userID string, permissions int64) error {
 	key := c.sessionKey(token)
 
 	session := SessionCache{
 		UserID: userID,
-		Role:   role,
+		Permissions: permissions,
 	}
 
 	data, err := json.Marshal(session)
