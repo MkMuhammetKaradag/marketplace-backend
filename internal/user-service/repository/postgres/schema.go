@@ -16,10 +16,13 @@ const (
 	PermissionViewAnalytics  int64 = 1 << 15 // Satış istatistiklerini görme
 
 	// --- Moderasyon ve Destek İzinleri (20-29) ---
-	PermissionApproveProducts int64 = 1 << 20 // Satıcıların ürünlerini yayına almadan önce onaylama
-	PermissionManageDisputes  int64 = 1 << 21 // Alıcı-Satıcı arasındaki itirazları yönetme
-	PermissionBanUsers        int64 = 1 << 22 // Kural ihlali yapanları yasaklama
-	PermissionViewAllOrders   int64 = 1 << 23 // Sistemdeki tüm sipariş detaylarını görme
+	PermissionApproveProducts       int64 = 1 << 20 // Satıcıların ürünlerini yayına almadan önce onaylama
+	PermissionManageDisputes        int64 = 1 << 21 // Alıcı-Satıcı arasındaki itirazları yönetme
+	PermissionBanUsers              int64 = 1 << 22 // Kural ihlali yapanları yasaklama
+	PermissionViewAllOrders         int64 = 1 << 23 // Sistemdeki tüm sipariş detaylarını görme
+	PermissionApproveOrRejectSeller int64 = 1 << 24 // Satıcı onayını yönetme (onaylama veya reddetme)
+	PermissionRemoveSeller          int64 = 1 << 25 // Satıcı onayını kaldırma
+	PermissionManageReports         int64 = 1 << 26 // Raporları yönetme
 
 	// --- Finans ve Üst Yönetim İzinleri (30-39) ---
 	PermissionManagePayments int64 = 1 << 30 // Ödeme geri iadeleri ve hakedişleri yönetme

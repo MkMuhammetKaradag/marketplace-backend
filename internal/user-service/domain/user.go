@@ -5,9 +5,9 @@ import "time"
 type UserRole string
 
 const (
-	Buyer  UserRole = "buyer"
-	Seller UserRole = "seller"
-	Admin  UserRole = "admin"
+	Buyer  UserRole = "Buyer"
+	Seller UserRole = "Seller"
+	Admin  UserRole = "Admin"
 )
 
 type User struct {

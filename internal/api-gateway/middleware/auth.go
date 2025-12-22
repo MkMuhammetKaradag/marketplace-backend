@@ -81,9 +81,6 @@ func AuthMiddleware(policies map[string]config.RoutePolicy, cacheManager *cache.
 			}
 		}
 		if !contains(policy.Permissions, permissions) {
-			log.Printf("❌ Permission denied - UserID: %s", userID)
-			log.Printf("❌ Permission denied - Permissions: %s", permissions)
-			log.Printf("❌ Permission denied - Required Permissions: %s", policy.Permissions)
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"error": "You do not have permission to access this resource",
 			})
@@ -135,5 +132,10 @@ func contains(requiredPerm int64, userTotalPerms int64) bool {
 	if (userTotalPerms & PermissionAdministrator) == PermissionAdministrator {
 		return true
 	}
-	return (userTotalPerms & requiredPerm) == requiredPerm
+
+	if requiredPerm == config.PermissionNone {
+		return true
+	}
+
+	return (userTotalPerms & requiredPerm) != 0
 }

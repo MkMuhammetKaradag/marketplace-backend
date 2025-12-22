@@ -82,26 +82,29 @@ type RoutePolicy struct {
 }
 
 const (
-	PermissionAdministrator int64 = 1 << 62
+	PermissionNone                  int64 = 0
+	PermissionAdministrator         int64 = 1 << 62
+	PermissionApproveOrRejectSeller int64 = 1 << 24
+	PermissionManageRoles           int64 = 1 << 32
 )
 
 // GetProtectedRoutes returns the set of routes that require authentication
 func GetProtectedRoutes() map[string]RoutePolicy {
 	return map[string]RoutePolicy{
 		"/users/profile": {
-			Permissions: 0,
+			Permissions: PermissionNone,
 		},
-		"/users/change-user-role/:user_id": {
-			Permissions: PermissionAdministrator,
+		"/users/add-user-role/:user_id": {
+			Permissions: PermissionManageRoles | PermissionAdministrator,
 		},
 		"/sellers/onboard": {
-			Permissions: PermissionAdministrator,
+			Permissions: PermissionNone,
 		},
 		"/sellers/approve/:seller_id": {
-			Permissions: PermissionAdministrator,
+			Permissions: PermissionApproveOrRejectSeller | PermissionAdministrator,
 		},
 		"/sellers/reject/:seller_id": {
-			Permissions: PermissionAdministrator,
+			Permissions: PermissionApproveOrRejectSeller | PermissionAdministrator,
 		},
 	}
 }

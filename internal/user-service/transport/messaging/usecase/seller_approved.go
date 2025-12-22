@@ -23,9 +23,9 @@ func NewSellerApprovedUseCase(repository domain.UserRepository) SellerApprovedUs
 
 func (u *sellerApprovedUseCase) Execute(ctx context.Context, userID uuid.UUID) error {
 
-	err := u.repository.ChangeUserRole(ctx, userID, domain.Seller)
+	err := u.repository.AddUserRole(ctx, userID, "Seller")
 	if err != nil {
-		return fmt.Errorf("failed to change user role: %w", err)
+		return fmt.Errorf("failed to add user role: %w", err)
 	}
 
 	return nil
