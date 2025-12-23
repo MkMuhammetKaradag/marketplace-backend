@@ -52,6 +52,10 @@ func (h *Handlers) AddUserRole() *controller.AddUserRolerController {
 	addUserRolerUseCase := usecase.NewAddUserRolerUseCase(h.userRepository)
 	return controller.NewAddUserRolerController(addUserRolerUseCase)
 }
+func (h *Handlers) CreateRole() *controller.CreateRoleController {
+	createRoleUseCase := usecase.NewCreateRoleUseCase(h.userRepository)
+	return controller.NewCreateRoleController(createRoleUseCase)
+}
 
 type HelloResponse struct {
 	Message string `json:"message"`

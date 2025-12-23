@@ -97,6 +97,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/users/add-user-role/:user_id": {
 			Permissions: PermissionManageRoles | PermissionAdministrator,
 		},
+		"/users/create-role": {
+			Permissions: PermissionManageRoles | PermissionAdministrator,
+		},
 		"/sellers/onboard": {
 			Permissions: PermissionNone,
 		},
