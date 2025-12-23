@@ -54,4 +54,14 @@ const (
                  tax_number ~ '^[0-9]{10,20}$' 	
             )
         )`
+
+	createSellerStatusHistoryTable = `
+        CREATE TABLE IF NOT EXISTS seller_status_history (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            seller_id UUID NOT NULL REFERENCES sellers(id) ON DELETE CASCADE,
+            status seller_status NOT NULL,
+            reason TEXT,
+            changed_by UUID,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )`
 )

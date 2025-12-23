@@ -65,6 +65,7 @@ message SellerApprovedData {
 message SellerRejectedData {
     string seller_id = 1;
     string rejected_by = 2;
+    string reason = 3;
 
 }
 

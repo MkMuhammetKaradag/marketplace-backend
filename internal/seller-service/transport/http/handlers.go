@@ -33,13 +33,18 @@ func (h *Handlers) CreateSeller() *controller.CreateSellerController {
 }
 
 func (h *Handlers) RejectSeller() *controller.RejectSellerController {
-	rejectSellerUseCase := usecase.NewRejectSellerUseCase(h.sellerRepository)
+	rejectSellerUseCase := usecase.NewRejectSellerUseCase(h.sellerRepository, h.kafkaMessaging)
 	return controller.NewRejectSellerController(rejectSellerUseCase)
 }
 
 func (h *Handlers) ApproveSeller() *controller.ApproveSellerController {
 	approveSellerUseCase := usecase.NewApproveSellerUseCase(h.sellerRepository, h.kafkaMessaging)
 	return controller.NewApproveSellerController(approveSellerUseCase)
+}
+
+func (h *Handlers) GetSellerByUserID() *controller.GetSellerByUserIDController {
+	getSellerByUserIDUseCase := usecase.NewGetSellerByUserIDUseCase(h.sellerRepository)
+	return controller.NewGetSellerByUserIDController(getSellerByUserIDUseCase)
 }
 
 type HelloResponse struct {

@@ -1,30 +1,39 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type Seller struct {
-	ID                string `json:"id"`
-	UserID            string `json:"user_id"`
-	StoreName         string `json:"store_name" validate:"required"`
-	StoreSlug         string `json:"store_slug" validate:"required"`
-	TaxNumber         string `json:"tax_number" validate:"required"`
-	TaxOffice         string `json:"tax_office" validate:"required"`
-	IsApproved        bool   `json:"is_approved" validate:"required"`
-	StoreDescription  string `json:"store_description" validate:"required"`
-	LegalBusinessName string `json:"legal_business_name" validate:"required"`
-	PhoneNumber       string `json:"phone_number" validate:"required"`
-	AddressLine       string `json:"address_line" validate:"required"`
-	// AddressLine2 string `json:"address_line2" validate:"required"`
-	City string `json:"city" validate:"required"`
-	// State string `json:"state" validate:"required"`
-	// ZipCode string `json:"zip_code" validate:"required"`
-	Country               string    `json:"country" validate:"required"`
-	BankAccountIban       string    `json:"bank_account_iban" validate:"required"`
-	BankAccountHolderName string    `json:"bank_account_holder_name" validate:"required"`
-	BankAccountBic        string    `json:"bank_account_bic" validate:"required"`
-	Email                 string    `json:"email" validate:"required,email"`
-	CreatedAt             time.Time `json:"created_at"`
-	UpdatedAt             time.Time `json:"updated_at"`
-	Rating                float64   `json:"rating"`
-	TotalSales            int       `json:"total_sales"`
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	StoreName string `json:"store_name"`
+	StoreSlug string `json:"store_slug"`
+	// Pointer kullanarak NULL değerleri yönetiyoruz
+	StoreDescription  *string `json:"store_description"`
+	Rating            float64 `json:"rating"`
+	TotalSales        int     `json:"total_sales"`
+	LegalBusinessName string  `json:"legal_business_name"`
+	TaxNumber         string  `json:"tax_number"`
+	TaxOffice         string  `json:"tax_office"`
+	// status sütununu buraya alıyoruz
+	Status                string `json:"status"`
+	PhoneNumber           string `json:"phone_number"`
+	Email                 string `json:"email"`
+	AddressLine           string `json:"address_line"`
+	City                  string `json:"city"`
+	Country               string `json:"country"`
+	BankAccountIban       string `json:"bank_account_iban"`
+	BankAccountHolderName string `json:"bank_account_holder_name"`
+	BankAccountBic        string `json:"bank_account_bic"`
+	// NULL gelebilecek alanlar için pointer
+	RejectionReason *string               `json:"rejection_reason"`
+	CreatedAt       time.Time             `json:"created_at"`
+	UpdatedAt       time.Time             `json:"updated_at"`
+	History         []SellerStatusHistory `json:"history,omitempty"`
+}
+type SellerStatusHistory struct {
+	Status    string    `json:"status"`
+	Reason    string    `json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
 }

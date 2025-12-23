@@ -12,14 +12,14 @@ const createSellerQuery = `
         legal_business_name, tax_number, tax_office, 
         phone_number, email, 
         address_line_1, city, country, 
-        bank_account_iban, bank_account_holder_name, bank_account_bic
+        bank_account_iban, bank_account_holder_name,bank_account_bic
     ) 
     VALUES (
         $1, $2, $3, 
         $4, $5, $6, 
         $7, $8, 
         $9, $10, $11, 
-        $12, $13, $14
+        $12, $13,$14
     ) 
     RETURNING id;
 `
