@@ -32,6 +32,12 @@ func runMigrations(db *sql.DB) error {
 	if _, err := db.Exec(createForgotPasswordsTable); err != nil {
 		return fmt.Errorf("failed to create forgot_passwords table: %w", err)
 	}
+
+	// 6. Sıra: User Addresses Tablosu
+	if _, err := db.Exec(createUserAddressesTable); err != nil {
+		return fmt.Errorf("failed to create user_addresses table: %w", err)
+	}
+
 	
 	log.Println("Database migration completed successfully")
 	return nil

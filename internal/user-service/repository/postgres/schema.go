@@ -1,11 +1,21 @@
 package postgres
 
 const (
+	
 	createUsersTable = `
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     		username VARCHAR(50) NOT NULL UNIQUE,
-    		email VARCHAR(100) NOT NULL UNIQUE,
+			first_name VARCHAR(50),
+			last_name VARCHAR(50),
+			phone_number VARCHAR(15),
+			avatar_url TEXT,
+			cover_url TEXT,
+			bio TEXT,
+		email VARCHAR(100) NOT NULL UNIQUE,
+			
+
+    		
     		password TEXT NOT NULL,
     		is_active BOOLEAN DEFAULT false,
     		is_email_verified BOOLEAN DEFAULT false,
@@ -14,6 +24,7 @@ const (
 			activation_expiry TIMESTAMP WITH TIME ZONE,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			deleted_at TIMESTAMP WITH TIME ZONE,
 			failed_login_attempts INT DEFAULT 0,
 			account_locked BOOLEAN DEFAULT false,
 			lock_until TIMESTAMP WITH TIME ZONE,
@@ -22,6 +33,18 @@ const (
 				activation_code ~ '^[0-9]{6}$'
 			)
 		)`
+	createUserAddressesTable = `
+			CREATE TABLE IF NOT EXISTS user_addresses (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+				title VARCHAR(50) NOT NULL,
+				address_line TEXT NOT NULL,
+				city VARCHAR(50) NOT NULL,
+				country VARCHAR(50) NOT NULL,
+				zip_code VARCHAR(10),
+				is_default BOOLEAN DEFAULT false,
+				created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+			)`
 	createForgotPasswordsTable = `
 		CREATE TABLE IF NOT EXISTS forgot_passwords (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
