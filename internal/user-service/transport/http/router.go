@@ -26,6 +26,7 @@ func (r *Router) Register(app *fiber.App) {
 	allSignOutHandler := r.handlers.AllSignOut()
 	addUserRoleHandler := r.handlers.AddUserRole()
 	createRoleHandler := r.handlers.CreateRole()
+	forgotPasswordHandler := r.handlers.ForgotPassword()
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/signup", handler.HandleBasic[controller.SignUpRequest, controller.SignUpResponse](siginUpHandler))
 	app.Post("/user-activate", handler.HandleBasic[controller.UserActivateRequest, controller.UserActivateResponse](userActivateHandler))
@@ -34,6 +35,7 @@ func (r *Router) Register(app *fiber.App) {
 	app.Post("/all-signout", handler.HandleWithFiber[controller.AllSignOutRequest, controller.AllSignOutResponse](allSignOutHandler))
 	app.Post("/add-user-role/:user_id", handler.HandleWithFiber[controller.AddUserRolerRequest, controller.AddUserRolerResponse](addUserRoleHandler))
 	app.Post("/create-role", handler.HandleWithFiber[controller.CreateRoleRequest, controller.CreateRoleResponse](createRoleHandler))
+	app.Post("/forgot-password", handler.HandleBasic[controller.ForgotPasswordRequest, controller.ForgotPasswordResponse](forgotPasswordHandler))
 	app.Get("/profile", func(c *fiber.Ctx) error {
 		userIDStr := c.Get("X-User-ID")
 		if userIDStr == "" {

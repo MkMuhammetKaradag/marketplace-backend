@@ -28,6 +28,11 @@ func runMigrations(db *sql.DB) error {
 		return fmt.Errorf("failed to insert default roles: %w", err)
 	}
 
+	// 5. Sıra: Forgot Passwords Tablosu
+	if _, err := db.Exec(createForgotPasswordsTable); err != nil {
+		return fmt.Errorf("failed to create forgot_passwords table: %w", err)
+	}
+	
 	log.Println("Database migration completed successfully")
 	return nil
 }

@@ -1,6 +1,5 @@
 package postgres
 
-
 const (
 	createUsersTable = `
 		CREATE TABLE IF NOT EXISTS users (
@@ -22,6 +21,14 @@ const (
 			CONSTRAINT check_activation_code CHECK (
 				activation_code ~ '^[0-9]{6}$'
 			)
+		)`
+	createForgotPasswordsTable = `
+		CREATE TABLE IF NOT EXISTS forgot_passwords (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+			attempt_count INT DEFAULT 0,
+			expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 		)`
 
 	createRolesTable = `

@@ -57,6 +57,11 @@ func (h *Handlers) CreateRole() *controller.CreateRoleController {
 	return controller.NewCreateRoleController(createRoleUseCase)
 }
 
+func (h *Handlers) ForgotPassword() *controller.ForgotPasswordController {
+	forgotPasswordUseCase := usecase.NewForgotPasswordUseCase(h.userRepository)
+	return controller.NewForgotPasswordController(forgotPasswordUseCase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`
