@@ -8,8 +8,9 @@ import (
 )
 
 type ChangePasswordRequest struct {
-	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	OldPassword      string `json:"old_password", binding:"required"`
+	NewPassword      string `json:"new_password", binding:"required"`
+	CloseAllSessions bool   `json:"close_all_sessions"`
 }
 
 type ChangePasswordController struct {
@@ -32,9 +33,12 @@ func (h *ChangePasswordController) Handle(fbr *fiber.Ctx, req *ChangePasswordReq
 		return nil, err
 	}
 
-	err = h.usecase.Execute(fbr.UserContext(), userID, req.OldPassword, req.NewPassword)
+	err = h.usecase.Execute(fbr.UserContext(), userID, req.OldPassword, req.NewPassword, req.CloseAllSessions)
 	if err != nil {
 		return nil, err
+	}
+	if req.CloseAllSessions {
+		fbr.Set("X-Invalidate-User-All-Sessions", userID.String())
 	}
 
 	return &ChangePasswordResponse{Message: "Password changed successfully"}, nil

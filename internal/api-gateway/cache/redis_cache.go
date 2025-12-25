@@ -11,7 +11,7 @@ import (
 )
 
 type SessionCache struct {
-	UserID string
+	UserID      string
 	Permissions int64
 }
 
@@ -42,7 +42,7 @@ func NewCacheManager(redisAddr string, password string, db int, ttl time.Duratio
 }
 
 // GetSession cache'den session bilgisini al
-func (c *CacheManager) 	GetSession(ctx context.Context, token string) (*SessionCache, error) {
+func (c *CacheManager) GetSession(ctx context.Context, token string) (*SessionCache, error) {
 	key := c.sessionKey(token)
 
 	data, err := c.client.Get(ctx, key).Result()
@@ -63,34 +63,69 @@ func (c *CacheManager) 	GetSession(ctx context.Context, token string) (*SessionC
 
 // SetSession cache'e session bilgisini kaydet
 func (c *CacheManager) SetSession(ctx context.Context, token string, userID string, permissions int64) error {
-	key := c.sessionKey(token)
+	sessionKey := c.sessionKey(token)
+	userIndexKey := fmt.Sprintf("user_sessions:%s", userID)
 
 	session := SessionCache{
-		UserID: userID,
+		UserID:      userID,
 		Permissions: permissions,
 	}
 
-	data, err := json.Marshal(session)
-	if err != nil {
-		return fmt.Errorf("session serialize error : %w", err)
-	}
+	data, _ := json.Marshal(session)
 
-	if err := c.client.Set(ctx, key, data, c.ttl).Err(); err != nil {
-		return fmt.Errorf("session write error : %w", err)
-	}
+	// Redis Pipeline kullanarak atomik işlem yapalım
+	pipe := c.client.TxPipeline()
 
-	return nil
+	// 1. Session verisini kaydet
+	pipe.Set(ctx, sessionKey, data, c.ttl)
+
+	// 2. Bu token'ı kullanıcının aktif listesine ekle
+	pipe.SAdd(ctx, userIndexKey, token)
+	pipe.Expire(ctx, userIndexKey, c.ttl) // Liste de session süresi kadar yaşasın
+
+	_, err := pipe.Exec(ctx)
+	return err
 }
 
 // InvalidateSession cache'den session'ı sil (logout için)
 func (c *CacheManager) InvalidateSession(ctx context.Context, token string) error {
-	key := c.sessionKey(token)
-
-	if err := c.client.Del(ctx, key).Err(); err != nil {
-		return fmt.Errorf("session delete error : %w", err)
+	// Önce session'ı çekip userID'yi bulmamız lazım ki listeden silelim
+	session, err := c.GetSession(ctx, token)
+	if err != nil {
+		return c.client.Del(ctx, c.sessionKey(token)).Err() // Bulamazsa bile silmeyi dene
 	}
 
-	return nil
+	userIndexKey := fmt.Sprintf("user_sessions:%s", session.UserID)
+
+	pipe := c.client.TxPipeline()
+	pipe.Del(ctx, c.sessionKey(token))
+	pipe.SRem(ctx, userIndexKey, token) // Listeden bu tokenı çıkar
+
+	_, err = pipe.Exec(ctx)
+	return err
+}
+func (c *CacheManager) InvalidateAllUserSessions(ctx context.Context, userID string) error {
+	userIndexKey := fmt.Sprintf("user_sessions:%s", userID)
+
+	// 1. Kullanıcıya ait tüm tokenları al
+	tokens, err := c.client.SMembers(ctx, userIndexKey).Result()
+	if err != nil {
+		return err
+	}
+
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	// 2. Tüm tokenları ve index listesini sil
+	pipe := c.client.TxPipeline()
+	for _, token := range tokens {
+		pipe.Del(ctx, c.sessionKey(token))
+	}
+	pipe.Del(ctx, userIndexKey)
+
+	_, err = pipe.Exec(ctx)
+	return err
 }
 
 // sessionKey prefix ekleyerek key oluştur

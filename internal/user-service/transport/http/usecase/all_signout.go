@@ -21,8 +21,11 @@ func NewAllSignOutUseCase(repository domain.SessionRepository) AllSignOutUseCase
 }
 
 func (u *allSignOutUseCase) Execute(ctx *fiber.Ctx) error {
-	token := ctx.Cookies("Session")
-	if err := u.sessionRepository.DeleteUserAllSession(ctx.UserContext(), token); err != nil {
+	//token := ctx.Cookies("Session")
+
+	userID := ctx.Get("X-User-ID")
+
+	if err := u.sessionRepository.DeleteUserAllSession(ctx.UserContext(), userID); err != nil {
 		return err
 
 	}

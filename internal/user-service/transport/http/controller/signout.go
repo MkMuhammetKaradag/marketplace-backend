@@ -26,6 +26,6 @@ func (h *SignOutController) Handle(fbrCtx *fiber.Ctx, req *SignOutRequest) (*Sig
 	if err != nil {
 		return nil, err
 	}
-
+	fbrCtx.Set("X-Invalidate-Session", "true")
 	return &SignOutResponse{Message: "logout successfully"}, nil
 }

@@ -26,6 +26,6 @@ func (h *AllSignOutController) Handle(fbrCtx *fiber.Ctx, req *AllSignOutRequest)
 	if err != nil {
 		return nil, err
 	}
-
+	fbrCtx.Set("X-Invalidate-User-All-Sessions", "true")
 	return &AllSignOutResponse{Message: "all signout  successfully"}, nil
 }

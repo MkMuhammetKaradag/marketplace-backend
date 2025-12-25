@@ -2,16 +2,16 @@ package session
 
 import "context"
 
-func (s *SessionRepository) DeleteUserAllSession(ctx context.Context, token string) error {
-	session, err := s.GetSessionData(ctx, token)
-	if err != nil {
-		return err
-	}
-	if session == nil {
-		return nil
-	}
+func (s *SessionRepository) DeleteUserAllSession(ctx context.Context, userID string) error {
+	// session, err := s.GetSessionData(ctx, token)
+	// if err != nil {
+	// 	return err
+	// }
+	// if session == nil {
+	// 	return nil
+	// }
 
-	sessionSetKey := s.userSessionsKey(session.UserID)
+	sessionSetKey := s.userSessionsKey(userID)
 	tokens, err := s.client.SMembers(ctx, sessionSetKey).Result()
 	if err != nil {
 		return err

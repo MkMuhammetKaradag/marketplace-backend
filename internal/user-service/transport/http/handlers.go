@@ -68,7 +68,7 @@ func (h *Handlers) ResetPassword() *controller.ResetPasswordController {
 }
 
 func (h *Handlers) ChangePassword() *controller.ChangePasswordController {
-	changePasswordUseCase := usecase.NewChangePasswordUseCase(h.userRepository)
+	changePasswordUseCase := usecase.NewChangePasswordUseCase(h.userRepository, h.sessionRepository)
 	return controller.NewChangePasswordController(changePasswordUseCase)
 }
 

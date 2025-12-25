@@ -90,6 +90,26 @@ func (h *ProxyHandler) Handle(c *fiber.Ctx) error {
 			log.Printf("İpucu: Logout başarılı, Gateway cache silindi: %s", authValue)
 		}
 	}
+
+	if c.Response().StatusCode() == fiber.StatusOK {
+
+		userID := string(c.Response().Header.Peek("X-Invalidate-User-All-Sessions"))
+
+		if userID != "" {
+			h.cacheManager.InvalidateAllUserSessions(context.Background(), userID)
+			c.Response().Header.Del("X-Invalidate-User-All-Sessions")
+			log.Printf("Internal header removed for user: %s", userID)
+		} else if string(c.Response().Header.Peek("X-Invalidate-Session")) == "true" {
+			authValue := c.Cookies(config.SessionCookieName)
+			if authValue == "" {
+				authHeader := c.Get("Authorization")
+				authValue = strings.TrimPrefix(authHeader, "Bearer ")
+			}
+			h.cacheManager.InvalidateSession(context.Background(), authValue)
+			c.Response().Header.Del("X-Invalidate-Session")
+		}
+	}
+
 	h.Metrics.IncrementSuccess()
 	return nil
 }
