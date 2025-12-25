@@ -7,6 +7,7 @@ import (
 	"log"
 	"marketplace/internal/user-service/config"
 	"marketplace/internal/user-service/domain"
+	"marketplace/internal/user-service/infrastructure"
 	"marketplace/internal/user-service/pkg/graceful"
 	"marketplace/internal/user-service/repository/postgres"
 	"marketplace/internal/user-service/repository/session"
@@ -17,6 +18,8 @@ import (
 	messaginghandler "marketplace/internal/user-service/transport/messaging"
 
 	"time"
+
+	"github.com/cloudinary/cloudinary-go/v2"
 )
 
 type App struct {
@@ -26,6 +29,7 @@ type App struct {
 	sessionRepo domain.SessionRepository
 	messaging   domain.Messaging
 	consumer    *kafka.Consumer
+	cloudinary  *cloudinary.Cloudinary
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -41,6 +45,7 @@ func NewApp(cfg config.Config) (*App, error) {
 		sessionRepo: container.sessionRepo,
 		messaging:   container.messaging,
 		consumer:    container.consumer,
+		cloudinary:  container.cloudinary,
 	}, nil
 }
 
@@ -68,6 +73,7 @@ type container struct {
 	server      *server.Server
 	messaging   domain.Messaging
 	consumer    *kafka.Consumer
+	cloudinary  *cloudinary.Cloudinary
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -86,9 +92,12 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init kafka consumer: %w", err)
 	}
-
+	cloudinary, err := infrastructure.NewCloudinary(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
+	if err != nil {
+		return nil, fmt.Errorf("init cloudinary: %w", err)
+	}
 	userService := domain.NewUserService(repo)
-	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo)
+	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo, cloudinary)
 
 	router := httptransport.NewRouter(httpHandlers)
 
@@ -109,5 +118,6 @@ func buildContainer(cfg config.Config) (*container, error) {
 		sessionRepo: sessionRepo,
 		messaging:   kafkaConsumer.Client(),
 		consumer:    kafkaConsumer,
+		cloudinary:  cloudinary,
 	}, nil
 }

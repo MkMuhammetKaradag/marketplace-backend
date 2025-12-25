@@ -103,6 +103,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/users/change-password": {
 			Permissions: PermissionNone,
 		},
+		"/users/upload-avatar": {
+			Permissions: PermissionNone,
+		},
 		"/sellers/me": {
 			Permissions: PermissionNone,
 		},

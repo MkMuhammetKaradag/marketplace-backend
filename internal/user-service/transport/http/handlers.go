@@ -2,6 +2,7 @@
 package http
 
 import (
+	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/gofiber/fiber/v2"
 
 	"marketplace/internal/user-service/domain"
@@ -13,10 +14,11 @@ type Handlers struct {
 	userService       domain.UserService
 	userRepository    domain.UserRepository
 	sessionRepository domain.SessionRepository
+	cloudinary        *cloudinary.Cloudinary
 }
 
-func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository) *Handlers {
-	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo}
+func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository, cloudinary *cloudinary.Cloudinary) *Handlers {
+	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo, cloudinary: cloudinary}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -70,6 +72,11 @@ func (h *Handlers) ResetPassword() *controller.ResetPasswordController {
 func (h *Handlers) ChangePassword() *controller.ChangePasswordController {
 	changePasswordUseCase := usecase.NewChangePasswordUseCase(h.userRepository, h.sessionRepository)
 	return controller.NewChangePasswordController(changePasswordUseCase)
+}
+
+func (h *Handlers) UploadAvatar() *controller.UploadAvatarController {
+	uploadAvatarUseCase := usecase.NewUploadAvatarUseCase(h.userRepository, h.cloudinary)
+	return controller.NewUploadAvatarController(uploadAvatarUseCase)
 }
 
 type HelloResponse struct {
