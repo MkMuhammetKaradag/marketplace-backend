@@ -67,6 +67,11 @@ func (h *Handlers) ResetPassword() *controller.ResetPasswordController {
 	return controller.NewResetPasswordController(resetPasswordUseCase)
 }
 
+func (h *Handlers) ChangePassword() *controller.ChangePasswordController {
+	changePasswordUseCase := usecase.NewChangePasswordUseCase(h.userRepository)
+	return controller.NewChangePasswordController(changePasswordUseCase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

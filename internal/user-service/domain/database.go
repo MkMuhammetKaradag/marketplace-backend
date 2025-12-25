@@ -15,6 +15,7 @@ type UserRepository interface {
 	CreateRole(ctx context.Context, createdBy uuid.UUID, name string, permissions int64) (uuid.UUID, error)
 	ForgotPassword(ctx context.Context, identifier string) (*ForgotPasswordResult, error)
 	ResetPassword(ctx context.Context, recordID uuid.UUID, newPassword string) (uuid.UUID, error)
+	ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword string, newPassword string) error
 }
 type ForgotPasswordResult struct {
 	Username string
