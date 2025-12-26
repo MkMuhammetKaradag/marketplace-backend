@@ -4,6 +4,7 @@ package infrastructure
 import (
 	"context"
 	"fmt"
+	"marketplace/internal/seller-service/domain"
 	"mime/multipart"
 
 	"github.com/cloudinary/cloudinary-go/v2"
@@ -23,42 +24,31 @@ func NewCloudinaryService(cloudName, apiKey, apiSecret string) (*CloudinaryServi
 	return &CloudinaryService{client: cld}, nil
 }
 
-func (s *CloudinaryService) UploadStoreLogo(ctx context.Context, fileHeader *multipart.FileHeader, userID string, sellerID string) (string, string, error) {
-	file, _ := fileHeader.Open()
+func (s *CloudinaryService) UploadImage(ctx context.Context, fileHeader *multipart.FileHeader, opts domain.UploadOptions) (string, string, error) {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return "", "", err
+	}
 	defer file.Close()
 
+	// Eğer özel bir transformation gelmediyse varsayılanı kullan
+	if opts.Transformation == "" {
+		opts.Transformation = fmt.Sprintf("c_fill,g_auto,w_%d,h_%d,q_auto,f_auto", opts.Width, opts.Height)
+	}
+
 	uploadRes, err := s.client.Upload.Upload(ctx, file, uploader.UploadParams{
-		Folder:         "store_logos",
-		PublicID:       userID + "_" + sellerID,
+		Folder:         opts.Folder,
+		PublicID:       opts.PublicID,
 		Overwrite:      api.Bool(true),
 		Invalidate:     api.Bool(true),
-		Transformation: "c_fill,h_250,w_250,q_auto,f_auto",
+		Transformation: opts.Transformation,
 	})
 
 	if err != nil {
-		return "", "", fmt.Errorf("cloudinary upload store logo: %w", err)
+		return "", "", err
 	}
 	return uploadRes.SecureURL, uploadRes.PublicID, nil
 }
-
-func (s *CloudinaryService) UploadStoreBanner(ctx context.Context, fileHeader *multipart.FileHeader, userID string, sellerID string) (string, string, error) {
-	file, _ := fileHeader.Open()
-	defer file.Close()
-
-	uploadRes, err := s.client.Upload.Upload(ctx, file, uploader.UploadParams{
-		Folder:         "store_banners",
-		PublicID:       userID + "_" + sellerID,
-		Overwrite:      api.Bool(true),
-		Invalidate:     api.Bool(true),
-		Transformation: "c_fill,h_250,w_250,q_auto,f_auto",
-	})
-
-	if err != nil {
-		return "", "", fmt.Errorf("cloudinary upload store banner: %w", err)
-	}
-	return uploadRes.SecureURL, uploadRes.PublicID, nil
-}
-
 func (s *CloudinaryService) DeleteImage(ctx context.Context, publicID string) error {
 	_, err := s.client.Upload.Destroy(ctx, uploader.DestroyParams{
 		PublicID: publicID,

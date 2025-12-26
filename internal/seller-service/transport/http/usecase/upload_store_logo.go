@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"marketplace/internal/seller-service/domain"
 
 	"mime/multipart"
@@ -33,17 +32,21 @@ func (u *uploadStoreLogoUseCase) Execute(ctx context.Context, userID uuid.UUID, 
 	}
 	defer file.Close()
 
-	uploadRes, publicID, err := u.cloudinarySvc.UploadStoreLogo(ctx, fileHeader, userID.String(), sellerID.String())
+	uploadRes, publicID, err := u.cloudinarySvc.UploadImage(ctx, fileHeader, domain.UploadOptions{
+		Folder:         "store_logos",
+		Width:          250,
+		Height:         250,
+		PublicID:       userID.String() + "_" + sellerID.String(),
+		Transformation: "c_fill,g_auto,w_250,h_250,q_auto,f_auto",
+	})
 
 	if err != nil {
 		return err
 	}
 	err = u.repo.UpdateStoreLogo(ctx, userID, sellerID, uploadRes)
 	if err != nil {
-		clErr := u.cloudinarySvc.DeleteImage(ctx, publicID)
-		fmt.Println(clErr)
+		_ = u.cloudinarySvc.DeleteImage(ctx, publicID)
 		return err
 	}
-	fmt.Println(uploadRes)
 	return nil
 }

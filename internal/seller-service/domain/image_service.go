@@ -5,8 +5,14 @@ import (
 	"mime/multipart"
 )
 
+type UploadOptions struct {
+	Folder         string
+	Width          int
+	Height         int
+	PublicID       string
+	Transformation string
+}
 type ImageService interface {
-	UploadStoreLogo(ctx context.Context, file *multipart.FileHeader, userID string, sellerID string) (string, string, error)
-	UploadStoreBanner(ctx context.Context, fileHeader *multipart.FileHeader, userID string, sellerID string) (string, string, error)
+	UploadImage(ctx context.Context, fileHeader *multipart.FileHeader, opts UploadOptions) (string, string, error)
 	DeleteImage(ctx context.Context, publicID string) error
 }
