@@ -86,6 +86,7 @@ const (
 	PermissionAdministrator         int64 = 1 << 62
 	PermissionApproveOrRejectSeller int64 = 1 << 24
 	PermissionManageRoles           int64 = 1 << 32
+	PermissionManageOwnStore        int64 = 1 << 10
 )
 
 // GetProtectedRoutes returns the set of routes that require authentication
@@ -117,6 +118,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		},
 		"/sellers/reject/:seller_id": {
 			Permissions: PermissionApproveOrRejectSeller | PermissionAdministrator,
+		},
+		"/sellers/upload-store-logo/:seller_id": {
+			Permissions: PermissionManageOwnStore,
 		},
 	}
 }

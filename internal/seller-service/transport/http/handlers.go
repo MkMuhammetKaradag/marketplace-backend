@@ -12,10 +12,11 @@ import (
 type Handlers struct {
 	sellerRepository domain.SellerRepository
 	kafkaMessaging   domain.Messaging
+	cloudinarySvc    domain.ImageService
 }
 
-func NewHandlers(repository domain.SellerRepository, messaging domain.Messaging) *Handlers {
-	return &Handlers{sellerRepository: repository, kafkaMessaging: messaging}
+func NewHandlers(repository domain.SellerRepository, messaging domain.Messaging, cloudinarySvc domain.ImageService) *Handlers {
+	return &Handlers{sellerRepository: repository, kafkaMessaging: messaging, cloudinarySvc: cloudinarySvc}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -45,6 +46,11 @@ func (h *Handlers) ApproveSeller() *controller.ApproveSellerController {
 func (h *Handlers) GetSellerByUserID() *controller.GetSellerByUserIDController {
 	getSellerByUserIDUseCase := usecase.NewGetSellerByUserIDUseCase(h.sellerRepository)
 	return controller.NewGetSellerByUserIDController(getSellerByUserIDUseCase)
+}
+
+func (h *Handlers) UploadStoreLogo() *controller.UploadStoreLogoController {
+	uploadStoreLogoUseCase := usecase.NewUploadStoreLogoUseCase(h.sellerRepository, h.cloudinarySvc)
+	return controller.NewUploadStoreLogoController(uploadStoreLogoUseCase)
 }
 
 type HelloResponse struct {

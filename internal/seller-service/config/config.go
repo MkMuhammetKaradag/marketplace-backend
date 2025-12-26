@@ -29,11 +29,16 @@ type ServerConfig struct {
 type MessagingConfig struct {
 	Brokers []string `mapstructure:"brokers"`
 }
-
+type CloudinaryConfig struct {
+	CloudName string `mapstructure:"cloudName"`
+	APIKey    string `mapstructure:"apiKey"`
+	APISecret string `mapstructure:"apiSecret"`
+}
 type Config struct {
-	Database  DatabaseConfig  `mapstructure:"database"`
-	Server    ServerConfig    `mapstructure:"server"`
-	Messaging MessagingConfig `mapstructure:"messaging"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Server     ServerConfig     `mapstructure:"server"`
+	Messaging  MessagingConfig  `mapstructure:"messaging"`
+	Cloudinary CloudinaryConfig `mapstructure:"cloudinary"`
 }
 
 func Read() Config {
@@ -47,7 +52,7 @@ func Read() Config {
 	v.SetConfigType("yaml")
 
 	// Dosyaları sırayla yükle (varsa)
-	files := []string{"server.yaml", "database.yaml", "messasing.yaml"}
+	files := []string{"server.yaml", "database.yaml", "messasing.yaml", "cloudinary.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"marketplace/internal/seller-service/config"
 	"marketplace/internal/seller-service/domain"
+	"marketplace/internal/seller-service/infrastructure"
 	"marketplace/internal/seller-service/pkg/graceful"
 	"marketplace/internal/seller-service/repository/postgres"
 	"marketplace/internal/seller-service/server"
@@ -18,10 +19,11 @@ import (
 )
 
 type App struct {
-	cfg        config.Config
-	server     *server.Server
-	repository domain.SellerRepository
-	messaging  domain.Messaging
+	cfg           config.Config
+	server        *server.Server
+	repository    domain.SellerRepository
+	messaging     domain.Messaging
+	cloudinarySvc domain.ImageService
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -54,9 +56,10 @@ func (a *App) Start() error {
 }
 
 type container struct {
-	repo      domain.SellerRepository
-	server    *server.Server
-	messaging domain.Messaging
+	repo          domain.SellerRepository
+	server        *server.Server
+	messaging     domain.Messaging
+	cloudinarySvc domain.ImageService
 }
 
 func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
@@ -90,8 +93,11 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init kafka messaging: %w", err)
 	}
-
-	httpHandlers := httptransport.NewHandlers(repo, messaging)
+	cloudinarySvc, err := infrastructure.NewCloudinaryService(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
+	if err != nil {
+		return nil, fmt.Errorf("init cloudinary service: %w", err)
+	}
+	httpHandlers := httptransport.NewHandlers(repo, messaging,cloudinarySvc)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{

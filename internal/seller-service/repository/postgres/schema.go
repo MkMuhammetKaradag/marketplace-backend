@@ -19,6 +19,8 @@ const (
             
             store_name VARCHAR(100) NOT NULL UNIQUE,
             store_slug VARCHAR(100) NOT NULL UNIQUE, 
+            store_logo_url VARCHAR(255),
+            store_banner_url VARCHAR(255),
             store_description TEXT,
             rating NUMERIC(2, 1) DEFAULT 0.0, 
             total_sales INT DEFAULT 0,
