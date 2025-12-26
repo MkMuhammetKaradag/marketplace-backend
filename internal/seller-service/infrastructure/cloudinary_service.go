@@ -32,11 +32,29 @@ func (s *CloudinaryService) UploadStoreLogo(ctx context.Context, fileHeader *mul
 		PublicID:       userID + "_" + sellerID,
 		Overwrite:      api.Bool(true),
 		Invalidate:     api.Bool(true),
-		Transformation: "c_fill,g_face,h_250,w_250,q_auto,f_auto",
+		Transformation: "c_fill,h_250,w_250,q_auto,f_auto",
 	})
 
 	if err != nil {
 		return "", "", fmt.Errorf("cloudinary upload store logo: %w", err)
+	}
+	return uploadRes.SecureURL, uploadRes.PublicID, nil
+}
+
+func (s *CloudinaryService) UploadStoreBanner(ctx context.Context, fileHeader *multipart.FileHeader, userID string, sellerID string) (string, string, error) {
+	file, _ := fileHeader.Open()
+	defer file.Close()
+
+	uploadRes, err := s.client.Upload.Upload(ctx, file, uploader.UploadParams{
+		Folder:         "store_banners",
+		PublicID:       userID + "_" + sellerID,
+		Overwrite:      api.Bool(true),
+		Invalidate:     api.Bool(true),
+		Transformation: "c_fill,h_250,w_250,q_auto,f_auto",
+	})
+
+	if err != nil {
+		return "", "", fmt.Errorf("cloudinary upload store banner: %w", err)
 	}
 	return uploadRes.SecureURL, uploadRes.PublicID, nil
 }

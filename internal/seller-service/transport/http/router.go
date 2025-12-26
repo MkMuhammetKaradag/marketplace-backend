@@ -23,11 +23,12 @@ func (r *Router) Register(app *fiber.App) {
 	rejectSellerHandler := r.handlers.RejectSeller()
 	getSellerByUserIDHandler := r.handlers.GetSellerByUserID()
 	uploadStoreLogoHandler := r.handlers.UploadStoreLogo()
+	uploadStoreBannerHandler := r.handlers.UploadStoreBanner()
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/onboard", handler.HandleWithFiber[controller.CreateSellerRequest, controller.CreateSellerResponse](createSellerHandler))
 	app.Post("/approve/:seller_id", handler.HandleWithFiber[controller.ApproveSellerRequest, controller.ApproveSellerResponse](approveSellerHandler))
 	app.Post("/reject/:seller_id", handler.HandleWithFiber[controller.RejectSellerRequest, controller.RejectSellerResponse](rejectSellerHandler))
 	app.Get("/me", handler.HandleWithFiber[controller.GetSellerByUserIDRequest, controller.GetSellerByUserIDResponse](getSellerByUserIDHandler))
 	app.Post("/upload-store-logo/:seller_id", handler.HandleWithFiber[controller.UploadStoreLogoRequest, controller.UploadStoreLogoResponse](uploadStoreLogoHandler))
-
+	app.Post("/upload-store-banner/:seller_id", handler.HandleWithFiber[controller.UploadStoreBannerRequest, controller.UploadStoreBannerResponse](uploadStoreBannerHandler))
 }

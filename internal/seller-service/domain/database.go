@@ -14,4 +14,5 @@ type SellerRepository interface {
 	GetSellerByUserID(ctx context.Context, userID uuid.UUID) (*Seller, error)
 	UpdateForReapplication(ctx context.Context, seller *Seller) error
 	UpdateStoreLogo(ctx context.Context, userID uuid.UUID, sellerID uuid.UUID, storeLogo string) error
+	UpdateStoreBanner(ctx context.Context, userID uuid.UUID, sellerID uuid.UUID, storeBanner string) error
 }

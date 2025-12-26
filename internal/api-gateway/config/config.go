@@ -122,6 +122,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/sellers/upload-store-logo/:seller_id": {
 			Permissions: PermissionManageOwnStore,
 		},
+		"/sellers/upload-store-banner/:seller_id": {
+			Permissions: PermissionManageOwnStore,
+		},
 	}
 }
 func Read() Config {

@@ -53,6 +53,11 @@ func (h *Handlers) UploadStoreLogo() *controller.UploadStoreLogoController {
 	return controller.NewUploadStoreLogoController(uploadStoreLogoUseCase)
 }
 
+func (h *Handlers) UploadStoreBanner() *controller.UploadStoreBannerController {
+	uploadStoreBannerUseCase := usecase.NewUploadStoreBannerUseCase(h.sellerRepository, h.cloudinarySvc)
+	return controller.NewUploadStoreBannerController(uploadStoreBannerUseCase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`
