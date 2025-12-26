@@ -6,10 +6,6 @@ import (
 	"marketplace/internal/user-service/domain"
 	"mime/multipart"
 
-	"github.com/cloudinary/cloudinary-go/v2"
-	"github.com/cloudinary/cloudinary-go/v2/api"
-	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
-
 	"github.com/google/uuid"
 )
 
@@ -18,10 +14,10 @@ type UploadAvatarUseCase interface {
 }
 type uploadAvatarUseCase struct {
 	repo       domain.UserRepository
-	cloudinary *cloudinary.Cloudinary
+	cloudinary domain.ImageService
 }
 
-func NewUploadAvatarUseCase(repo domain.UserRepository, cloudinary *cloudinary.Cloudinary) UploadAvatarUseCase {
+func NewUploadAvatarUseCase(repo domain.UserRepository, cloudinary domain.ImageService) UploadAvatarUseCase {
 	return &uploadAvatarUseCase{
 		repo:       repo,
 		cloudinary: cloudinary,
@@ -36,17 +32,12 @@ func (u *uploadAvatarUseCase) Execute(ctx context.Context, userID uuid.UUID, fil
 	}
 	defer file.Close()
 
-	uploadRes, err := u.cloudinary.Upload.Upload(ctx, file, uploader.UploadParams{
-		Folder:         "profile_pictures",
-		PublicID:       userID.String(),
-		Overwrite:      api.Bool(true),                            // Eklemeyi unutma
-		Invalidate:     api.Bool(true),                            // Eski resim CDN'den de temizlensin                      // Kullanıcı ID'sini isim yaparsak, her yeni yüklemede eski resmin üzerine yazar
-		Transformation: "c_fill,g_face,h_500,w_500,q_auto,f_auto", // Otomatik yüz odaklı 500x500 kare yap
-	})
+	uploadRes, err := u.cloudinary.UploadAvatar(ctx, fileHeader, userID.String())
+
 	if err != nil {
 		return err
 	}
-	err = u.repo.UpdateAvatar(ctx, userID, uploadRes.SecureURL)
+	err = u.repo.UpdateAvatar(ctx, userID, uploadRes)
 	if err != nil {
 		return err
 	}

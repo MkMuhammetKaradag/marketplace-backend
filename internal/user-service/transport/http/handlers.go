@@ -2,7 +2,6 @@
 package http
 
 import (
-	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/gofiber/fiber/v2"
 
 	"marketplace/internal/user-service/domain"
@@ -14,10 +13,10 @@ type Handlers struct {
 	userService       domain.UserService
 	userRepository    domain.UserRepository
 	sessionRepository domain.SessionRepository
-	cloudinary        *cloudinary.Cloudinary
+	cloudinary        domain.ImageService
 }
 
-func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository, cloudinary *cloudinary.Cloudinary) *Handlers {
+func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository, cloudinary domain.ImageService) *Handlers {
 	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo, cloudinary: cloudinary}
 }
 

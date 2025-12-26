@@ -18,18 +18,16 @@ import (
 	messaginghandler "marketplace/internal/user-service/transport/messaging"
 
 	"time"
-
-	"github.com/cloudinary/cloudinary-go/v2"
 )
 
 type App struct {
-	cfg         config.Config
-	server      *server.Server
-	repository  domain.UserRepository
-	sessionRepo domain.SessionRepository
-	messaging   domain.Messaging
-	consumer    *kafka.Consumer
-	cloudinary  *cloudinary.Cloudinary
+	cfg           config.Config
+	server        *server.Server
+	repository    domain.UserRepository
+	sessionRepo   domain.SessionRepository
+	messaging     domain.Messaging
+	consumer      *kafka.Consumer
+	cloudinarySvc domain.ImageService
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -39,13 +37,13 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 
 	return &App{
-		cfg:         cfg,
-		server:      container.server,
-		repository:  container.repo,
-		sessionRepo: container.sessionRepo,
-		messaging:   container.messaging,
-		consumer:    container.consumer,
-		cloudinary:  container.cloudinary,
+		cfg:           cfg,
+		server:        container.server,
+		repository:    container.repo,
+		sessionRepo:   container.sessionRepo,
+		messaging:     container.messaging,
+		consumer:      container.consumer,
+		cloudinarySvc: container.cloudinarySvc,
 	}, nil
 }
 
@@ -68,12 +66,12 @@ func (a *App) Start() error {
 }
 
 type container struct {
-	repo        domain.UserRepository
-	sessionRepo domain.SessionRepository
-	server      *server.Server
-	messaging   domain.Messaging
-	consumer    *kafka.Consumer
-	cloudinary  *cloudinary.Cloudinary
+	repo          domain.UserRepository
+	sessionRepo   domain.SessionRepository
+	server        *server.Server
+	messaging     domain.Messaging
+	consumer      *kafka.Consumer
+	cloudinarySvc domain.ImageService
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -92,12 +90,13 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init kafka consumer: %w", err)
 	}
-	cloudinary, err := infrastructure.NewCloudinary(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
+
+	cloudinarySvc, err := infrastructure.NewCloudinaryService(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
 	if err != nil {
-		return nil, fmt.Errorf("init cloudinary: %w", err)
+		return nil, fmt.Errorf("init cloudinary service: %w", err)
 	}
 	userService := domain.NewUserService(repo)
-	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo, cloudinary)
+	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo, cloudinarySvc)
 
 	router := httptransport.NewRouter(httpHandlers)
 
@@ -113,11 +112,11 @@ func buildContainer(cfg config.Config) (*container, error) {
 	httpServer := server.New(serverCfg, router, grpcHandler)
 
 	return &container{
-		repo:        repo,
-		server:      httpServer,
-		sessionRepo: sessionRepo,
-		messaging:   kafkaConsumer.Client(),
-		consumer:    kafkaConsumer,
-		cloudinary:  cloudinary,
+		repo:          repo,
+		server:        httpServer,
+		sessionRepo:   sessionRepo,
+		messaging:     kafkaConsumer.Client(),
+		consumer:      kafkaConsumer,
+		cloudinarySvc: cloudinarySvc,
 	}, nil
 }
