@@ -44,7 +44,7 @@ func (h *SellerApprovedUserHandler) Handle(ctx context.Context, msg *pb.Message)
 		return fmt.Errorf("failed to unmarshal payload to SellerApprovedData: %w", err)
 	}
 
-	idUUID, err := uuid.Parse(event.SellerId)
+	idUUID, err := uuid.Parse(event.UserId)
 	if err != nil {
 		return fmt.Errorf("invalid seller user id format: %w", err)
 	}

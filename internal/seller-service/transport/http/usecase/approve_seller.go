@@ -35,14 +35,15 @@ func (u *approveSellerUseCase) Execute(ctx context.Context, sellerId, approvedBy
 	// Publish message to Kafka
 
 	data := &pb.SellerApprovedData{
-		SellerId:   sellerUserId,
+		SellerId:   sellerId,
 		ApprovedBy: approvedBy,
+		UserId:     sellerUserId,
 	}
 	message := &pb.Message{
 		Id:          uuid.New().String(),
 		Type:        pb.MessageType_SELLER_APPROVED,
 		FromService: pb.ServiceType_SELLER_SERVICE,
-		ToServices:  []pb.ServiceType{pb.ServiceType_USER_SERVICE},
+		ToServices:  []pb.ServiceType{pb.ServiceType_USER_SERVICE, pb.ServiceType_PRODUCT_SERVICE},
 		Payload:     &pb.Message_SellerApprovedData{SellerApprovedData: data},
 	}
 

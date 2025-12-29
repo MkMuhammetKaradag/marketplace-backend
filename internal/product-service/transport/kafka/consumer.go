@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"marketplace/internal/user-service/config"
-	"marketplace/internal/user-service/domain"
+	"marketplace/internal/product-service/config"
+	"marketplace/internal/product-service/domain"
 	"marketplace/pkg/messaging"
 	pb "marketplace/pkg/proto/events"
 	"time"
@@ -66,13 +66,13 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		Topic:                 "main-events",
 		RetryTopic:            "retry-events",
 		DLQTopic:              "dlq-events",
-		ServiceType:           pb.ServiceType_USER_SERVICE,
+		ServiceType:           pb.ServiceType_PRODUCT_SERVICE,
 		EnableRetry:           true,
 		MaxRetries:            3,
 		ConnectionTimeout:     10 * time.Second,
 		MaxConcurrentHandlers: 10,
 		AllowedMessageTypes: map[pb.ServiceType][]pb.MessageType{
-			pb.ServiceType_USER_SERVICE: {
+			pb.ServiceType_PRODUCT_SERVICE: {
 				pb.MessageType_SELLER_APPROVED,
 				pb.MessageType_SELLER_REJECTED,
 			},

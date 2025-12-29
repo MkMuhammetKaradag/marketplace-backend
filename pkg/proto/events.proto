@@ -60,12 +60,14 @@ message UserCreatedData {
 message SellerApprovedData {
     string seller_id = 1;
     string approved_by = 2;
+    string user_id = 3;
 
 }
 message SellerRejectedData {
     string seller_id = 1;
     string rejected_by = 2;
     string reason = 3;
+    string user_id = 4;
 
 }
 

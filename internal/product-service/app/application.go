@@ -10,6 +10,9 @@ import (
 	"marketplace/internal/product-service/repository/postgres"
 	"marketplace/internal/product-service/server"
 	httptransport "marketplace/internal/product-service/transport/http"
+	"marketplace/internal/product-service/transport/kafka"
+	messaginghandler "marketplace/internal/product-service/transport/messaging"
+
 	"time"
 )
 
@@ -17,6 +20,8 @@ type App struct {
 	cfg        config.Config
 	server     *server.Server
 	repository domain.ProductRepository
+	messaging  domain.Messaging
+	consumer   *kafka.Consumer
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -29,13 +34,16 @@ func NewApp(cfg config.Config) (*App, error) {
 		cfg:        cfg,
 		server:     container.server,
 		repository: container.repo,
+		messaging:  container.messaging,
+		consumer:   container.consumer,
 	}, nil
 }
 
 func (a *App) Start() error {
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	a.consumer.Start(ctx)
 	log.Printf("starting user-service on %s", a.server.Address())
 	if err := a.server.Start(); err != nil {
 		return fmt.Errorf("server exited with error: %w", err)
@@ -46,8 +54,10 @@ func (a *App) Start() error {
 }
 
 type container struct {
-	repo   domain.ProductRepository
-	server *server.Server
+	repo      domain.ProductRepository
+	server    *server.Server
+	messaging domain.Messaging
+	consumer  *kafka.Consumer
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -58,8 +68,13 @@ func buildContainer(cfg config.Config) (*container, error) {
 
 	productService := domain.NewProductService(repo)
 	httpHandlers := httptransport.NewHandlers(productService, repo)
-
+	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
 	router := httptransport.NewRouter(httpHandlers)
+
+	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
+	if err != nil {
+		return nil, fmt.Errorf("init kafka consumer: %w", err)
+	}
 
 	serverCfg := server.Config{
 		Port:         cfg.Server.Port,
@@ -72,7 +87,9 @@ func buildContainer(cfg config.Config) (*container, error) {
 	httpServer := server.New(serverCfg, router)
 
 	return &container{
-		repo:   repo,
-		server: httpServer,
+		repo:      repo,
+		server:    httpServer,
+		messaging: kafkaConsumer.Client(),
+		consumer:  kafkaConsumer,
 	}, nil
 }

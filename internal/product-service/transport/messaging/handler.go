@@ -1,22 +1,22 @@
 package messaginghandler
 
 import (
-	"marketplace/internal/user-service/domain"
-	"marketplace/internal/user-service/transport/messaging/controller"
-	"marketplace/internal/user-service/transport/messaging/usecase"
+	"marketplace/internal/product-service/domain"
+	"marketplace/internal/product-service/transport/messaging/controller"
+	"marketplace/internal/product-service/transport/messaging/usecase"
 
 	pb "marketplace/pkg/proto/events"
 )
 
 type Handlers struct {
-	userRepository domain.UserRepository
+	productRepository domain.ProductRepository
 }
 
-func NewMessageHandlers(repository domain.UserRepository) *Handlers {
-	return &Handlers{userRepository: repository}
+func NewMessageHandlers(repository domain.ProductRepository) *Handlers {
+	return &Handlers{productRepository: repository}
 }
 
-func SetupMessageHandlers(repository domain.UserRepository) map[pb.MessageType]domain.MessageHandler {
+func SetupMessageHandlers(repository domain.ProductRepository) map[pb.MessageType]domain.MessageHandler {
 	sellerApprovedUseCase := usecase.NewSellerApprovedUseCase(repository)
 	sellerApprovedHandler := controller.NewSellerApprovedHandler(sellerApprovedUseCase)
 

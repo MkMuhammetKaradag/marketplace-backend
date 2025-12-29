@@ -386,6 +386,7 @@ type SellerApprovedData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SellerId      string                 `protobuf:"bytes,1,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
 	ApprovedBy    string                 `protobuf:"bytes,2,opt,name=approved_by,json=approvedBy,proto3" json:"approved_by,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -434,11 +435,19 @@ func (x *SellerApprovedData) GetApprovedBy() string {
 	return ""
 }
 
+func (x *SellerApprovedData) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 type SellerRejectedData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SellerId      string                 `protobuf:"bytes,1,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
 	RejectedBy    string                 `protobuf:"bytes,2,opt,name=rejected_by,json=rejectedBy,proto3" json:"rejected_by,omitempty"`
 	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	UserId        string                 `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -494,6 +503,13 @@ func (x *SellerRejectedData) GetReason() string {
 	return ""
 }
 
+func (x *SellerRejectedData) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
@@ -524,16 +540,18 @@ const file_events_proto_rawDesc = "" +
 	"\x0fUserCreatedData\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\"R\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\"k\n" +
 	"\x12SellerApprovedData\x12\x1b\n" +
 	"\tseller_id\x18\x01 \x01(\tR\bsellerId\x12\x1f\n" +
 	"\vapproved_by\x18\x02 \x01(\tR\n" +
-	"approvedBy\"j\n" +
+	"approvedBy\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\"\x83\x01\n" +
 	"\x12SellerRejectedData\x12\x1b\n" +
 	"\tseller_id\x18\x01 \x01(\tR\bsellerId\x12\x1f\n" +
 	"\vrejected_by\x18\x02 \x01(\tR\n" +
 	"rejectedBy\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason*\x87\x01\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x17\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId*\x87\x01\n" +
 	"\vMessageType\x12\x18\n" +
 	"\x14UNKNOWN_MESSAGE_TYPE\x10\x00\x12\x10\n" +
 	"\fUSER_CREATED\x10\x01\x12\x10\n" +

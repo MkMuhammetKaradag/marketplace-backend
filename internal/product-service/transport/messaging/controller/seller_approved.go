@@ -5,24 +5,24 @@ import (
 
 	"fmt"
 
-	"marketplace/internal/user-service/transport/messaging/usecase"
+	"marketplace/internal/product-service/transport/messaging/usecase"
 	pb "marketplace/pkg/proto/events"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
 
-type SellerApprovedUserHandler struct {
+type SellerApprovedHandler struct {
 	usecase usecase.SellerApprovedUseCase
 }
 
-func NewSellerApprovedHandler(usecase usecase.SellerApprovedUseCase) *SellerApprovedUserHandler {
-	return &SellerApprovedUserHandler{
+func NewSellerApprovedHandler(usecase usecase.SellerApprovedUseCase) *SellerApprovedHandler {
+	return &SellerApprovedHandler{
 		usecase: usecase,
 	}
 }
 
-func (h *SellerApprovedUserHandler) Handle(ctx context.Context, msg *pb.Message) error {
+func (h *SellerApprovedHandler) Handle(ctx context.Context, msg *pb.Message) error {
 
 	data := msg.GetSellerApprovedData()
 	if data == nil {
@@ -30,11 +30,8 @@ func (h *SellerApprovedUserHandler) Handle(ctx context.Context, msg *pb.Message)
 	}
 	fmt.Println("Seller approved use case executed", data)
 
-	// Safely convert payload to struct
 	var event pb.SellerApprovedData
 
-	// Convert interface{} (map) back to bytes then to struct
-	// This handles both map[string]interface{} (from JSON) and struct (if passed internally) cases reliably
 	payloadBytes, err := proto.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)
