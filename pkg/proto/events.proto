@@ -39,12 +39,13 @@ message Message {
     bool critical = 8;
     int32 retry_count = 9;
     google.protobuf.Timestamp retry_after = 10;
+    string last_error = 11;
 
     // Payload için bir oneof yapısı kullanabiliriz
     oneof payload {
-        UserCreatedData user_created_data = 11;
-        SellerApprovedData seller_approved_data = 12;
-        SellerRejectedData seller_rejected_data = 13;
+        UserCreatedData user_created_data = 12;
+        SellerApprovedData seller_approved_data = 13;
+        SellerRejectedData seller_rejected_data = 14;
         // Diğer olay tipleri için buraya payload'lar eklenecek
        
 

@@ -2,8 +2,10 @@ package messaging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -27,7 +29,7 @@ func (l QuietKafkaLogger) Printf(format string, v ...interface{}) {
 		"request exceeded",
 		"allocated time",
 	}
-	
+
 	for _, pattern := range noisyPatterns {
 		if strings.Contains(msg, pattern) {
 			return
@@ -43,10 +45,10 @@ type KafkaClient struct {
 	mu          sync.RWMutex
 	closed      bool
 	serviceType pb.ServiceType
-	
+
 	// Retry mechanism
 	retryProducer *kafka.Writer
-	
+
 	// Worker pool for concurrent processing
 	workerPool chan struct{}
 	wg         sync.WaitGroup
@@ -66,7 +68,7 @@ func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
 	}
 
 	quietLogger := QuietKafkaLogger{}
-	
+
 	// Main producer
 	kc.producer = &kafka.Writer{
 		Addr:         kafka.TCP(config.Brokers...),
@@ -100,7 +102,7 @@ func NewKafkaClient(config KafkaConfig) (*KafkaClient, error) {
 
 	log.Printf("✓ Kafka Client initialized [service=%s, topic=%s, workers=%d]",
 		config.ServiceType.String(), config.Topic, cap(kc.workerPool))
-	
+
 	return kc, nil
 }
 
@@ -177,7 +179,7 @@ func (kc *KafkaClient) Close() error {
 	kc.wg.Wait()
 
 	var errs []error
-	
+
 	if kc.producer != nil {
 		if err := kc.producer.Close(); err != nil {
 			errs = append(errs, fmt.Errorf("close producer: %w", err))
@@ -214,7 +216,7 @@ func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *pb.Message) erro
 	if msg.Created == nil {
 		msg.Created = timestamppb.Now()
 	}
-	
+
 	isCritical := kc.isCriticalMessageType(msg.Type)
 	msg.Critical = isCritical
 	msg.FromService = kc.serviceType
@@ -242,14 +244,14 @@ func (kc *KafkaClient) PublishMessage(ctx context.Context, msg *pb.Message) erro
 	// Publish with retries
 	err = kc.producer.WriteMessages(publishCtx, kafkaMsg)
 	if err != nil {
-		log.Printf("✗ Publish failed [id=%s, type=%s]: %v", 
+		log.Printf("✗ Publish failed [id=%s, type=%s]: %v",
 			msg.Id, msg.Type.String(), err)
 		return fmt.Errorf("write message failed: %w", err)
 	}
 
 	log.Printf("✓ Published [id=%s, type=%s, critical=%v]",
 		msg.Id, msg.Type.String(), isCritical)
-	
+
 	return nil
 }
 
@@ -308,7 +310,6 @@ func (kc *KafkaClient) processMessage(
 	reader *kafka.Reader,
 	handler MessageHandler,
 ) error {
-	// Fetch message with timeout
 	fetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -323,26 +324,84 @@ func (kc *KafkaClient) processMessage(
 		return err
 	}
 
-	// Unmarshal message
 	var message pb.Message
 	if err := proto.Unmarshal(m.Value, &message); err != nil {
 		log.Printf("✗ Unmarshal failed [partition=%d, offset=%d]: %v",
 			m.Partition, m.Offset, err)
-		return reader.CommitMessages(ctx, m) // Skip bad message
+		return reader.CommitMessages(ctx, m)
 	}
 
-	// Filter messages not for this service
+	// ⭐ YENİ: RetryAfter kontrolü - Eğer henüz zamanı gelmediyse goroutine'de beklet
+	if message.RetryAfter != nil {
+		retryTime := message.RetryAfter.AsTime()
+		now := time.Now()
+
+		// 500ms tolerans ekle (network/processing delay için)
+		if now.Add(500 * time.Millisecond).Before(retryTime) {
+			waitDuration := retryTime.Sub(now)
+
+			log.Printf("⏳ Delaying message [id=%s, wait=%v, retry_at=%s]",
+				message.Id,
+				waitDuration.Round(time.Second),
+				retryTime.Format("15:04:05"))
+
+			// Mesajı commit et (tekrar fetch edilmesin)
+			if err := reader.CommitMessages(ctx, m); err != nil {
+				log.Printf("✗ Commit failed for delayed message [id=%s]: %v", message.Id, err)
+			}
+
+			// Goroutine'de bekle ve sonra işle
+			kc.wg.Add(1)
+			go func(msg pb.Message) { // Mesajı kopyala
+				defer kc.wg.Done()
+
+				select {
+				case <-time.After(waitDuration):
+					// Süre doldu, işleme başla
+					log.Printf("✓ Retry delay completed [id=%s], starting processing", msg.Id)
+
+					// Worker pool'dan slot al
+					kc.workerPool <- struct{}{}
+					defer func() { <-kc.workerPool }()
+
+					// Handler'ı çağır
+					log.Printf("⚙ Processing [id=%s, type=%s, retry=%d]",
+						msg.Id, msg.Type.String(), msg.RetryCount)
+
+					handlerCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+
+					err := handler(handlerCtx, &msg)
+					if err != nil {
+						log.Printf("✗ Handler failed after retry delay [id=%s]: %v", msg.Id, err)
+						// Tekrar başarısız olursa retry/DLQ mantığı devreye girer
+						kc.handleFailureAfterDelay(context.Background(), &msg, err)
+					} else {
+						log.Printf("✓ Processed successfully after retry delay [id=%s]", msg.Id)
+					}
+
+				case <-ctx.Done():
+					log.Printf("⊘ Context cancelled while waiting for retry [id=%s]", msg.Id)
+					return
+				}
+			}(message) // message'ı değer olarak geçir
+
+			return nil // Hemen dön, mesaj arka planda işlenecek
+		}
+
+		log.Printf("✓ Retry time reached, processing immediately [id=%s]", message.Id)
+	}
+
 	if !kc.shouldProcessMessage(&message) {
 		return reader.CommitMessages(ctx, m)
 	}
 
-	// Process with worker pool (concurrent processing)
-	kc.workerPool <- struct{}{} // Acquire worker
+	kc.workerPool <- struct{}{}
 	kc.wg.Add(1)
 
 	go func() {
 		defer func() {
-			<-kc.workerPool // Release worker
+			<-kc.workerPool
 			kc.wg.Done()
 		}()
 
@@ -351,8 +410,26 @@ func (kc *KafkaClient) processMessage(
 
 	return nil
 }
+func (kc *KafkaClient) handleFailureAfterDelay(
+	ctx context.Context,
+	message *pb.Message,
+	err error,
+) {
+	if err != nil {
+		message.LastError = err.Error()
+	}
 
-// handleMessage processes a single message with retry/DLQ logic
+	// Retry kontrolü
+	if kc.shouldRetry(message) {
+		message.RetryCount++
+		log.Printf("⟳ Retrying after delayed failure [id=%s, count=%d]",
+			message.Id, message.RetryCount)
+		kc.sendToRetry(ctx, message)
+	} else {
+		log.Printf("⚠ Max retries reached after delayed failure [id=%s]", message.Id)
+		kc.sendToDLQ(ctx, message, err)
+	}
+}
 func (kc *KafkaClient) handleMessage(
 	ctx context.Context,
 	reader *kafka.Reader,
@@ -371,12 +448,12 @@ func (kc *KafkaClient) handleMessage(
 
 	if err != nil {
 		log.Printf("✗ Handler failed [id=%s]: %v", message.Id, err)
-		kc.handleFailure(ctx, message, reader, kafkaMsg)
+		kc.handleFailure(ctx, message, reader, kafkaMsg, err)
 		return
 	}
 
 	log.Printf("✓ Processed successfully [id=%s]", message.Id)
-	
+
 	// Commit offset
 	if err := reader.CommitMessages(context.Background(), kafkaMsg); err != nil {
 		log.Printf("✗ Commit failed [id=%s]: %v", message.Id, err)
@@ -389,14 +466,21 @@ func (kc *KafkaClient) handleFailure(
 	message *pb.Message,
 	reader *kafka.Reader,
 	kafkaMsg kafka.Message,
+	err error,
 ) {
+
+	if err != nil {
+		message.LastError = err.Error() // Bu satırın çalıştığından emin ol
+	}
+
 	// Check if should retry
 	if kc.shouldRetry(message) {
 		message.RetryCount++
+
 		kc.sendToRetry(ctx, message)
 	} else {
 		// Send to DLQ
-		kc.sendToDLQ(ctx, message)
+		kc.sendToDLQ(ctx, message, err)
 	}
 
 	// Always commit original message to avoid reprocessing
@@ -409,13 +493,13 @@ func (kc *KafkaClient) handleFailure(
 func (kc *KafkaClient) sendToRetry(ctx context.Context, msg *pb.Message) {
 	if kc.retryProducer == nil {
 		log.Printf("✗ Retry producer not configured [id=%s]", msg.Id)
-		kc.sendToDLQ(ctx, msg)
+		kc.sendToDLQ(ctx, msg, errors.New("retry producer not configured"))
 		return
 	}
 
-	// Calculate exponential backoff delay
 	delaySeconds := kc.calculateRetryDelay(int(msg.RetryCount))
-	msg.RetryAfter = timestamppb.New(time.Now().Add(time.Duration(delaySeconds) * time.Second))
+	retryTime := time.Now().Add(time.Duration(delaySeconds) * time.Second)
+	msg.RetryAfter = timestamppb.New(retryTime)
 
 	messageBytes, err := proto.Marshal(msg)
 	if err != nil {
@@ -431,22 +515,23 @@ func (kc *KafkaClient) sendToRetry(ctx context.Context, msg *pb.Message) {
 		Value: messageBytes,
 		Headers: []kafka.Header{
 			{Key: "RetryCount", Value: []byte(fmt.Sprintf("%d", msg.RetryCount))},
-			{Key: "RetryAfter", Value: []byte(msg.RetryAfter.AsTime().Format(time.RFC3339))},
+			{Key: "RetryAfter", Value: []byte(retryTime.Format(time.RFC3339))},
+			{Key: "DelaySeconds", Value: []byte(fmt.Sprintf("%d", delaySeconds))},
 		},
 	}
 
 	if err := kc.retryProducer.WriteMessages(retryCtx, kafkaMsg); err != nil {
 		log.Printf("✗ Send to retry failed [id=%s]: %v", msg.Id, err)
-		kc.sendToDLQ(ctx, msg)
+		kc.sendToDLQ(ctx, msg, err)
 		return
 	}
 
-	log.Printf("⟳ Sent to retry [id=%s, count=%d, delay=%ds]",
-		msg.Id, msg.RetryCount, delaySeconds)
+	log.Printf("⟳ Sent to retry [id=%s, count=%d, delay=%ds, retry_at=%s]",
+		msg.Id, msg.RetryCount, delaySeconds, retryTime.Format("15:04:05"))
 }
 
 // sendToDLQ sends failed messages to Dead Letter Queue
-func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *pb.Message) {
+func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *pb.Message, errReason error) {
 	if kc.config.DLQTopic == "" {
 		log.Printf("✗ DLQ not configured [id=%s]", msg.Id)
 		return
@@ -474,6 +559,7 @@ func (kc *KafkaClient) sendToDLQ(ctx context.Context, msg *pb.Message) {
 		Key:   []byte(msg.Id),
 		Value: messageBytes,
 		Headers: []kafka.Header{
+			{Key: "ErrorReason", Value: []byte(errReason.Error())},
 			{Key: "OriginalTopic", Value: []byte(kc.config.Topic)},
 			{Key: "FailedTimestamp", Value: []byte(time.Now().Format(time.RFC3339))},
 			{Key: "FinalRetryCount", Value: []byte(fmt.Sprintf("%d", msg.RetryCount))},
@@ -544,11 +630,20 @@ func (kc *KafkaClient) shouldRetry(msg *pb.Message) bool {
 }
 
 func (kc *KafkaClient) calculateRetryDelay(retryCount int) int {
-	// Exponential backoff: 2^retryCount seconds (max 5 minutes)
-	delay := 1 << retryCount // 2^retryCount
-	if delay > 300 {
-		delay = 300
+	// Exponential backoff: 2^retryCount seconds
+
+	if retryCount <= 0 {
+		return 5 // İlk retry için 2 saniye
 	}
+
+	delay := 5 << (retryCount - 1) // 2 * 2^(retryCount-1)
+
+	maxDelay := 300 // 5  max
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+
+	log.Printf("📊 Retry delay calculated [count=%d, delay=%ds]", retryCount, delay)
 	return delay
 }
 
@@ -559,9 +654,123 @@ func (kc *KafkaClient) getConsumerGroupID(groupID *string) string {
 	return kc.serviceType.String() + "-group"
 }
 
+// ConsumeDLQWithRecovery fonksiyonu, DLQ topic'ini dinler ve kritik mesajları tekrar işleme sokar
+func (kc *KafkaClient) ConsumeDLQWithRecovery(ctx context.Context, handler MessageHandler) error {
+	if kc.config.DLQTopic == "" {
+		return fmt.Errorf("DLQ topic not configured for recovery consumer")
+	}
+
+	readerConfig := kafka.ReaderConfig{
+		Brokers: kc.config.Brokers,
+		GroupID: kc.serviceType.String() + "-dlq-recovery-group",
+		Topic:   kc.config.DLQTopic,
+		// DLQ için genellikle FirstOffset (en baştan başla) ayarı tercih edilir
+		StartOffset: kafka.FirstOffset,
+		// ... diğer ayarlar ...
+	}
+	reader := kafka.NewReader(readerConfig)
+	defer reader.Close()
+
+	log.Printf("Kafka DLQ Recovery Consumer started for service %s, DLQ topic: %s, group: %s",
+		kc.serviceType.String(), kc.config.DLQTopic, readerConfig.GroupID)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("DLQ Recovery Consumer context cancelled, shutting down.")
+			return nil
+		default:
+			m, err := reader.FetchMessage(ctx)
+			if err != nil {
+				if err == context.Canceled {
+					return nil
+				}
+				log.Printf("Error fetching message from DLQ: %v", err)
+				time.Sleep(time.Second)
+				continue
+			}
+
+			var message pb.Message
+			if err := proto.Unmarshal(m.Value, &message); err != nil {
+				log.Printf("Failed to unmarshal protobuf message from DLQ: %v", err)
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset for bad DLQ message: %v", commitErr)
+				}
+				continue
+			}
+
+			log.Printf("Received message from DLQ [ID: %s, Type: %s]. Attempting recovery...",
+				message.Id, message.Type.String())
+
+			if kc.isCriticalMessageType(message.Type) {
+				log.Printf("Critical message from DLQ, resetting retry count and re-publishing: %s", message.Id)
+				//message.RetryCount = 0  // Sıfırdan denemek için retry sayısını resetle
+				//message.Critical = true // Kritik olarak işaretle (eğer değilse)
+				kc.saveCriticalMessageToStorage(&message)
+				// Mesajı tekrar ana topice veya orijinal servise özel topice gönder
+				// Bu, PublishMessage fonksiyonunun içinde ToServices'a göre doğru topice yönlendirilmesi anlamına gelir.
+				// Bu örnekte PublishMessage ana topice gönderiyor, bu da consumer tarafından tekrar işlenmesini sağlar.
+				// if err := kc.PublishMessage(ctx, &message); err != nil {
+				// 	log.Printf("Failed to re-publish critical message from DLQ for ID %s: %v", message.Id, err)
+				// 	// Tekrar yayınlanamazsa, DLQ'da kalmalı veya kalıcı depolamaya kaydedilmeli.
+				// 	// Bu durumda, offset'i commit etmeyiz ve mesaj tekrar gelir.
+				// 	// Ya da Nack + requeue mantığı Kafka'da olmadığı için, manuel olarak DLQ'ya tekrar gönderebiliriz.
+				// 	// Bu basit örnekte, hata durumunda mesajın DLQ'da kalmasına izin veriyoruz.
+				// 	kc.saveCriticalMessageToStorage(&message) // Ek güvenlik için kaydet
+				// } else {
+				//log.Printf("Successfully re-published critical message from DLQ for ID %s. Committing offset.", message.Id)
+				if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+					log.Printf("Failed to commit offset for recovered DLQ message: %v", commitErr)
+				}
+				// }
+			} else {
+				// Kritik olmayan mesajlar için normal işleme (eğer DLQ handler'ı farklı bir işlem yapacaksa)
+				log.Printf("Non-critical message from DLQ, passing to handler: %s", message.Id)
+				err := handler(ctx, &message)
+				if err != nil {
+					log.Printf("Handler failed for non-critical DLQ message ID %s: %v", message.Id, err)
+					// Hata durumunda commit etmeyebiliriz
+				} else {
+					if commitErr := reader.CommitMessages(ctx, m); commitErr != nil {
+						log.Printf("Failed to commit offset for handled non-critical DLQ message: %v", commitErr)
+					}
+				}
+			}
+		}
+	}
+}
 func (kc *KafkaClient) getConsumerTopic(topic *string) string {
 	if topic != nil {
 		return *topic
 	}
 	return kc.config.Topic
+}
+func (kc *KafkaClient) saveCriticalMessageToStorage(msg *pb.Message) {
+
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		log.Printf("!!! Marshal error: %v", err)
+	}
+
+	humanReadable := fmt.Sprintf("ID: %s\nType: %s\nTime: %s\nLAST ERROR: %s\nPayload: %s",
+		msg.Id,
+		msg.Type.String(),
+		time.Now().Format(time.RFC3339),
+		msg.LastError,
+		msg.String(),
+	)
+
+	filename := fmt.Sprintf("critical_messages/%s_%s.pb", msg.Type.String(), msg.Id)
+	logName := filename + ".txt"
+
+	os.MkdirAll("critical_messages", 0755)
+
+	// Binary dosyayı yaz
+	os.WriteFile(filename, data, 0644)
+
+	// İnsan okuyabilsin diye txt dosyasını yaz
+	os.WriteFile(logName, []byte(humanReadable), 0644)
+
+	log.Printf("💾 Message saved! MsgError: %s, MarshalError: %v", msg.LastError, err)
+
 }

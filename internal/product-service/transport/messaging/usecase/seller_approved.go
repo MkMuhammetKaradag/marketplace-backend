@@ -25,7 +25,7 @@ func (u *sellerApprovedUseCase) Execute(ctx context.Context, sellerID uuid.UUID)
 
 	err := u.repository.AddSeller(ctx, sellerID, "approved")
 	if err != nil {
-		return fmt.Errorf("failed to add user role: %w", err)
+		return fmt.Errorf("failed to add seller: %w", err)
 	}
 
 	return nil

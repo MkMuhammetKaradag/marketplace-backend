@@ -154,6 +154,7 @@ type Message struct {
 	Critical    bool                   `protobuf:"varint,8,opt,name=critical,proto3" json:"critical,omitempty"`
 	RetryCount  int32                  `protobuf:"varint,9,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
 	RetryAfter  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=retry_after,json=retryAfter,proto3" json:"retry_after,omitempty"`
+	LastError   string                 `protobuf:"bytes,11,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
 	// Payload için bir oneof yapısı kullanabiliriz
 	//
 	// Types that are valid to be assigned to Payload:
@@ -266,6 +267,13 @@ func (x *Message) GetRetryAfter() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Message) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
 func (x *Message) GetPayload() isMessage_Payload {
 	if x != nil {
 		return x.Payload
@@ -305,15 +313,15 @@ type isMessage_Payload interface {
 }
 
 type Message_UserCreatedData struct {
-	UserCreatedData *UserCreatedData `protobuf:"bytes,11,opt,name=user_created_data,json=userCreatedData,proto3,oneof"`
+	UserCreatedData *UserCreatedData `protobuf:"bytes,12,opt,name=user_created_data,json=userCreatedData,proto3,oneof"`
 }
 
 type Message_SellerApprovedData struct {
-	SellerApprovedData *SellerApprovedData `protobuf:"bytes,12,opt,name=seller_approved_data,json=sellerApprovedData,proto3,oneof"`
+	SellerApprovedData *SellerApprovedData `protobuf:"bytes,13,opt,name=seller_approved_data,json=sellerApprovedData,proto3,oneof"`
 }
 
 type Message_SellerRejectedData struct {
-	SellerRejectedData *SellerRejectedData `protobuf:"bytes,13,opt,name=seller_rejected_data,json=sellerRejectedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
+	SellerRejectedData *SellerRejectedData `protobuf:"bytes,14,opt,name=seller_rejected_data,json=sellerRejectedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
 }
 
 func (*Message_UserCreatedData) isMessage_Payload() {}
@@ -514,7 +522,7 @@ var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe2\x05\n" +
+	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\x81\x06\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.events.MessageTypeR\x04type\x124\n" +
@@ -529,10 +537,12 @@ const file_events_proto_rawDesc = "" +
 	"retryCount\x12;\n" +
 	"\vretry_after\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"retryAfter\x12E\n" +
-	"\x11user_created_data\x18\v \x01(\v2\x17.events.UserCreatedDataH\x00R\x0fuserCreatedData\x12N\n" +
-	"\x14seller_approved_data\x18\f \x01(\v2\x1a.events.SellerApprovedDataH\x00R\x12sellerApprovedData\x12N\n" +
-	"\x14seller_rejected_data\x18\r \x01(\v2\x1a.events.SellerRejectedDataH\x00R\x12sellerRejectedData\x1a:\n" +
+	"retryAfter\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\v \x01(\tR\tlastError\x12E\n" +
+	"\x11user_created_data\x18\f \x01(\v2\x17.events.UserCreatedDataH\x00R\x0fuserCreatedData\x12N\n" +
+	"\x14seller_approved_data\x18\r \x01(\v2\x1a.events.SellerApprovedDataH\x00R\x12sellerApprovedData\x12N\n" +
+	"\x14seller_rejected_data\x18\x0e \x01(\v2\x1a.events.SellerRejectedDataH\x00R\x12sellerRejectedData\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +

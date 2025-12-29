@@ -39,7 +39,7 @@ func (c *Consumer) Start(ctx context.Context) {
 		}
 		return handler.Handle(ctx, msg)
 	}
-
+	ctx, cancel := context.WithCancel(ctx)
 	// Ana Consumer
 	go func() {
 		log.Println("Starting Kafka consumer for main-events...")
@@ -47,6 +47,27 @@ func (c *Consumer) Start(ctx context.Context) {
 		topic := c.cfg.Topic
 		if err := c.client.ConsumeMessages(ctx, messageRouter, &topic, &groupID); err != nil {
 			log.Printf("Main consumer error: %v", err)
+			cancel()
+		}
+	}()
+
+	go func() {
+		log.Println("Starting Kafka consumer for retry-events...")
+		// Aynı KafkaClient'ı kullanarak, sadece farklı bir topic ve grup adı veriyoruz.
+		groupID := c.cfg.ServiceType.String() + "-retry-group"
+		topic := c.cfg.RetryTopic
+		if err := c.client.ConsumeMessages(ctx, messageRouter, &topic, &groupID); err != nil {
+			log.Printf("Retry consumer error: %v", err)
+			cancel()
+		}
+	}()
+
+	// DLQ Consumer
+	go func() {
+		log.Println("Starting DLQ recovery consumer...")
+		if err := c.client.ConsumeDLQWithRecovery(ctx, messageRouter); err != nil {
+			log.Printf("DLQ consumer error: %v", err)
+			cancel()
 		}
 	}()
 }
