@@ -1,0 +1,4 @@
+server:
+  port: '8084'
+  grpcPort: '3004'
+  host: '0.0.0.0'
