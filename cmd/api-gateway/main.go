@@ -17,9 +17,10 @@ func main() {
 	// Important: Ensure these URLs match your actual service ports or docker-compose
 	application.RegisterService("user-service", []string{"http://localhost:8081", "http://localhost:8081"}, "/users")
 	application.RegisterService("seller-service", []string{"http://localhost:8083"}, "/sellers")
-	application.RegisterService("auth-service", []string{"http://localhost:8084"}, "/auth")
+	// application.RegisterService("auth-service", []string{"http://localhost:8084"}, "/auth")
 	application.RegisterService("test-service", []string{"http://localhost:8082"}, "/test")
 	application.RegisterService("chat-service", []string{"http://localhost:8085"}, "/chat")
+	application.RegisterService("product-service", []string{"http://localhost:8084"}, "/products")
 
 	log.Printf("🚀 Gateway started on %s", config.GatewayPort)
 	log.Printf("ℹ️  Usage:")

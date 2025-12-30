@@ -71,8 +71,8 @@ func GetDefaultRouteConfigs() map[string]RouteConfig {
 			UserLimit: 5.0 / 60, UserBurst: 3,
 		},
 		"default": {
-			GlobalLimit: 1.0 / 60, GlobalBurst: 1,
-			UserLimit: 1.0 / 60, UserBurst: 1,
+			GlobalLimit: 1000.0 / 60, GlobalBurst: 1000,
+			UserLimit: 1000.0 / 60, UserBurst: 1000,
 		},
 	}
 }
@@ -123,6 +123,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 			Permissions: PermissionManageOwnStore,
 		},
 		"/sellers/upload-store-banner/:seller_id": {
+			Permissions: PermissionManageOwnStore,
+		},
+		"/products/create": {
 			Permissions: PermissionManageOwnStore,
 		},
 	}

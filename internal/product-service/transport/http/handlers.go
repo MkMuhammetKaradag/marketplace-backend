@@ -3,17 +3,19 @@ package http
 
 import (
 	"marketplace/internal/product-service/domain"
+	"marketplace/internal/product-service/transport/http/controller"
+	"marketplace/internal/product-service/transport/http/usecase"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handlers struct {
-	userService    domain.ProductService
-	userRepository domain.ProductRepository
+	userService       domain.ProductService
+	productRepository domain.ProductRepository
 }
 
 func NewHandlers(userService domain.ProductService, repository domain.ProductRepository) *Handlers {
-	return &Handlers{userService: userService, userRepository: repository}
+	return &Handlers{userService: userService, productRepository: repository}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -23,6 +25,11 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 		Info:    "Fiber handler connected to domain layer",
 	}
 	return c.JSON(resp)
+}
+
+func (h *Handlers) CreateProduct() *controller.CreateProductController {
+	usecase := usecase.NewCreateProductUseCase(h.productRepository)
+	return controller.NewCreateProductController(usecase)
 }
 
 type HelloResponse struct {

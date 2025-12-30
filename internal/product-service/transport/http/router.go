@@ -3,6 +3,8 @@ package http
 
 import (
 	"fmt"
+	"marketplace/internal/product-service/handler"
+	"marketplace/internal/product-service/transport/http/controller"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -18,7 +20,10 @@ func NewRouter(handlers *Handlers) *Router {
 func (r *Router) Register(app *fiber.App) {
 	//api := app.Group("/api/v1")
 
+	createProduct := r.handlers.CreateProduct()
+
 	app.Get("/hello", r.handlers.Hello)
+	app.Post("/create", handler.HandleWithFiber[controller.CreateProductRequest, controller.CreateProductResponse](createProduct))
 
 	app.Get("/profile", func(c *fiber.Ctx) error {
 		userIDStr := c.Get("X-User-ID")
