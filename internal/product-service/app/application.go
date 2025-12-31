@@ -7,6 +7,7 @@ import (
 	"log"
 	"marketplace/internal/product-service/config"
 	"marketplace/internal/product-service/domain"
+	"marketplace/internal/product-service/infrastructure"
 	"marketplace/internal/product-service/repository/postgres"
 	"marketplace/internal/product-service/server"
 	httptransport "marketplace/internal/product-service/transport/http"
@@ -17,11 +18,12 @@ import (
 )
 
 type App struct {
-	cfg        config.Config
-	server     *server.Server
-	repository domain.ProductRepository
-	messaging  domain.Messaging
-	consumer   *kafka.Consumer
+	cfg           config.Config
+	server        *server.Server
+	repository    domain.ProductRepository
+	messaging     domain.Messaging
+	consumer      *kafka.Consumer
+	cloudinarySvc domain.ImageService
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -54,10 +56,11 @@ func (a *App) Start() error {
 }
 
 type container struct {
-	repo      domain.ProductRepository
-	server    *server.Server
-	messaging domain.Messaging
-	consumer  *kafka.Consumer
+	repo          domain.ProductRepository
+	server        *server.Server
+	messaging     domain.Messaging
+	consumer      *kafka.Consumer
+	cloudinarySvc domain.ImageService
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -66,8 +69,12 @@ func buildContainer(cfg config.Config) (*container, error) {
 		return nil, fmt.Errorf("init postgres repository: %w", err)
 	}
 
+	cloudinarySvc, err := infrastructure.NewCloudinaryService(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
+	if err != nil {
+		return nil, fmt.Errorf("init cloudinary service: %w", err)
+	}
 	productService := domain.NewProductService(repo)
-	httpHandlers := httptransport.NewHandlers(productService, repo)
+	httpHandlers := httptransport.NewHandlers(productService, repo,cloudinarySvc)
 	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
 	router := httptransport.NewRouter(httpHandlers)
 

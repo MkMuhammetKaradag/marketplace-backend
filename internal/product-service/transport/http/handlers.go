@@ -12,10 +12,11 @@ import (
 type Handlers struct {
 	userService       domain.ProductService
 	productRepository domain.ProductRepository
+	cloudinarySvc     domain.ImageService
 }
 
-func NewHandlers(userService domain.ProductService, repository domain.ProductRepository) *Handlers {
-	return &Handlers{userService: userService, productRepository: repository}
+func NewHandlers(userService domain.ProductService, repository domain.ProductRepository, cloudinarySvc domain.ImageService) *Handlers {
+	return &Handlers{userService: userService, productRepository: repository, cloudinarySvc: cloudinarySvc}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -30,6 +31,11 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 func (h *Handlers) CreateProduct() *controller.CreateProductController {
 	usecase := usecase.NewCreateProductUseCase(h.productRepository)
 	return controller.NewCreateProductController(usecase)
+}
+
+func (h *Handlers) UploadProductImages() *controller.UploadProductImagesController {
+	usecase := usecase.NewUploadProductImagesUseCase(h.productRepository, h.cloudinarySvc)
+	return controller.NewUploadProductImagesController(usecase)
 }
 
 type HelloResponse struct {

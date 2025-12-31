@@ -48,4 +48,20 @@ const (
                 REFERENCES local_sellers(seller_id)
                 ON DELETE CASCADE 
         );`
+
+	createProductImagesTable = `
+		CREATE TABLE IF NOT EXISTS product_images (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			product_id UUID NOT NULL,
+			image_url TEXT NOT NULL,
+            is_main BOOLEAN DEFAULT FALSE,
+            sort_order INTEGER DEFAULT 0,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+			CONSTRAINT fk_product
+			    FOREIGN KEY(product_id) 
+			    REFERENCES products(id)
+			    ON DELETE CASCADE 
+		);`
 )

@@ -6,6 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
+type ProductImage struct {
+	ID        uuid.UUID `json:"id"`
+	ImageURL  string    `json:"image_url"`
+	IsMain    bool      `json:"is_main"`
+	SortOrder int       `json:"sort_order"`
+}
 type Product struct {
 	ID          uuid.UUID              `json:"id"`
 	SellerID    uuid.UUID              `json:"seller_id"`
@@ -17,4 +23,5 @@ type Product struct {
 	CreatedAt   time.Time              `json:"created_at"`
 	Attributes  map[string]interface{} `json:"attributes"`
 	UpdatedAt   time.Time              `json:"updated_at"`
+	Images      []ProductImage         `json:"images"`
 }

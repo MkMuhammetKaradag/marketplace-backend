@@ -20,6 +20,9 @@ func runMigrations(db *sql.DB) error {
 	if _, err := db.Exec(createProductsTable); err != nil {
 		return fmt.Errorf("failed to create products table: %w", err)
 	}
+	if _, err := db.Exec(createProductImagesTable); err != nil {
+		return fmt.Errorf("failed to create product_images table: %w", err)
+	}
 
 	log.Println("Database migration completed successfully")
 	return nil

@@ -128,6 +128,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/products/create": {
 			Permissions: PermissionManageOwnStore,
 		},
+		"/products/upload/:product_id": {
+			Permissions: PermissionManageOwnStore,
+		},
 	}
 }
 func Read() Config {

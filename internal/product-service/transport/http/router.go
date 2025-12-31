@@ -21,9 +21,11 @@ func (r *Router) Register(app *fiber.App) {
 	//api := app.Group("/api/v1")
 
 	createProduct := r.handlers.CreateProduct()
+	uploadProductImages := r.handlers.UploadProductImages()
 
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/create", handler.HandleWithFiber[controller.CreateProductRequest, controller.CreateProductResponse](createProduct))
+	app.Post("/upload/:product_id", handler.HandleWithFiber[controller.UploadProductImagesRequest, controller.UploadProductImagesResponse](uploadProductImages))
 
 	app.Get("/profile", func(c *fiber.Ctx) error {
 		userIDStr := c.Get("X-User-ID")

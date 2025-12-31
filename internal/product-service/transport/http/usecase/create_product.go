@@ -21,5 +21,6 @@ func NewCreateProductUseCase(productRepository domain.ProductRepository) CreateP
 }
 
 func (c *createProductUseCase) Execute(fiberCtx *fiber.Ctx, req *domain.Product) error {
+
 	return c.productRepository.CreateProduct(fiberCtx.UserContext(), req)
 }
