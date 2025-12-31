@@ -36,7 +36,8 @@ const (
             description TEXT,
             price DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
             stock_count INTEGER NOT NULL DEFAULT 0,
-            status product_status DEFAULT 'inactive', 
+            status product_status DEFAULT 'inactive',
+            attributes JSONB DEFAULT '{}',
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
