@@ -34,6 +34,7 @@ const (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             seller_id UUID NOT NULL,      
             name VARCHAR(255) NOT NULL,
+            category_id UUID REFERENCES categories(id) NOT NULL,
             description TEXT,
             price DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
             stock_count INTEGER NOT NULL DEFAULT 0,
@@ -65,4 +66,14 @@ const (
 			    REFERENCES products(id)
 			    ON DELETE CASCADE 
 		);`
+
+	createCategoriesTable = `
+        CREATE TABLE IF NOT EXISTS categories (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            parent_id UUID REFERENCES categories(id) ON DELETE CASCADE, -- Alt kategori desteği
+            name VARCHAR(100) NOT NULL,
+            slug VARCHAR(100) NOT NULL UNIQUE, -- URL dostu isim (örn: bilgisayar-laptop)
+            description TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );`
 )

@@ -38,6 +38,11 @@ func (h *Handlers) UploadProductImages() *controller.UploadProductImagesControll
 	return controller.NewUploadProductImagesController(usecase)
 }
 
+func (h *Handlers) CreateCategory() *controller.CreateCategoryController {
+	usecase := usecase.NewCreateCategoryUseCase(h.productRepository)
+	return controller.NewCreateCategoryController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

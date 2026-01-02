@@ -11,5 +11,6 @@ type ProductRepository interface {
 	GetSellerIDByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 	CreateProduct(ctx context.Context, p *Product) error
 	SaveImagesAndUpdateStatus(ctx context.Context, productID uuid.UUID, images []ProductImage) error
+	CreateCategory(ctx context.Context, c *Category) error
 	Close() error
 }

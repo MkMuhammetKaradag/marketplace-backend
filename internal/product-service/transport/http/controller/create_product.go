@@ -9,13 +9,12 @@ import (
 )
 
 type CreateProductRequest struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	StockCount  int     `json:"stock_count"`
-	// Status      string    `json:"status"`
-	// SellerID   uuid.UUID              `json:"seller_id"`
-	Attributes map[string]interface{} `json:"attributes"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Price       float64                `json:"price"`
+	StockCount  int                    `json:"stock_count"`
+	CategoryID  uuid.UUID              `json:"category_id"`
+	Attributes  map[string]interface{} `json:"attributes"`
 }
 
 type CreateProductResponse struct {
@@ -43,8 +42,7 @@ func (c *CreateProductController) Handle(fiberCtx *fiber.Ctx, req *CreateProduct
 		Price:       req.Price,
 		StockCount:  req.StockCount,
 		Attributes:  req.Attributes,
-		// Status:      req.Status,
-		// SellerID: req.SellerID,
+		CategoryID:  req.CategoryID,
 	}
 	err = c.usecase.Execute(fiberCtx.UserContext(), parsedUserID, p)
 	if err != nil {

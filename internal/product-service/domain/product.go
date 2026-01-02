@@ -15,6 +15,7 @@ type ProductImage struct {
 type Product struct {
 	ID          uuid.UUID              `json:"id"`
 	SellerID    uuid.UUID              `json:"seller_id"`
+	CategoryID  uuid.UUID              `json:"category_id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	Price       float64                `json:"price"`

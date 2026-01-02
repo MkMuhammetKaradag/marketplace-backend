@@ -14,6 +14,9 @@ func runMigrations(db *sql.DB) error {
 	if _, err := db.Exec(createLocalSellersTable); err != nil {
 		return fmt.Errorf("failed to create local_sellers table: %w", err)
 	}
+	if _, err := db.Exec(createCategoriesTable); err != nil {
+		return fmt.Errorf("failed to create categories table: %w", err)
+	}
 	if _, err := db.Exec(createProductStatusEnum); err != nil {
 		return fmt.Errorf("failed to create product_status enum: %w", err)
 	}
