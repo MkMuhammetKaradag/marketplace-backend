@@ -23,7 +23,8 @@ const (
 	createLocalSellersTable = `
 		CREATE TABLE IF NOT EXISTS local_sellers (
 			seller_id UUID PRIMARY KEY,
-			status seller_status, -- Approved mu?
+            user_id UUID NOT NULL UNIQUE,
+			status seller_status,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 
 		)`

@@ -29,11 +29,15 @@ func (h *SellerApprovedHandler) Handle(ctx context.Context, msg *pb.Message) err
 	}
 
 	// 2. UUID doğrulaması yap
-	idUUID, err := uuid.Parse(data.SellerId) // 'event' yerine doğrudan 'data' kullan
+	sellerIDUUID, err := uuid.Parse(data.SellerId) // 'event' yerine doğrudan 'data' kullan
+	if err != nil {
+		return fmt.Errorf("invalid seller user id format: %w", err)
+	}
+	userIDUUID, err := uuid.Parse(data.UserId)
 	if err != nil {
 		return fmt.Errorf("invalid seller user id format: %w", err)
 	}
 
 	// 3. Usecase'e gönder
-	return h.usecase.Execute(ctx, idUUID)
+	return h.usecase.Execute(ctx, sellerIDUUID, userIDUUID)
 }

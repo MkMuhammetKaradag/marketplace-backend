@@ -14,7 +14,7 @@ type CreateProductRequest struct {
 	Price       float64 `json:"price"`
 	StockCount  int     `json:"stock_count"`
 	// Status      string    `json:"status"`
-	SellerID   uuid.UUID              `json:"seller_id"`
+	// SellerID   uuid.UUID              `json:"seller_id"`
 	Attributes map[string]interface{} `json:"attributes"`
 }
 
@@ -32,6 +32,10 @@ func NewCreateProductController(usecase usecase.CreateProductUseCase) *CreatePro
 }
 
 func (c *CreateProductController) Handle(fiberCtx *fiber.Ctx, req *CreateProductRequest) (*CreateProductResponse, error) {
+	parsedUserID, err := uuid.Parse(fiberCtx.Get("X-User-ID"))
+	if err != nil {
+		return nil, err
+	}
 
 	p := &domain.Product{
 		Name:        req.Name,
@@ -40,9 +44,9 @@ func (c *CreateProductController) Handle(fiberCtx *fiber.Ctx, req *CreateProduct
 		StockCount:  req.StockCount,
 		Attributes:  req.Attributes,
 		// Status:      req.Status,
-		SellerID: req.SellerID,
+		// SellerID: req.SellerID,
 	}
-	err := c.usecase.Execute(fiberCtx, p)
+	err = c.usecase.Execute(fiberCtx.UserContext(), parsedUserID, p)
 	if err != nil {
 		return nil, err
 	}

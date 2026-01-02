@@ -9,7 +9,7 @@ import (
 )
 
 type SellerApprovedUseCase interface {
-	Execute(ctx context.Context, sellerID uuid.UUID) error
+	Execute(ctx context.Context, sellerID uuid.UUID, userID uuid.UUID) error
 }
 type sellerApprovedUseCase struct {
 	repository domain.ProductRepository
@@ -21,9 +21,11 @@ func NewSellerApprovedUseCase(repository domain.ProductRepository) SellerApprove
 	}
 }
 
-func (u *sellerApprovedUseCase) Execute(ctx context.Context, sellerID uuid.UUID) error {
+func (u *sellerApprovedUseCase) Execute(ctx context.Context, sellerID uuid.UUID, userID uuid.UUID) error {
 
-	err := u.repository.AddSeller(ctx, sellerID, "approved")
+	
+
+	err := u.repository.AddSeller(ctx, sellerID, userID, "approved")
 	if err != nil {
 		return fmt.Errorf("failed to add seller: %w", err)
 	}

@@ -1,13 +1,15 @@
 package usecase
 
 import (
+	"context"
+	"fmt"
 	"marketplace/internal/product-service/domain"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type CreateProductUseCase interface {
-	Execute(fiberCtx *fiber.Ctx, req *domain.Product) error
+	Execute(ctx context.Context, userID uuid.UUID, req *domain.Product) error
 }
 
 type createProductUseCase struct {
@@ -20,7 +22,13 @@ func NewCreateProductUseCase(productRepository domain.ProductRepository) CreateP
 	}
 }
 
-func (c *createProductUseCase) Execute(fiberCtx *fiber.Ctx, req *domain.Product) error {
+func (c *createProductUseCase) Execute(ctx context.Context, userID uuid.UUID, req *domain.Product) error {
 
-	return c.productRepository.CreateProduct(fiberCtx.UserContext(), req)
+	sellerID, err := c.productRepository.GetSellerIDByUserID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get seller ID: %w", err)
+	}
+
+	req.SellerID = sellerID
+	return c.productRepository.CreateProduct(ctx, req)
 }
