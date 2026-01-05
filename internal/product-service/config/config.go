@@ -32,11 +32,16 @@ type CloudinaryConfig struct {
 	APIKey    string `mapstructure:"apiKey"`
 	APISecret string `mapstructure:"apiSecret"`
 }
+
+type AiProviderConfig struct {
+	APIKey string `mapstructure:"apiKey"`
+}
 type Config struct {
 	Database   DatabaseConfig   `mapstructure:"database"`
 	Server     ServerConfig     `mapstructure:"server"`
 	Messaging  MessagingConfig  `mapstructure:"messaging"`
 	Cloudinary CloudinaryConfig `mapstructure:"cloudinary"`
+	AiProvider AiProviderConfig `mapstructure:"aiProvider"`
 }
 
 func Read() Config {
@@ -50,7 +55,7 @@ func Read() Config {
 	v.SetConfigType("yaml")
 
 	// Dosyaları sırayla yükle (varsa)
-	files := []string{"server.yaml", "database.yaml", "messasing.yaml", "cloudinary.yaml"}
+	files := []string{"server.yaml", "database.yaml", "messasing.yaml", "cloudinary.yaml", "aiProvider.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {

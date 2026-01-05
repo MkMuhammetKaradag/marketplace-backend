@@ -1,6 +1,7 @@
 *test.go 
 .env
 cloudinary.yaml
+aiProvider.yaml
 *.txt
 
 **/init/

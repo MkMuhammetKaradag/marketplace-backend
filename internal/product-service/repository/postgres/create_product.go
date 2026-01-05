@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"marketplace/internal/product-service/domain"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -22,19 +24,18 @@ const (
         RETURNING id, created_at, updated_at`
 )
 
-func (r *Repository) CreateProduct(ctx context.Context, p *domain.Product) error {
+func (r *Repository) CreateProduct(ctx context.Context, p *domain.Product) (uuid.UUID, error) {
 	// 1. Map yapısını JSONB için byte slice'a çeviriyoruz
 	attrBytes, err := json.Marshal(p.Attributes)
 	if err != nil {
-		return fmt.Errorf("failed to marshal attributes: %w", err)
+		return uuid.Nil, fmt.Errorf("failed to marshal attributes: %w", err)
 	}
-
 
 	err = r.db.QueryRowContext(
 		ctx,
 		CREATE_PRODUCT,
 		p.SellerID,    // $1
-		p.CategoryID,  // $2 
+		p.CategoryID,  // $2
 		p.Name,        // $3
 		p.Description, // $4
 		p.Price,       // $5
@@ -43,8 +44,8 @@ func (r *Repository) CreateProduct(ctx context.Context, p *domain.Product) error
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert product: %w", err)
+		return uuid.Nil, fmt.Errorf("failed to insert product: %w", err)
 	}
 
-	return nil
+	return p.ID, nil
 }

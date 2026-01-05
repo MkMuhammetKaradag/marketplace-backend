@@ -8,6 +8,9 @@ import (
 
 func runMigrations(db *sql.DB) error {
 
+	if _, err := db.Exec(createExtension); err != nil {
+		return fmt.Errorf("failed to create extension: %w", err)
+	}
 	if _, err := db.Exec(createSellerStatusEnum); err != nil {
 		return fmt.Errorf("failed to create seller_status enum: %w", err)
 	}
@@ -25,6 +28,15 @@ func runMigrations(db *sql.DB) error {
 	}
 	if _, err := db.Exec(createProductImagesTable); err != nil {
 		return fmt.Errorf("failed to create product_images table: %w", err)
+	}
+	if _, err := db.Exec(createUserPreferencesTable); err != nil {
+		return fmt.Errorf("failed to create user_preferences table: %w", err)
+	}
+	if _, err := db.Exec(createUserProductInteractionsTable); err != nil {
+		return fmt.Errorf("failed to create user_product_interactions table: %w", err)
+	}
+	if _, err := db.Exec(createIndex); err != nil {
+		return fmt.Errorf("failed to create index: %w", err)
 	}
 
 	log.Println("Database migration completed successfully")

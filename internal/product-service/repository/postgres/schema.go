@@ -1,6 +1,10 @@
 package postgres
 
 const (
+	createExtension = `
+        CREATE EXTENSION IF NOT EXISTS vector
+    `
+
 	createSellerStatusEnum = `
         DO $$
         BEGIN
@@ -40,6 +44,7 @@ const (
             stock_count INTEGER NOT NULL DEFAULT 0,
             status product_status DEFAULT 'inactive',
             attributes JSONB DEFAULT '{}',
+            embedding vector(768),
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
@@ -75,5 +80,28 @@ const (
             slug VARCHAR(100) NOT NULL UNIQUE, -- URL dostu isim (örn: bilgisayar-laptop)
             description TEXT,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );`
+        )`
+
+	createUserPreferencesTable = `
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id UUID PRIMARY KEY, -- Harici user tablosuna referans
+            interest_vector vector(768),
+            last_interaction_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+        `
+	createUserProductInteractionsTable = `
+        CREATE TABLE IF NOT EXISTS user_product_interactions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL,
+            product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+            interaction_type VARCHAR(20), -- 'view', 'like', 'purchase'
+            weight FLOAT DEFAULT 1.0,     -- Satın alma: 5.0, İzleme: 1.0 gibi
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )  
+    `
+
+	createIndex = `
+        CREATE INDEX ON products USING hnsw (embedding vector_cosine_ops)
+        `
 )

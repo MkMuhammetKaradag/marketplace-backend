@@ -13,10 +13,11 @@ type Handlers struct {
 	userService       domain.ProductService
 	productRepository domain.ProductRepository
 	cloudinarySvc     domain.ImageService
+	aiProvider        domain.AiProvider
 }
 
-func NewHandlers(userService domain.ProductService, repository domain.ProductRepository, cloudinarySvc domain.ImageService) *Handlers {
-	return &Handlers{userService: userService, productRepository: repository, cloudinarySvc: cloudinarySvc}
+func NewHandlers(userService domain.ProductService, repository domain.ProductRepository, cloudinarySvc domain.ImageService, aiProvider domain.AiProvider) *Handlers {
+	return &Handlers{userService: userService, productRepository: repository, cloudinarySvc: cloudinarySvc, aiProvider: aiProvider}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -29,7 +30,7 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) CreateProduct() *controller.CreateProductController {
-	usecase := usecase.NewCreateProductUseCase(h.productRepository)
+	usecase := usecase.NewCreateProductUseCase(h.productRepository, h.aiProvider)
 	return controller.NewCreateProductController(usecase)
 }
 

@@ -1,5 +1,5 @@
-// internal/user-service/infrastructure/cloudinary_service.go
-package infrastructure
+// internal/product-service/infrastructure/img/cloudinary_service.go
+package img
 
 import (
 	"context"

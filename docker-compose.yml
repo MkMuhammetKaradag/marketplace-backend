@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
+    image: pgvector/pgvector:pg15-trixie
     container_name: marketplace-postgres
     restart: always
     environment:
@@ -64,10 +64,23 @@ services:
       KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka -Dcom.sun.management.jmxremote.rmi.port=9101
     networks:
       - kafka-network
+  ollama:
+    image: ollama/ollama:latest
+    container_name: marketplace-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
 
 networks:
   kafka-network:
     driver: bridge
+  
 
 volumes:
   postgres_data:
+  ollama_data:
+
+# Run this command just once from the terminal.
+#  docker exec -it marketplace-ollama ollama pull nomic-embed-text
