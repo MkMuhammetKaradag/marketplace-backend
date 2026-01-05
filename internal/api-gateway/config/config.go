@@ -134,6 +134,12 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/products/category": {
 			Permissions: PermissionAdministrator,
 		},
+		"/products/recommended": {
+			Permissions: PermissionNone,
+		},
+		"/products/product/:product_id": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {

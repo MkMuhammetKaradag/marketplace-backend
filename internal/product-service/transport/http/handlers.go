@@ -44,6 +44,16 @@ func (h *Handlers) CreateCategory() *controller.CreateCategoryController {
 	return controller.NewCreateCategoryController(usecase)
 }
 
+func (h *Handlers) GetRecommendedProducts() *controller.GetRecommendationsController {
+	usecase := usecase.NewGetRecommendedProductsUseCase(h.productRepository)
+	return controller.NewGetRecommendationsController(usecase)
+}
+
+func (h *Handlers) GetProduct() *controller.GetProductController {
+	usecase := usecase.NewGetProductUseCase(h.productRepository)
+	return controller.NewGetProductController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`
