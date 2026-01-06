@@ -1,0 +1,275 @@
+definitions:
+  controller.SignInRequest:
+    properties:
+      identifier:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  controller.SignInResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  controller.SignOutResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  controller.SignUpRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  controller.SignUpResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_product-service_transport_http_controller.CreateProductRequest:
+    properties:
+      attributes:
+        additionalProperties: true
+        type: object
+      category_id:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      stock_count:
+        type: integer
+    type: object
+  internal_product-service_transport_http_controller.CreateProductResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_product-service_transport_http_controller.GetProductResponse:
+    properties:
+      product:
+        $ref: '#/definitions/marketplace_internal_product-service_domain.Product'
+    type: object
+  internal_product-service_transport_http_controller.SearchProductsResponse:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/marketplace_internal_product-service_domain.Product'
+        type: array
+    type: object
+  marketplace_internal_product-service_domain.Product:
+    properties:
+      attributes:
+        additionalProperties: true
+        type: object
+      category_id:
+        type: string
+      category_name:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/marketplace_internal_product-service_domain.ProductImage'
+        type: array
+      name:
+        type: string
+      price:
+        type: number
+      seller_id:
+        type: string
+      status:
+        type: string
+      stock_count:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  marketplace_internal_product-service_domain.ProductImage:
+    properties:
+      id:
+        type: string
+      image_url:
+        type: string
+      is_main:
+        type: boolean
+      sort_order:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /health:
+    get:
+      description: Check the health of the gateway and connected services
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check gateway health
+      tags:
+      - management
+  /products/{product_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get product by product id
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_product-service_transport_http_controller.GetProductResponse'
+      summary: Get product
+      tags:
+      - products
+  /products/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new product
+      parameters:
+      - description: Product
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_product-service_transport_http_controller.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_product-service_transport_http_controller.CreateProductResponse'
+      summary: Create product
+      tags:
+      - products
+  /products/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for products using vector search
+      parameters:
+      - description: Limit results
+        in: query
+        name: limit
+        type: integer
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_product-service_transport_http_controller.SearchProductsResponse'
+      summary: Search products
+      tags:
+      - products
+  /simulate/login:
+    get:
+      description: Creates a fake session cookie for testing purposes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Simulate a login session
+      tags:
+      - management
+  /users/signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns a session cookie
+      parameters:
+      - description: Sign In Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controller.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SignInResponse'
+      summary: Sign in user
+      tags:
+      - users
+  /users/signout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidates the user's session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SignOutResponse'
+      summary: Sign out user
+      tags:
+      - users
+  /users/signup:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account
+      parameters:
+      - description: Sign Up Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controller.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SignUpResponse'
+      summary: Register a new user
+      tags:
+      - users
+swagger: "2.0"

@@ -26,6 +26,15 @@ func NewSignUpController(usecase usecase.SignUpUseCase) *SignUpController {
 	}
 }
 
+// Handle godoc
+// @Summary Register a new user
+// @Description Creates a new user account
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body SignUpRequest true "Sign Up Request"
+// @Success 200 {object} SignUpResponse
+// @Router /users/signup [post]
 func (h *SignUpController) Handle(ctx context.Context, req *SignUpRequest) (*SignUpResponse, error) {
 	err := h.usecase.Execute(ctx, &domain.User{
 		Username: req.Username,

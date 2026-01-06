@@ -65,6 +65,30 @@ go run cmd/product-service/main.go
 
 Benzer şekilde `user-service` ve `seller-service` de çalıştırılabilir.
 
+## 📚 API Dokümantasyonu (Swagger)
+
+Proje, API dokümantasyonu için Swagger kullanmaktadır.
+
+### Erişim
+
+API Gateway çalıştırıldıktan sonra, aşağıdaki adresten Swagger arayüzüne erişebilirsiniz:
+
+[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
+
+### Dokümantasyonu Güncelleme
+
+API endpoint'lerinde değişiklik yaptığınızda veya yeni endpoint eklediğinizde, Swagger dokümantasyonunu güncellemek için proje ana dizininde aşağıdaki komutu çalıştırın. Bu komut, API Gateway ve diğer servislerin (User, Product) controller ve domain paketlerini tarar:
+
+```bash
+swag init -g cmd/api-gateway/main.go -d cmd/api-gateway,internal/api-gateway/handlers,internal/user-service/transport/http/controller,internal/user-service/domain,internal/product-service/transport/http/controller,internal/product-service/domain -o docs
+```
+
+Not: `swag` komutu yüklü değilse, aşağıdaki komutla yükleyebilirsiniz:
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
 ## 📂 Proje Yapısı
 
 ```

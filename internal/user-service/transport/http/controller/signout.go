@@ -21,6 +21,14 @@ func NewSignOutController(usecase usecase.SignOutUseCase) *SignOutController {
 	}
 }
 
+// Handle godoc
+// @Summary Sign out user
+// @Description Invalidates the user's session
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} SignOutResponse
+// @Router /users/signout [post]
 func (h *SignOutController) Handle(fbrCtx *fiber.Ctx, req *SignOutRequest) (*SignOutResponse, error) {
 	err := h.usecase.Execute(fbrCtx)
 	if err != nil {

@@ -1,4 +1,4 @@
-// internal/user-service/transport/http/router.go
+// internal/product-service/transport/http/router.go
 package http
 
 import (
@@ -6,7 +6,10 @@ import (
 	"marketplace/internal/product-service/handler"
 	"marketplace/internal/product-service/transport/http/controller"
 
+	_ "marketplace/docs"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/swagger"
 )
 
 type Router struct {
@@ -19,7 +22,7 @@ func NewRouter(handlers *Handlers) *Router {
 
 func (r *Router) Register(app *fiber.App) {
 	//api := app.Group("/api/v1")
-
+	app.Get("/swagger/*", swagger.HandlerDefault)
 	createProduct := r.handlers.CreateProduct()
 	uploadProductImages := r.handlers.UploadProductImages()
 	createCategory := r.handlers.CreateCategory()

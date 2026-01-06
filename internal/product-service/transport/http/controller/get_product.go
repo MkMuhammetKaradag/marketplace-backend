@@ -26,6 +26,15 @@ func NewGetProductController(usecase usecase.GetProductUseCase) *GetProductContr
 	}
 }
 
+// Handle godoc
+// @Summary Get product
+// @Description Get product by product id
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path string true "Product ID"
+// @Success 200 {object} GetProductResponse
+// @Router /products/{product_id} [get]
 func (c *GetProductController) Handle(fiberCtx *fiber.Ctx, req *GetProductRequest) (*GetProductResponse, error) {
 
 	userIDStr := fiberCtx.Get("X-User-ID")

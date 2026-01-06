@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"log"
+	_ "marketplace/docs" // Import generated docs
 	"marketplace/internal/api-gateway/cache"
 	"marketplace/internal/api-gateway/config"
 	"marketplace/internal/api-gateway/grpc_client"
@@ -11,8 +12,11 @@ import (
 	"marketplace/internal/api-gateway/metrics"
 	"marketplace/internal/api-gateway/middleware"
 	"marketplace/internal/api-gateway/service"
+
 	"net/http"
 	"time"
+
+	"github.com/gofiber/swagger"
 
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
@@ -67,6 +71,9 @@ func New(cfg config.Config, cacheManager *cache.CacheManager) *Server {
 	f.Get("/metrics", manageHandler.GetMetrics)
 	f.Get("/services", manageHandler.ListServices)
 	f.Get("/simulate/login", manageHandler.SimulateLogin)
+
+	// Swagger Route
+	f.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Proxy Route (Catch-all)
 	// We matched "/" in original but `http.NewServeMux` matches prefixes.

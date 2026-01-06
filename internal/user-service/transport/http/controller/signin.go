@@ -25,6 +25,15 @@ func NewSignInController(usecase usecase.SignInUseCase) *SignInController {
 	}
 }
 
+// Handle godoc
+// @Summary Sign in user
+// @Description Authenticates a user and returns a session cookie
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body SignInRequest true "Sign In Request"
+// @Success 200 {object} SignInResponse
+// @Router /users/signin [post]
 func (h *SignInController) Handle(fiberCtx *fiber.Ctx, req *SignInRequest) (*SignInResponse, error) {
 	err := h.usecase.Execute(fiberCtx, req.Identifier, req.Password)
 	if err != nil {

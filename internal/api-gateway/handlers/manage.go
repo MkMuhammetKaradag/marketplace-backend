@@ -23,6 +23,13 @@ func NewManageHandler(registry *service.ServiceRegistry, metrics *metrics.Metric
 	}
 }
 
+// HealthCheck godoc
+// @Summary Check gateway health
+// @Description Check the health of the gateway and connected services
+// @Tags management
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /health [get]
 func (h *ManageHandler) HealthCheck(c *fiber.Ctx) error {
 	services := h.Registry.List()
 	serviceHealth := make(map[string]interface{})
@@ -67,6 +74,13 @@ func (h *ManageHandler) ListServices(c *fiber.Ctx) error {
 	return c.JSON(serviceList)
 }
 
+// SimulateLogin godoc
+// @Summary Simulate a login session
+// @Description Creates a fake session cookie for testing purposes
+// @Tags management
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /simulate/login [get]
 func (h *ManageHandler) SimulateLogin(c *fiber.Ctx) error {
 	sessionID := uuid.New().String()
 

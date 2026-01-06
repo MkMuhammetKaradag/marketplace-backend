@@ -1,3 +1,4 @@
+// internal/product-service/server/server.go
 package server
 
 import (
@@ -45,6 +46,7 @@ func New(cfg Config, registrar RouteRegistrar) *Server {
 		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
 		AllowCredentials: true,
 	}))
+
 	app.Use(requestid.New())
 
 	app.Get("/health", func(c *fiber.Ctx) error {

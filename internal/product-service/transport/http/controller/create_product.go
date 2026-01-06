@@ -30,6 +30,15 @@ func NewCreateProductController(usecase usecase.CreateProductUseCase) *CreatePro
 	}
 }
 
+// Handle godoc
+// @Summary Create product
+// @Description Create a new product
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product body CreateProductRequest true "Product"
+// @Success 200 {object} CreateProductResponse
+// @Router /products/create [post]
 func (c *CreateProductController) Handle(fiberCtx *fiber.Ctx, req *CreateProductRequest) (*CreateProductResponse, error) {
 	parsedUserID, err := uuid.Parse(fiberCtx.Get("X-User-ID"))
 	if err != nil {

@@ -27,6 +27,16 @@ func NewSearchProductsController(usecase usecase.SearchProductsUseCase) *SearchP
 	}
 }
 
+// Handle godoc
+// @Summary Search products
+// @Description Search for products using vector search
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param limit query int false "Limit results"
+// @Param query query string false "Search query"
+// @Success 200 {object} SearchProductsResponse
+// @Router /products/search [get]
 func (c *SearchProductsController) Handle(fiberCtx *fiber.Ctx, req *SearchProductsRequest) (*SearchProductsResponse, error) {
 
 	products, err := c.usecase.Execute(fiberCtx.UserContext(), req.Limit, req.Query)

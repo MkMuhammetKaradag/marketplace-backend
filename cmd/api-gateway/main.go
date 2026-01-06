@@ -13,6 +13,20 @@ func main() {
 	cfg := config.Read()
 	application := app.New(cfg)
 
+	// @title Marketplace Backend API
+	// @version 1.0
+	// @description This is the API Gateway for the Marketplace Backend.
+	// @termsOfService http://swagger.io/terms/
+
+	// @contact.name API Support
+	// @contact.email support@swagger.io
+
+	// @license.name Apache 2.0
+	// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+	// @host localhost:8080
+	// @BasePath /
+
 	// Register Services (In a real scenario, this might be dynamic or loaded from config)
 	// Important: Ensure these URLs match your actual service ports or docker-compose
 	application.RegisterService("user-service", []string{"http://localhost:8081", "http://localhost:8081"}, "/users")

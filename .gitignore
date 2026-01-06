@@ -3,5 +3,5 @@
 cloudinary.yaml
 aiProvider.yaml
 *.txt
-
+generate_docs.bat
 **/init/
