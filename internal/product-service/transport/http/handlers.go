@@ -54,6 +54,11 @@ func (h *Handlers) GetProduct() *controller.GetProductController {
 	return controller.NewGetProductController(usecase)
 }
 
+func (h *Handlers) SearchProducts() *controller.SearchProductsController {
+	usecase := usecase.NewSearchProductsUseCase(h.productRepository, h.aiProvider)
+	return controller.NewSearchProductsController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

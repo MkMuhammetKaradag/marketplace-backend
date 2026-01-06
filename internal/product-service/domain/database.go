@@ -18,5 +18,6 @@ type ProductRepository interface {
 	GetRecommendedProducts(ctx context.Context, userID uuid.UUID, limit int) ([]*Product, error)
 	GetProduct(ctx context.Context, productID uuid.UUID) (*Product, error)
 	AddInteraction(ctx context.Context, userID uuid.UUID, productID uuid.UUID, interactionType string) error
+	SearchProducts(ctx context.Context, queryVector []float32, queryText string, limit int) ([]*Product, error)
 	Close() error
 }
