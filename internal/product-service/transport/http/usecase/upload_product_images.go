@@ -27,28 +27,45 @@ func NewUploadProductImagesUseCase(productRepository domain.ProductRepository, c
 
 func (c *uploadProductImagesUseCase) Execute(fiberCtx *fiber.Ctx, productID uuid.UUID, files []*multipart.FileHeader) error {
 	var productImages []domain.ProductImage
+	errChan := make(chan error, len(files))
+	imgChan := make(chan domain.ProductImage, len(files))
+
+	// Fiber context'inden context'i alıyoruz (fiberCtx bitmeden işimiz bitmeli)
+	ctx := fiberCtx.UserContext()
 
 	for i, file := range files {
-		publicID := fmt.Sprintf("%s_%d", productID.String(), i)
-		fmt.Println(publicID)
-		uploadResult, _, err := c.cloudinarySvc.UploadImage(fiberCtx.UserContext(), file, domain.UploadOptions{
-			Folder:         "products",
-			PublicID:       publicID,
-			Transformation: "c_fill,g_auto,w_1200,h_630,q_auto,f_auto",
-			Width:          1200,
-			Height:         630,
-		})
-		fmt.Println(uploadResult)
-		if err != nil {
-			return fmt.Errorf("image upload failed: %w", err)
-		}
+		// Go routine içinde i ve file değerlerini sabitlemek için kopyalıyoruz
+		go func(index int, f *multipart.FileHeader) {
+			publicID := fmt.Sprintf("%s_%d", productID.String(), index)
 
-		productImages = append(productImages, domain.ProductImage{
-			ImageURL:  uploadResult,
-			IsMain:    i == 0,
-			SortOrder: i,
-		})
+			url, _, err := c.cloudinarySvc.UploadImage(ctx, f, domain.UploadOptions{
+				Folder:   "products",
+				PublicID: publicID,
+				Width:    1200,
+				Height:   630,
+			})
+
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			imgChan <- domain.ProductImage{
+				ImageURL:  url,
+				IsMain:    index == 0,
+				SortOrder: index,
+			}
+			errChan <- nil
+		}(i, file)
 	}
 
-	return c.productRepository.SaveImagesAndUpdateStatus(fiberCtx.UserContext(), productID, productImages)
+	// Tüm sonuçları topla
+	for i := 0; i < len(files); i++ {
+		if err := <-errChan; err != nil {
+			return err // Hata varsa hemen dön
+		}
+		productImages = append(productImages, <-imgChan)
+	}
+
+	return c.productRepository.SaveImagesAndUpdateStatus(ctx, productID, productImages)
 }
