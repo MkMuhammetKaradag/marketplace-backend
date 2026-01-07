@@ -51,7 +51,7 @@ func (h *Handlers) GetRecommendedProducts() *controller.GetRecommendationsContro
 }
 
 func (h *Handlers) GetProduct() *controller.GetProductController {
-	usecase := usecase.NewGetProductUseCase(h.productRepository)
+	usecase := usecase.NewGetProductUseCase(h.productRepository, h.worker)
 	return controller.NewGetProductController(usecase)
 }
 

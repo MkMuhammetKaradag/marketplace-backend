@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"marketplace/internal/product-service/domain"
 
 	"github.com/google/uuid"
@@ -14,11 +13,13 @@ type GetProductUseCase interface {
 
 type getProductUseCase struct {
 	productRepository domain.ProductRepository
+	distributorWorker domain.Worker
 }
 
-func NewGetProductUseCase(productRepository domain.ProductRepository) GetProductUseCase {
+func NewGetProductUseCase(productRepository domain.ProductRepository, distributor domain.Worker) GetProductUseCase {
 	return &getProductUseCase{
 		productRepository: productRepository,
+		distributorWorker: distributor,
 	}
 }
 
@@ -28,30 +29,15 @@ func (c *getProductUseCase) Execute(ctx context.Context, userID uuid.UUID, produ
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(product)
-	// Repository'deki o meşhur vektör benzerliği sorgusunu çağırıyoruz
-	go func(p *domain.Product, uID uuid.UUID) {
 
-		if uID == uuid.Nil {
-			// Log alabilirsin ama işleme devam etmeye gerek yok
-			fmt.Println("Anonim kullanıcı: Tracking atlandı.")
-			return
-		}
-		// Ürünün embedding'i yoksa (AI henüz üretmediyse) bir şey yapamayız
-		if len(p.Embedding) == 0 {
-			return
-		}
-
-		// Repository'deki o meşhur fonksiyonu çağırıyoruz
-		// Context.Background kullanıyoruz çünkü ana istek (request) bitse bile bu sürsün
-		err := c.productRepository.TrackProductView(context.Background(), uID, p.Embedding)
-		if err != nil {
-			fmt.Printf("Tracking hatası: %v\n", err)
-		}
-
-		// Opsiyonel: user_product_interactions tablosuna da kayıt atabilirsin
-		c.productRepository.AddInteraction(context.Background(), uID, p.ID, "view")
-	}(product, userID)
+	if userID != uuid.Nil && len(product.Embedding) > 0 {
+		// Hızlıca kuyruğa atıyoruz, kullanıcı beklemiyor
+		_ = c.distributorWorker.EnqueueTrackView(domain.TrackProductViewPayload{
+			UserID:    userID,
+			Embedding: product.Embedding,
+			ProductID: product.ID,
+		})
+	}
 
 	return product, nil
 }

@@ -12,8 +12,6 @@ const UPSERT_USER_PREFERENCE = `
     INSERT INTO user_preferences (user_id, interest_vector, last_interaction_at, updated_at)
     VALUES ($1, $2, NOW(), NOW())
     ON CONFLICT (user_id) DO UPDATE SET
-        -- Çarpma yerine doğrudan vektör toplama kullanıyoruz
-        -- Bu işlem genellikle tüm pgvector sürümlerinde sorunsuz çalışır
         interest_vector = user_preferences.interest_vector + EXCLUDED.interest_vector,
         last_interaction_at = NOW(),
         updated_at = NOW();

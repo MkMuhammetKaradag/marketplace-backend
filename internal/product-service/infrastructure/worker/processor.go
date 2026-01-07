@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"marketplace/internal/product-service/domain"
+	"strings"
 
 	"github.com/hibiken/asynq"
 )
@@ -18,7 +19,6 @@ type TaskProcessor struct {
 }
 
 func NewTaskProcessor(redisOpt asynq.RedisClientOpt, repo domain.ProductRepository, cloudinarySvc domain.ImageService) *TaskProcessor {
-	// Concurrency: 5 -> Aynı anda en fazla 5 resim işlensin (Sunucuyu yormamak için)
 	server := asynq.NewServer(redisOpt, asynq.Config{
 		Concurrency: 5,
 		Queues: map[string]int{
@@ -36,8 +36,8 @@ func NewTaskProcessor(redisOpt asynq.RedisClientOpt, repo domain.ProductReposito
 func (p *TaskProcessor) Start() error {
 	mux := asynq.NewServeMux()
 
-	// "task:upload_product_image" isminde bir görev gelirse ProcessUploadTask'ı çalıştır
 	mux.HandleFunc(TaskUploadProductImage, p.ProcessUploadTask)
+	mux.HandleFunc(TaskTrackProductView, p.ProcessTrackViewTask)
 
 	log.Println("Worker Processor başlatılıyor...")
 	return p.server.Run(mux)
@@ -49,17 +49,18 @@ func (p *TaskProcessor) ProcessUploadTask(ctx context.Context, t *asynq.Task) er
 		return err
 	}
 
-	// 1. Cloudinary'ye yükle (Önceki adımda yazdığımız ImageFromBytes metodunu kullanıyor)
 	url, err := p.cloudinarySvc.UploadImageFromBytes(ctx, payload.ImageData, domain.UploadOptions{
 		Folder:   "products",
 		PublicID: fmt.Sprintf("%s_%d", payload.ProductID, payload.SortOrder),
 	})
 	if err != nil {
-		log.Printf("Cloudinary hatası: %v", err)
-		return err // Hata dönerse Asynq otomatik olarak tekrar dener (Retry)
+		if strings.Contains(err.Error(), "Invalid image file") {
+
+			return fmt.Errorf("%w: %v", asynq.SkipRetry, err)
+		}
+		return err
 	}
 
-	// 2. Veritabanına kaydet
 	img := []domain.ProductImage{{
 		ImageURL:  url,
 		IsMain:    payload.IsMain,
@@ -67,4 +68,17 @@ func (p *TaskProcessor) ProcessUploadTask(ctx context.Context, t *asynq.Task) er
 	}}
 
 	return p.repo.SaveImagesAndUpdateStatus(ctx, payload.ProductID, img)
+}
+func (p *TaskProcessor) ProcessTrackViewTask(ctx context.Context, t *asynq.Task) error {
+	var payload domain.TrackProductViewPayload
+	json.Unmarshal(t.Payload(), &payload)
+	fmt.Println("Payload: ", payload)
+	// 1. Ürün izlemeyi kaydet
+	err := p.repo.TrackProductView(ctx, payload.UserID, payload.Embedding)
+	if err != nil {
+		return err
+	}
+
+	// 2. Etkileşimi ekle
+	return p.repo.AddInteraction(ctx, payload.UserID, payload.ProductID, "view")
 }
