@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"bytes"
 	"fmt"
 	"marketplace/internal/product-service/domain"
 	"mime/multipart"
@@ -16,56 +17,39 @@ type UploadProductImagesUseCase interface {
 type uploadProductImagesUseCase struct {
 	productRepository domain.ProductRepository
 	cloudinarySvc     domain.ImageService
+	imageWorker       domain.Worker
 }
 
-func NewUploadProductImagesUseCase(productRepository domain.ProductRepository, cloudinarySvc domain.ImageService) UploadProductImagesUseCase {
+func NewUploadProductImagesUseCase(productRepository domain.ProductRepository, cloudinarySvc domain.ImageService, imageWorker domain.Worker) UploadProductImagesUseCase {
 	return &uploadProductImagesUseCase{
 		productRepository: productRepository,
 		cloudinarySvc:     cloudinarySvc,
+		imageWorker:       imageWorker,
 	}
 }
 
 func (c *uploadProductImagesUseCase) Execute(fiberCtx *fiber.Ctx, productID uuid.UUID, files []*multipart.FileHeader) error {
-	var productImages []domain.ProductImage
-	errChan := make(chan error, len(files))
-	imgChan := make(chan domain.ProductImage, len(files))
+	for i, fileHeader := range files {
+		// 1. Dosyayı byte dizisine çevir (Kuyruğa atmak için)
+		file, _ := fileHeader.Open()
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(file)
+		file.Close()
 
-	// Fiber context'inden context'i alıyoruz (fiberCtx bitmeden işimiz bitmeli)
-	ctx := fiberCtx.UserContext()
-
-	for i, file := range files {
-		// Go routine içinde i ve file değerlerini sabitlemek için kopyalıyoruz
-		go func(index int, f *multipart.FileHeader) {
-			publicID := fmt.Sprintf("%s_%d", productID.String(), index)
-
-			url, _, err := c.cloudinarySvc.UploadImage(ctx, f, domain.UploadOptions{
-				Folder:   "products",
-				PublicID: publicID,
-				Width:    1200,
-				Height:   630,
-			})
-
-			if err != nil {
-				errChan <- err
-				return
-			}
-
-			imgChan <- domain.ProductImage{
-				ImageURL:  url,
-				IsMain:    index == 0,
-				SortOrder: index,
-			}
-			errChan <- nil
-		}(i, file)
-	}
-
-	// Tüm sonuçları topla
-	for i := 0; i < len(files); i++ {
-		if err := <-errChan; err != nil {
-			return err // Hata varsa hemen dön
+		payload := domain.UploadImageTaskPayload{
+			ProductID: productID,
+			ImageData: buf.Bytes(),
+			FileName:  fileHeader.Filename,
+			IsMain:    i == 0,
+			SortOrder: i,
 		}
-		productImages = append(productImages, <-imgChan)
-	}
 
-	return c.productRepository.SaveImagesAndUpdateStatus(ctx, productID, productImages)
+		// 2. Worker nesnesi aracılığıyla Redis kuyruğuna at
+		err := c.imageWorker.EnqueueImageUpload(payload)
+		if err != nil {
+			return fmt.Errorf("kuyruğa atılamadı: %w", err)
+		}
+	}
+	// Burada artık Cloudinary bitmiş olmuyor, sadece "mutfağa fiş gitti"
+	return nil
 }

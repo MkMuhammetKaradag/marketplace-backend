@@ -2,6 +2,7 @@
 package img
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"marketplace/internal/product-service/domain"
@@ -55,4 +56,19 @@ func (s *CloudinaryService) DeleteImage(ctx context.Context, publicID string) er
 		PublicID: publicID,
 	})
 	return err
+}
+func (s *CloudinaryService) UploadImageFromBytes(ctx context.Context, data []byte, opts domain.UploadOptions) (string, error) {
+
+	reader := bytes.NewReader(data)
+
+	uploadRes, err := s.client.Upload.Upload(ctx, reader, uploader.UploadParams{
+		Folder:         opts.Folder,
+		PublicID:       opts.PublicID,
+		Transformation: opts.Transformation,
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return uploadRes.SecureURL, nil
 }
