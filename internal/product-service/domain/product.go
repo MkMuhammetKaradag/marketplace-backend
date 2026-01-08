@@ -28,3 +28,10 @@ type Product struct {
 	Images       []ProductImage         `json:"images"`
 	Embedding    []float32              `json:"-"` // Bu alan artık JSON'da gözükmeyecek
 }
+type SearchProductsParams struct {
+	Limit      int      `json:"limit"`
+	Query      string   `json:"query"`
+	MinPrice   *float64 `json:"min_price"`
+	MaxPrice   *float64 `json:"max_price"`
+	CategoryID *string  `json:"category_id"`
+}

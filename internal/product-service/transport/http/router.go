@@ -2,7 +2,6 @@
 package http
 
 import (
-	"fmt"
 	"marketplace/internal/product-service/handler"
 	"marketplace/internal/product-service/transport/http/controller"
 
@@ -37,13 +36,5 @@ func (r *Router) Register(app *fiber.App) {
 	app.Get("/recommended", handler.HandleWithFiber[controller.GetRecommendationsRequest, controller.GetRecommendationsResponse](getRecommendedProducts))
 	app.Get("/product/:product_id", handler.HandleWithFiber[controller.GetProductRequest, controller.GetProductResponse](getProduct))
 	app.Get("/search", handler.HandleWithFiber[controller.SearchProductsRequest, controller.SearchProductsResponse](searchProducts))
-	app.Get("/profile", func(c *fiber.Ctx) error {
-		userIDStr := c.Get("X-User-ID")
-		if userIDStr == "" {
 
-			return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
-		}
-		fmt.Println("user id : " + userIDStr)
-		return c.SendString("Hello World " + userIDStr)
-	})
 }

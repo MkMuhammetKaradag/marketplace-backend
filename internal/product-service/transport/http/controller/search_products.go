@@ -9,8 +9,11 @@ import (
 )
 
 type SearchProductsRequest struct {
-	Limit int    `json:"limit"`
-	Query string `json:"query"`
+	Limit      int      `json:"limit"`
+	Query      string   `json:"query"`
+	MinPrice   *float64 `json:"min_price"`
+	MaxPrice   *float64 `json:"max_price"`
+	CategoryID *string  `json:"category_id"`
 }
 
 type SearchProductsResponse struct {
@@ -38,8 +41,15 @@ func NewSearchProductsController(usecase usecase.SearchProductsUseCase) *SearchP
 // @Success 200 {object} SearchProductsResponse
 // @Router /products/search [get]
 func (c *SearchProductsController) Handle(fiberCtx *fiber.Ctx, req *SearchProductsRequest) (*SearchProductsResponse, error) {
+	params := domain.SearchProductsParams{
+		Limit:      req.Limit,
+		Query:      req.Query,
+		MinPrice:   req.MinPrice,
+		MaxPrice:   req.MaxPrice,
+		CategoryID: req.CategoryID,
+	}
 
-	products, err := c.usecase.Execute(fiberCtx.UserContext(), req.Limit, req.Query)
+	products, err := c.usecase.Execute(fiberCtx.UserContext(), params)
 	if err != nil {
 		return nil, errors.New("failed to get search products")
 	}

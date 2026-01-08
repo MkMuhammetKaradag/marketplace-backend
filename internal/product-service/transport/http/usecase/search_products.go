@@ -6,7 +6,7 @@ import (
 )
 
 type SearchProductsUseCase interface {
-	Execute(ctx context.Context, limit int, query string) ([]*domain.Product, error)
+	Execute(ctx context.Context, req domain.SearchProductsParams) ([]*domain.Product, error)
 }
 
 type searchProductsUseCase struct {
@@ -21,11 +21,17 @@ func NewSearchProductsUseCase(productRepository domain.ProductRepository, aiProv
 	}
 }
 
-func (c *searchProductsUseCase) Execute(ctx context.Context, limit int, query string) ([]*domain.Product, error) {
+func (c *searchProductsUseCase) Execute(ctx context.Context, req domain.SearchProductsParams) ([]*domain.Product, error) {
+	var vector []float32
+	var err error
 
-	vector, err := c.aiProvider.GetVector(query)
-	if err != nil {
-		return nil, err
+	if req.Query != "" {
+		vector, err = c.aiProvider.GetVector(req.Query)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return c.productRepository.SearchProducts(ctx, vector, query, limit)
+
+	// Filtreleri repository'ye paslıyoruz
+	return c.productRepository.SearchProducts(ctx, vector, req)
 }
