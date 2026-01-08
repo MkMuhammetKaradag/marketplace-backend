@@ -16,6 +16,8 @@ import (
 	httptransport "marketplace/internal/user-service/transport/http"
 	"marketplace/internal/user-service/transport/kafka"
 	messaginghandler "marketplace/internal/user-service/transport/messaging"
+	"marketplace/pkg/messaging"
+	pb "marketplace/pkg/proto/events"
 
 	"time"
 )
@@ -74,6 +76,24 @@ type container struct {
 	cloudinarySvc domain.ImageService
 }
 
+func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
+	broker := cfg.Brokers[0]
+	if broker == "" {
+		broker = "localhost:29092"
+	}
+	kafkaBrokers := []string{broker}
+	return messaging.KafkaConfig{
+		Brokers:              kafkaBrokers,
+		Topic:                "main-events", // Ana olay topic'i
+		RetryTopic:           "main-events-retry",
+		DLQTopic:             "main-events-dlq",
+		ServiceType:          pb.ServiceType_USER_SERVICE,
+		EnableRetry:          true,
+		MaxRetries:           3,
+		ConnectionTimeout:    10 * time.Second,
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_CREATED},
+	}
+}
 func buildContainer(cfg config.Config) (*container, error) {
 	repo, err := postgres.NewRepository(cfg)
 	if err != nil {
@@ -85,7 +105,11 @@ func buildContainer(cfg config.Config) (*container, error) {
 	}
 
 	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
-
+	messagingConfig := createMessagingConfig(cfg.Messaging)
+	messaging, err := messaging.NewKafkaClient(messagingConfig)
+	if err != nil {
+		return nil, fmt.Errorf("init kafka messaging: %w", err)
+	}
 	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
 	if err != nil {
 		return nil, fmt.Errorf("init kafka consumer: %w", err)
@@ -96,7 +120,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 		return nil, fmt.Errorf("init cloudinary service: %w", err)
 	}
 	userService := domain.NewUserService(repo)
-	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo, cloudinarySvc)
+	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo, messaging, cloudinarySvc)
 
 	router := httptransport.NewRouter(httpHandlers)
 

@@ -13,11 +13,12 @@ type Handlers struct {
 	userService       domain.UserService
 	userRepository    domain.UserRepository
 	sessionRepository domain.SessionRepository
+	messaging         domain.Messaging
 	cloudinary        domain.ImageService
 }
 
-func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository, cloudinary domain.ImageService) *Handlers {
-	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo, cloudinary: cloudinary}
+func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository, messaging domain.Messaging, cloudinary domain.ImageService) *Handlers {
+	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo, messaging: messaging, cloudinary: cloudinary}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -33,7 +34,7 @@ func (h *Handlers) SignUp() *controller.SignUpController {
 	return controller.NewSignUpController(signUpUseCase)
 }
 func (h *Handlers) UserActivate() *controller.UserActivateController {
-	userActivateUseCase := usecase.NewUserActivateUseCase(h.userRepository)
+	userActivateUseCase := usecase.NewUserActivateUseCase(h.userRepository, h.messaging)
 	return controller.NewUserActivateController(userActivateUseCase)
 }
 func (h *Handlers) SignIn() *controller.SignInController {

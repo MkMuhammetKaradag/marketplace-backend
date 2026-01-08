@@ -20,7 +20,10 @@ func SetupMessageHandlers(repository domain.ProductRepository) map[pb.MessageTyp
 	sellerApprovedUseCase := usecase.NewSellerApprovedUseCase(repository)
 	sellerApprovedHandler := controller.NewSellerApprovedHandler(sellerApprovedUseCase)
 
+	userCreatedUseCase := usecase.NewUserCreatedUseCase(repository)
+	userCreatedHandler := controller.NewUserCreatedHandler(userCreatedUseCase)
 	return map[pb.MessageType]domain.MessageHandler{
 		pb.MessageType_SELLER_APPROVED: sellerApprovedHandler,
+		pb.MessageType_USER_CREATED:    userCreatedHandler,
 	}
 }

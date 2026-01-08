@@ -32,6 +32,13 @@ const (
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 
 		)`
+	createLocalUsersTable = `
+		CREATE TABLE IF NOT EXISTS local_users (
+            id UUID PRIMARY KEY,
+            username VARCHAR(100), 
+            email VARCHAR(100),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )`
 
 	createProductsTable = `
 		CREATE TABLE IF NOT EXISTS products (
@@ -99,6 +106,19 @@ const (
             weight FLOAT DEFAULT 1.0,     -- Satın alma: 5.0, İzleme: 1.0 gibi
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         )  
+    `
+
+	createProductFavoriteTable = `
+        CREATE TABLE IF NOT EXISTS product_favorites (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL,
+            product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            deleted_at TIMESTAMP WITH TIME ZONE,
+
+           
+        )
     `
 
 	createIndex = `
