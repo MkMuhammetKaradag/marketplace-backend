@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type Worker interface {
 	EnqueueImageUpload(payload UploadImageTaskPayload) error
 	EnqueueTrackView(payload TrackProductViewPayload) error
+	EnqueueToggleFavorite(payload FavoritePayload) error
 }
 
 type UploadImagePayload struct {
@@ -25,5 +26,10 @@ type UploadImageTaskPayload struct {
 type TrackProductViewPayload struct {
 	UserID    uuid.UUID `json:"user_id"`
 	Embedding []float32 `json:"embedding"`
+	ProductID uuid.UUID `json:"product_id"`
+}
+
+type FavoritePayload struct {
+	UserID    uuid.UUID `json:"user_id"`
 	ProductID uuid.UUID `json:"product_id"`
 }

@@ -38,6 +38,9 @@ func runMigrations(db *sql.DB) error {
 	if _, err := db.Exec(createUserProductInteractionsTable); err != nil {
 		return fmt.Errorf("failed to create user_product_interactions table: %w", err)
 	}
+	if _, err := db.Exec(createFavoriteTable); err != nil {
+		return fmt.Errorf("failed to create favorites table: %w", err)
+	}
 	if _, err := db.Exec(createIndex); err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
 	}

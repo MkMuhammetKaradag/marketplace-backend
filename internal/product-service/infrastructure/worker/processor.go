@@ -38,6 +38,7 @@ func (p *TaskProcessor) Start() error {
 
 	mux.HandleFunc(TaskUploadProductImage, p.ProcessUploadTask)
 	mux.HandleFunc(TaskTrackProductView, p.ProcessTrackViewTask)
+	mux.HandleFunc(TaskToggleFavorite, p.ProcessFavoriteTask)
 
 	log.Println("Worker Processor başlatılıyor...")
 	return p.server.Run(mux)
@@ -81,4 +82,26 @@ func (p *TaskProcessor) ProcessTrackViewTask(ctx context.Context, t *asynq.Task)
 
 	// 2. Etkileşimi ekle
 	return p.repo.AddInteraction(ctx, payload.UserID, payload.ProductID, "view")
+}
+
+func (p *TaskProcessor) ProcessFavoriteTask(ctx context.Context, t *asynq.Task) error {
+	var payload domain.FavoritePayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return err
+	}
+
+	fmt.Println("Payload: ", payload)
+
+	isAdded, err := p.repo.ToggleFavorite(ctx, payload.UserID, payload.ProductID)
+	if err != nil {
+		return err
+	}
+
+	if isAdded {
+
+		return p.repo.AddInteraction(ctx, payload.UserID, payload.ProductID, "like")
+	} else {
+
+		return p.repo.RemoveInteraction(ctx, payload.UserID, payload.ProductID, "like")
+	}
 }

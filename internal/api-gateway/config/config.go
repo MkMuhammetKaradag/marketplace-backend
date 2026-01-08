@@ -140,6 +140,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/products/product/:product_id": {
 			Permissions: PermissionNone,
 		},
+		"/products/toggle-favorite/:product_id": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {

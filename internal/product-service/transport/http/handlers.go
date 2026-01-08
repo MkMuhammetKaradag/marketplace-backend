@@ -60,6 +60,11 @@ func (h *Handlers) SearchProducts() *controller.SearchProductsController {
 	return controller.NewSearchProductsController(usecase)
 }
 
+func (h *Handlers) ToggleFavorite() *controller.ToggleFavoriteController {
+	usecase := usecase.NewToggleFavoriteUseCase(h.productRepository, h.worker)
+	return controller.NewToggleFavoriteController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

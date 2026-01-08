@@ -108,16 +108,12 @@ const (
         )  
     `
 
-	createProductFavoriteTable = `
-        CREATE TABLE IF NOT EXISTS product_favorites (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            user_id UUID NOT NULL,
+	createFavoriteTable = `
+        CREATE TABLE IF NOT EXISTS favorites (
+            user_id UUID REFERENCES local_users(id) ON DELETE CASCADE,
             product_id UUID REFERENCES products(id) ON DELETE CASCADE,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            deleted_at TIMESTAMP WITH TIME ZONE,
-
-           
+            PRIMARY KEY (user_id, product_id)
         )
     `
 

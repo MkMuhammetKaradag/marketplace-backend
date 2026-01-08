@@ -28,6 +28,7 @@ func (r *Router) Register(app *fiber.App) {
 	getRecommendedProducts := r.handlers.GetRecommendedProducts()
 	getProduct := r.handlers.GetProduct()
 	searchProducts := r.handlers.SearchProducts()
+	toggleFavorite := r.handlers.ToggleFavorite()
 
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/create", handler.HandleWithFiber[controller.CreateProductRequest, controller.CreateProductResponse](createProduct))
@@ -36,5 +37,5 @@ func (r *Router) Register(app *fiber.App) {
 	app.Get("/recommended", handler.HandleWithFiber[controller.GetRecommendationsRequest, controller.GetRecommendationsResponse](getRecommendedProducts))
 	app.Get("/product/:product_id", handler.HandleWithFiber[controller.GetProductRequest, controller.GetProductResponse](getProduct))
 	app.Get("/search", handler.HandleWithFiber[controller.SearchProductsRequest, controller.SearchProductsResponse](searchProducts))
-
+	app.Post("/toggle-favorite/:product_id", handler.HandleWithFiber[controller.ToggleFavoriteRequest, controller.ToggleFavoriteResponse](toggleFavorite))
 }

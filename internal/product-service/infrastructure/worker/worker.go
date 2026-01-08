@@ -9,6 +9,7 @@ import (
 
 const TaskUploadProductImage = "task:upload_product_image"
 const TaskTrackProductView = "task:track_product_view"
+const TaskToggleFavorite = "task:toggle_favorite"
 
 type Worker struct {
 	client *asynq.Client
@@ -32,4 +33,14 @@ func (w *Worker) EnqueueImageUpload(payload domain.UploadImageTaskPayload) error
 	return err
 }
 
+func (w *Worker) EnqueueToggleFavorite(payload domain.FavoritePayload) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 
+	task := asynq.NewTask(TaskToggleFavorite, data, asynq.MaxRetry(5))
+
+	_, err = w.client.Enqueue(task)
+	return err
+}
