@@ -8,7 +8,7 @@ import (
 )
 
 type GetProductUseCase interface {
-	Execute(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (*domain.Product, error)
+	Execute(ctx context.Context, productID uuid.UUID, userID *uuid.UUID) (*domain.Product, error)
 }
 
 type getProductUseCase struct {
@@ -23,17 +23,17 @@ func NewGetProductUseCase(productRepository domain.ProductRepository, distributo
 	}
 }
 
-func (c *getProductUseCase) Execute(ctx context.Context, userID uuid.UUID, productID uuid.UUID) (*domain.Product, error) {
+func (c *getProductUseCase) Execute(ctx context.Context, productID uuid.UUID, userID *uuid.UUID) (*domain.Product, error) {
 
-	product, err := c.productRepository.GetProduct(ctx, productID)
+	product, err := c.productRepository.GetProduct(ctx, productID, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if userID != uuid.Nil && len(product.Embedding) > 0 {
+	if userID != nil && len(product.Embedding) > 0 {
 		// Hızlıca kuyruğa atıyoruz, kullanıcı beklemiyor
 		_ = c.distributorWorker.EnqueueTrackView(domain.TrackProductViewPayload{
-			UserID:    userID,
+			UserID:    *userID,
 			Embedding: product.Embedding,
 			ProductID: product.ID,
 		})

@@ -25,8 +25,10 @@ type Product struct {
 	CreatedAt    time.Time              `json:"created_at"`
 	Attributes   map[string]interface{} `json:"attributes"`
 	UpdatedAt    time.Time              `json:"updated_at"`
-	Images       []ProductImage         `json:"images"`
-	Embedding    []float32              `json:"-"` // Bu alan artık JSON'da gözükmeyecek
+	IsFavorited  bool                   `json:"is_favorited"`
+
+	Images    []ProductImage `json:"images"`
+	Embedding []float32      `json:"-"`
 }
 type SearchProductsParams struct {
 	Limit      int      `json:"limit"`

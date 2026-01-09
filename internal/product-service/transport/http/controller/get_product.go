@@ -40,10 +40,8 @@ func (c *GetProductController) Handle(fiberCtx *fiber.Ctx, req *GetProductReques
 	userIDStr := fiberCtx.Get("X-User-ID")
 
 	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		userID = uuid.Nil
-	}
-	product, err := c.usecase.Execute(fiberCtx.UserContext(), userID, req.ProductID)
+
+	product, err := c.usecase.Execute(fiberCtx.UserContext(), req.ProductID, &userID)
 	if err != nil {
 		return nil, err
 	}

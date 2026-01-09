@@ -83,6 +83,7 @@ type RoutePolicy struct {
 
 const (
 	PermissionNone                  int64 = 0
+	PermissionViewProduct           int64 = 1 << 0
 	PermissionAdministrator         int64 = 1 << 62
 	PermissionApproveOrRejectSeller int64 = 1 << 24
 	PermissionManageRoles           int64 = 1 << 32
@@ -138,7 +139,7 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 			Permissions: PermissionNone,
 		},
 		"/products/product/:product_id": {
-			Permissions: PermissionNone,
+			Permissions: PermissionViewProduct,
 		},
 		"/products/toggle-favorite/:product_id": {
 			Permissions: PermissionNone,

@@ -17,7 +17,8 @@ type ProductRepository interface {
 	RemoveInteraction(ctx context.Context, userID uuid.UUID, productID uuid.UUID, interactionType string) error
 	TrackProductView(ctx context.Context, userID uuid.UUID, productEmbedding []float32) error
 	GetRecommendedProducts(ctx context.Context, userID uuid.UUID, limit int) ([]*Product, error)
-	GetProduct(ctx context.Context, productID uuid.UUID) (*Product, error)
+
+	GetProduct(ctx context.Context, id uuid.UUID, userID *uuid.UUID) (*Product, error)
 	AddInteraction(ctx context.Context, userID uuid.UUID, productID uuid.UUID, interactionType string) error
 	SearchProducts(ctx context.Context, queryVector []float32, req SearchProductsParams) ([]*Product, error)
 	ToggleFavorite(ctx context.Context, userID, productID uuid.UUID) (bool, error)

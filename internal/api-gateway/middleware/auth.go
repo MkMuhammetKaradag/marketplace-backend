@@ -45,6 +45,9 @@ func AuthMiddleware(policies map[string]config.RoutePolicy, cacheManager *cache.
 		}
 
 		if authValue == "" {
+			if policy.Permissions == config.PermissionViewProduct {
+				return c.Next()
+			}
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Authentication required",
 			})
