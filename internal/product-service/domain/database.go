@@ -23,5 +23,6 @@ type ProductRepository interface {
 	SearchProducts(ctx context.Context, queryVector []float32, req SearchProductsParams) ([]*Product, error)
 	ToggleFavorite(ctx context.Context, userID, productID uuid.UUID) (bool, error)
 	CheckLocalUserExists(ctx context.Context, userID uuid.UUID) (bool, error)
+	GetUserFavorites(ctx context.Context, userID uuid.UUID) ([]*FavoriteItem, error)
 	Close() error
 }

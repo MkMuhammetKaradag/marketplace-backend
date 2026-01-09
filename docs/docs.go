@@ -70,6 +70,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/products/favorites": {
+            "get": {
+                "description": "Get  user favorites",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get favorites",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_product-service_transport_http_controller.GetFavoritesResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/products/search": {
             "get": {
                 "description": "Search for products using vector search",
@@ -345,6 +368,17 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_product-service_transport_http_controller.GetFavoritesResponse": {
+            "type": "object",
+            "properties": {
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/marketplace_internal_product-service_domain.FavoriteItem"
+                    }
+                }
+            }
+        },
         "internal_product-service_transport_http_controller.GetProductResponse": {
             "type": "object",
             "properties": {
@@ -361,6 +395,35 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/marketplace_internal_product-service_domain.Product"
                     }
+                }
+            }
+        },
+        "marketplace_internal_product-service_domain.FavoriteItem": {
+            "type": "object",
+            "properties": {
+                "category_name": {
+                    "type": "string"
+                },
+                "favorited_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/marketplace_internal_product-service_domain.ProductImage"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "stock_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -391,6 +454,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/marketplace_internal_product-service_domain.ProductImage"
                     }
+                },
+                "is_favorited": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

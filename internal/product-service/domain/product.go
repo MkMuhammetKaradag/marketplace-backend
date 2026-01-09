@@ -37,3 +37,12 @@ type SearchProductsParams struct {
 	MaxPrice   *float64 `json:"max_price"`
 	CategoryID *string  `json:"category_id"`
 }
+type FavoriteItem struct {
+	ID           uuid.UUID      `json:"id"`
+	Name         string         `json:"name"`
+	Price        float64        `json:"price"`
+	StockCount   int            `json:"stock_count"`
+	Images       []ProductImage `json:"images"`
+	FavoritedAt  time.Time      `json:"favorited_at"`
+	CategoryName string         `json:"category_name"`
+}

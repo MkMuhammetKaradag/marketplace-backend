@@ -60,6 +60,13 @@ definitions:
       message:
         type: string
     type: object
+  internal_product-service_transport_http_controller.GetFavoritesResponse:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/marketplace_internal_product-service_domain.FavoriteItem'
+        type: array
+    type: object
   internal_product-service_transport_http_controller.GetProductResponse:
     properties:
       product:
@@ -71,6 +78,25 @@ definitions:
         items:
           $ref: '#/definitions/marketplace_internal_product-service_domain.Product'
         type: array
+    type: object
+  marketplace_internal_product-service_domain.FavoriteItem:
+    properties:
+      category_name:
+        type: string
+      favorited_at:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/marketplace_internal_product-service_domain.ProductImage'
+        type: array
+      name:
+        type: string
+      price:
+        type: number
+      stock_count:
+        type: integer
     type: object
   marketplace_internal_product-service_domain.Product:
     properties:
@@ -91,6 +117,8 @@ definitions:
         items:
           $ref: '#/definitions/marketplace_internal_product-service_domain.ProductImage'
         type: array
+      is_favorited:
+        type: boolean
       name:
         type: string
       price:
@@ -173,6 +201,21 @@ paths:
           schema:
             $ref: '#/definitions/internal_product-service_transport_http_controller.CreateProductResponse'
       summary: Create product
+      tags:
+      - products
+  /products/favorites:
+    get:
+      consumes:
+      - application/json
+      description: Get  user favorites
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_product-service_transport_http_controller.GetFavoritesResponse'
+      summary: Get favorites
       tags:
       - products
   /products/search:
