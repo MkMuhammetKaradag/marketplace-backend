@@ -150,6 +150,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/products/update/:product_id": {
 			Permissions: PermissionManageOwnStore,
 		},
+		"/products/delete/:product_id": {
+			Permissions: PermissionManageOwnStore | PermissionAdministrator,
+		},
 	}
 }
 func Read() Config {

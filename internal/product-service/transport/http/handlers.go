@@ -75,6 +75,11 @@ func (h *Handlers) UpdateProduct() *controller.UpdateProductController {
 	return controller.NewUpdateProductController(usecase)
 }
 
+func (h *Handlers) DeleteProduct() *controller.DeleteProductController {
+	usecase := usecase.NewDeleteProductUseCase(h.productRepository)
+	return controller.NewDeleteProductController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

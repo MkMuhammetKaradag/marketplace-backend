@@ -120,4 +120,28 @@ const (
 	createIndex = `
         CREATE INDEX ON products USING hnsw (embedding vector_cosine_ops)
         `
+
+	createCleanupProductFunction = `
+            
+            CREATE OR REPLACE FUNCTION fn_cleanup_product_on_soft_delete()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF (NEW.status = 'deleted' AND OLD.status != 'deleted') THEN
+                    DELETE FROM favorites WHERE product_id = NEW.id;
+                    DELETE FROM user_product_interactions WHERE product_id = NEW.id;
+                    RAISE NOTICE 'Product % soft-deleted, relations cleaned up.', NEW.id;
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            
+            DROP TRIGGER IF EXISTS trg_after_product_soft_delete ON products;
+
+          
+            CREATE TRIGGER trg_after_product_soft_delete
+            AFTER UPDATE ON products
+            FOR EACH ROW
+            EXECUTE FUNCTION fn_cleanup_product_on_soft_delete();
+        `
 )

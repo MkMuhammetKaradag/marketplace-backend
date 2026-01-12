@@ -31,6 +31,7 @@ func (r *Router) Register(app *fiber.App) {
 	toggleFavorite := r.handlers.ToggleFavorite()
 	getUserFavorites := r.handlers.GetUserFavorites()
 	updateProduct := r.handlers.UpdateProduct()
+	deleteProduct := r.handlers.DeleteProduct()
 
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/create", handler.HandleWithFiber[controller.CreateProductRequest, controller.CreateProductResponse](createProduct))
@@ -42,4 +43,5 @@ func (r *Router) Register(app *fiber.App) {
 	app.Post("/toggle-favorite/:product_id", handler.HandleWithFiber[controller.ToggleFavoriteRequest, controller.ToggleFavoriteResponse](toggleFavorite))
 	app.Get("/favorites", handler.HandleWithFiber[controller.GetFavoritesRequest, controller.GetFavoritesResponse](getUserFavorites))
 	app.Put("/update/:product_id", handler.HandleWithFiber[controller.UpdateProductRequest, controller.UpdateProductResponse](updateProduct))
+	app.Delete("/delete/:product_id", handler.HandleWithFiber[controller.DeleteProductRequest, controller.DeleteProductResponse](deleteProduct))
 }
