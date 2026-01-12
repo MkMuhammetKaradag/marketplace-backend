@@ -49,7 +49,7 @@ func (r *Repository) GetProduct(ctx context.Context, id uuid.UUID, userID *uuid.
             
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN product_images pi ON p.id = pi.product_id
+        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.deleted_at IS NULL
         WHERE p.id = $1
         GROUP BY p.id, c.name;
     `

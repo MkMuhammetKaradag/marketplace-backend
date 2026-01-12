@@ -27,5 +27,6 @@ type ProductRepository interface {
 	GetProductByID(ctx context.Context, id uuid.UUID) (*Product, error)
 	UpdateProduct(ctx context.Context, p *Product) error
 	SoftDeleteProduct(ctx context.Context, productID uuid.UUID) error
+	SoftDeleteAllProductImages(ctx context.Context, productID uuid.UUID) error
 	Close() error
 }

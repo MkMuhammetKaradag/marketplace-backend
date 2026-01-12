@@ -8,6 +8,7 @@ import (
 	"log"
 	"marketplace/internal/product-service/domain"
 	"strings"
+	"time"
 
 	"github.com/hibiken/asynq"
 )
@@ -49,10 +50,11 @@ func (p *TaskProcessor) ProcessUploadTask(ctx context.Context, t *asynq.Task) er
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return err
 	}
-
+	uniqueSuffix := time.Now().Unix()
+	publicID := fmt.Sprintf("%s_%d_%d", payload.ProductID, payload.SortOrder, uniqueSuffix)
 	url, err := p.cloudinarySvc.UploadImageFromBytes(ctx, payload.ImageData, domain.UploadOptions{
 		Folder:   "products",
-		PublicID: fmt.Sprintf("%s_%d", payload.ProductID, payload.SortOrder),
+		PublicID: publicID,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "Invalid image file") {

@@ -29,8 +29,13 @@ func NewUploadProductImagesUseCase(productRepository domain.ProductRepository, c
 }
 
 func (c *uploadProductImagesUseCase) Execute(fiberCtx *fiber.Ctx, productID uuid.UUID, files []*multipart.FileHeader) error {
+	err := c.productRepository.SoftDeleteAllProductImages(fiberCtx.UserContext(), productID)
+	if err != nil {
+		return fmt.Errorf("failed to clear old images: %w", err)
+	}
+
 	for i, fileHeader := range files {
-		
+
 		file, _ := fileHeader.Open()
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(file)
@@ -44,7 +49,6 @@ func (c *uploadProductImagesUseCase) Execute(fiberCtx *fiber.Ctx, productID uuid
 			SortOrder: i,
 		}
 
-		
 		err := c.imageWorker.EnqueueImageUpload(payload)
 		if err != nil {
 			return fmt.Errorf("kuyruğa atılamadı: %w", err)

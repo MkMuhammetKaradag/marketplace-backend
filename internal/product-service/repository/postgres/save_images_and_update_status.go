@@ -24,11 +24,8 @@ func (r *Repository) SaveImagesAndUpdateStatus(ctx context.Context, productID uu
 		INSERT INTO product_images (product_id, image_url, is_main, sort_order) 
 		VALUES ($1, $2, $3, $4)`
 
-	for i, img := range images {
-		// İlk resmi otomatik olarak ana resim (is_main = true) yapıyoruz
-		isMain := (i == 0)
-
-		_, err := tx.ExecContext(ctx, insertImageQuery, productID, img.ImageURL, isMain, i)
+	for _, img := range images {
+		_, err := tx.ExecContext(ctx, insertImageQuery, productID, img.ImageURL, img.IsMain, img.SortOrder)
 		if err != nil {
 			return fmt.Errorf("resim kaydedilirken hata (URL: %s): %w", img.ImageURL, err)
 		}

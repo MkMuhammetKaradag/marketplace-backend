@@ -72,6 +72,7 @@ const (
             sort_order INTEGER DEFAULT 0,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            deleted_at TIMESTAMP WITH TIME ZONE, 
 
 			CONSTRAINT fk_product
 			    FOREIGN KEY(product_id) 
