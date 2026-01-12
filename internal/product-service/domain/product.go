@@ -46,3 +46,12 @@ type FavoriteItem struct {
 	FavoritedAt  time.Time      `json:"favorited_at"`
 	CategoryName string         `json:"category_name"`
 }
+type UpdateProduct struct {
+	ProductID   uuid.UUID
+	Name        *string
+	Description *string
+	Price       *float64
+	StockCount  *int
+	CategoryID  *uuid.UUID
+	Attributes  map[string]interface{}
+}

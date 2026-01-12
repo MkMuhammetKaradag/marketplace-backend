@@ -70,6 +70,11 @@ func (h *Handlers) GetUserFavorites() *controller.GetFavoritesController {
 	return controller.NewGetFavoritesController(usecase)
 }
 
+func (h *Handlers) UpdateProduct() *controller.UpdateProductController {
+	usecase := usecase.NewUpdateProductUseCase(h.productRepository, h.aiProvider)
+	return controller.NewUpdateProductController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

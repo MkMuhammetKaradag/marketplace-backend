@@ -73,7 +73,7 @@ func (p *TaskProcessor) ProcessUploadTask(ctx context.Context, t *asynq.Task) er
 func (p *TaskProcessor) ProcessTrackViewTask(ctx context.Context, t *asynq.Task) error {
 	var payload domain.TrackProductViewPayload
 	json.Unmarshal(t.Payload(), &payload)
-	fmt.Println("Payload: ", payload)
+	//fmt.Println("Payload: ", payload)
 	// 1. Ürün izlemeyi kaydet
 	err := p.repo.TrackProductView(ctx, payload.UserID, payload.Embedding)
 	if err != nil {
@@ -90,7 +90,7 @@ func (p *TaskProcessor) ProcessFavoriteTask(ctx context.Context, t *asynq.Task) 
 		return err
 	}
 
-	fmt.Println("Payload: ", payload)
+	//fmt.Println("Payload: ", payload)
 
 	isAdded, err := p.repo.ToggleFavorite(ctx, payload.UserID, payload.ProductID)
 	if err != nil {

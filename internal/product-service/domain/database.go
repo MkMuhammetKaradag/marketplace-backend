@@ -24,5 +24,7 @@ type ProductRepository interface {
 	ToggleFavorite(ctx context.Context, userID, productID uuid.UUID) (bool, error)
 	CheckLocalUserExists(ctx context.Context, userID uuid.UUID) (bool, error)
 	GetUserFavorites(ctx context.Context, userID uuid.UUID) ([]*FavoriteItem, error)
+	GetProductByID(ctx context.Context, id uuid.UUID) (*Product, error)
+	UpdateProduct(ctx context.Context, p *Product) error
 	Close() error
 }

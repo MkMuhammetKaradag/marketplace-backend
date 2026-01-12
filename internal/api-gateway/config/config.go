@@ -147,6 +147,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/products/favorites": {
 			Permissions: PermissionNone,
 		},
+		"/products/update/:product_id": {
+			Permissions: PermissionManageOwnStore,
+		},
 	}
 }
 func Read() Config {
