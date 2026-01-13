@@ -8,6 +8,7 @@ import (
 	"marketplace/internal/basket-service/config"
 	"marketplace/internal/basket-service/domain"
 	"marketplace/internal/basket-service/pkg/graceful"
+	"marketplace/internal/basket-service/repository/basket"
 	"marketplace/internal/basket-service/repository/postgres"
 	"marketplace/internal/basket-service/server"
 	httptransport "marketplace/internal/basket-service/transport/http"
@@ -16,9 +17,10 @@ import (
 )
 
 type App struct {
-	cfg        config.Config
-	server     *server.Server
-	repository domain.BasketRepository
+	cfg                      config.Config
+	server                   *server.Server
+	BasketPostgresRepository domain.BasketPostgresRepository
+	BasketRedisRepository    domain.BasketRedisRepository
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -28,9 +30,10 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 
 	return &App{
-		cfg:        cfg,
-		server:     container.server,
-		repository: container.repo,
+		cfg:                      cfg,
+		server:                   container.server,
+		BasketPostgresRepository: container.BasketPostgresRepository,
+		BasketRedisRepository:    container.BasketRedisRepository,
 	}, nil
 }
 
@@ -46,12 +49,16 @@ func (a *App) Start() error {
 	}
 
 	log.Println("server stopped, closing repository")
-	return a.repository.Close()
+	if err := a.BasketRedisRepository.Close(); err != nil {
+		return fmt.Errorf("failed to close redis repository: %w", err)
+	}
+	return a.BasketPostgresRepository.Close()
 }
 
 type container struct {
-	repo   domain.BasketRepository
-	server *server.Server
+	BasketPostgresRepository domain.BasketPostgresRepository
+	BasketRedisRepository    domain.BasketRedisRepository
+	server                   *server.Server
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -60,7 +67,12 @@ func buildContainer(cfg config.Config) (*container, error) {
 		return nil, fmt.Errorf("init postgres repository: %w", err)
 	}
 
-	httpHandlers := httptransport.NewHandlers(repo)
+	redisRepo, err := basket.NewBasketRedisRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("init redis repository: %w", err)
+	}
+
+	httpHandlers := httptransport.NewHandlers(repo, redisRepo)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
@@ -73,7 +85,8 @@ func buildContainer(cfg config.Config) (*container, error) {
 	httpServer := server.New(serverCfg, router)
 
 	return &container{
-		repo:   repo,
-		server: httpServer,
+		BasketPostgresRepository: repo,
+		BasketRedisRepository:    redisRepo,
+		server:                   httpServer,
 	}, nil
 }

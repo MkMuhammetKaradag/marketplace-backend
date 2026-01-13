@@ -13,11 +13,11 @@ import (
 func newPostgresDB(cfg config.Config) (*sql.DB, error) {
 	conn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.DB,
+		cfg.Postgres.User,
+		cfg.Postgres.Password,
+		cfg.Postgres.Host,
+		cfg.Postgres.Port,
+		cfg.Postgres.DB,
 	)
 
 	db, err := sql.Open("postgres", conn)

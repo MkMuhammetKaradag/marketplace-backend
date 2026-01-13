@@ -1,6 +1,13 @@
 // internal/basket-service/domain/database.go
 package domain
 
-type BasketRepository interface {
+import "context"
+
+type BasketPostgresRepository interface {
 	Close() error
+}
+type BasketRedisRepository interface {
+	Close() error
+	GetBasket(ctx context.Context, userID string) (*Basket, error)
+	UpdateBasket(ctx context.Context, basket *Basket) error
 }

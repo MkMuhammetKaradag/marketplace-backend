@@ -5,14 +5,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"marketplace/internal/basket-service/domain"
+	"marketplace/internal/basket-service/transport/http/controller"
+	"marketplace/internal/basket-service/transport/http/usecase"
 )
 
 type Handlers struct {
-	basketRepository domain.BasketRepository
+	basketPostgresRepository domain.BasketPostgresRepository
+	basketRedisRepository    domain.BasketRedisRepository
 }
 
-func NewHandlers(repository domain.BasketRepository) *Handlers {
-	return &Handlers{basketRepository: repository}
+func NewHandlers(postgresRepository domain.BasketPostgresRepository, redisRepository domain.BasketRedisRepository) *Handlers {
+	return &Handlers{basketPostgresRepository: postgresRepository, basketRedisRepository: redisRepository}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -22,6 +25,12 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 		Info:    "Fiber handler connected to domain layer",
 	}
 	return c.JSON(resp)
+}
+
+func (h *Handlers) AddItem() *controller.AddItemController {
+	usecase := usecase.NewAddItemUseCase(h.basketRedisRepository)
+	return controller.NewAddItemController(usecase)
+
 }
 
 type HelloResponse struct {

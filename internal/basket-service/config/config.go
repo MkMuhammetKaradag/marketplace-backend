@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-type DatabaseConfig struct {
+type PostgresConfig struct {
 	Port     string `mapstructure:"port"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
@@ -19,6 +19,11 @@ type DatabaseConfig struct {
 	Host     string `mapstructure:"host"`
 }
 
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+}
 type ServerConfig struct {
 	Port        string `mapstructure:"port"`
 	GrpcPort    string `mapstructure:"grpcPort"`
@@ -26,19 +31,10 @@ type ServerConfig struct {
 	Description string `mapstructure:"description"`
 }
 
-type MessagingConfig struct {
-	Brokers []string `mapstructure:"brokers"`
-}
-type CloudinaryConfig struct {
-	CloudName string `mapstructure:"cloudName"`
-	APIKey    string `mapstructure:"apiKey"`
-	APISecret string `mapstructure:"apiSecret"`
-}
 type Config struct {
-	Database   DatabaseConfig   `mapstructure:"database"`
-	Server     ServerConfig     `mapstructure:"server"`
-	Messaging  MessagingConfig  `mapstructure:"messaging"`
-	Cloudinary CloudinaryConfig `mapstructure:"cloudinary"`
+	Postgres PostgresConfig `mapstructure:"postgres"`
+	Redis    RedisConfig    `mapstructure:"redis"`
+	Server   ServerConfig   `mapstructure:"server"`
 }
 
 func Read() Config {
