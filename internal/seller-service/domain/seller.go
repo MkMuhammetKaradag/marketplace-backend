@@ -1,3 +1,4 @@
+// internal/seller-service/domain/seller.go
 package domain
 
 import (

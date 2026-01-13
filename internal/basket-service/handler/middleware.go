@@ -1,10 +1,10 @@
-// internal/seller-service/handler/middleware.go
+// internal/basket-service/handler/middleware.go
 package handler
 
 import (
 	"errors"
-	"marketplace/internal/seller-service/domain"
-	"marketplace/internal/seller-service/repository/postgres"
+	"marketplace/internal/basket-service/domain"
+	"marketplace/internal/basket-service/repository/postgres"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -85,13 +85,13 @@ func getStatusCodeFromError(err error) int {
 	switch {
 	// Hata spesifik ise (Duplicate, Not Found, vb.)
 	case errors.Is(err, postgres.ErrDuplicateResource):
-		return fiber.StatusConflict // 409
-	case errors.Is(err, postgres.ErrUserNotFound):
-		return fiber.StatusNotFound // 404
+		return fiber.StatusConflict
+	case errors.Is(err, postgres.ErrBasketNotFound):
+		return fiber.StatusNotFound
 	case errors.Is(err, postgres.ErrInvalidCredentials):
-		return fiber.StatusBadRequest // 400
+		return fiber.StatusBadRequest
 	case errors.Is(err, domain.ErrUnauthorized):
-		return fiber.StatusUnauthorized // 401
+		return fiber.StatusUnauthorized
 
 	// Default: Beklenmedik veya sunucu hatası
 	default:

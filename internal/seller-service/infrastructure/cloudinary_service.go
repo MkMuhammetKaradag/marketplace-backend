@@ -1,4 +1,4 @@
-// internal/user-service/infrastructure/cloudinary_service.go
+// internal/seller-service/infrastructure/cloudinary_service.go
 package infrastructure
 
 import (

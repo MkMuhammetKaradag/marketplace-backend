@@ -1,4 +1,4 @@
-// internal/seller-service/handler/interface.go
+// internal/basket-service/handler/interface.go
 package handler
 
 import (

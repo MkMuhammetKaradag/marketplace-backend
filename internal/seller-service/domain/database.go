@@ -1,3 +1,4 @@
+// internal/seller-service/domain/database.go
 package domain
 
 import (

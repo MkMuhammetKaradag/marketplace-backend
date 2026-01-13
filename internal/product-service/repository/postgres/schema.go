@@ -130,6 +130,9 @@ const (
                 IF (NEW.status = 'deleted' AND OLD.status != 'deleted') THEN
                     DELETE FROM favorites WHERE product_id = NEW.id;
                     DELETE FROM user_product_interactions WHERE product_id = NEW.id;
+                    UPDATE product_images 
+                        SET deleted_at = NOW()
+                        WHERE product_id = NEW.id AND deleted_at IS NULL;
                     RAISE NOTICE 'Product % soft-deleted, relations cleaned up.', NEW.id;
                 END IF;
                 RETURN NEW;

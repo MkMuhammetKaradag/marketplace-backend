@@ -1,4 +1,4 @@
-// internal/seller-service/pkg/graceful/shutdown.go
+// internal/basket-service/pkg/graceful/shutdown.go
 package graceful
 
 import (

@@ -1,3 +1,4 @@
+// internal/seller-service/domain/messasing.go
 package domain
 
 import (

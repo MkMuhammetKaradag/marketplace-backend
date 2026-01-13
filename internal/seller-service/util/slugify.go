@@ -1,4 +1,4 @@
-// util/slugify.go
+// internal/seller-service/util/slugify.go
 package util
 
 import (

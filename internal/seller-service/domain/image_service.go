@@ -1,3 +1,4 @@
+// internal/seller-service/domain/image_service.go
 package domain
 
 import (
