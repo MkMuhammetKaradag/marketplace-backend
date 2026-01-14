@@ -32,6 +32,10 @@ func (h *Handlers) AddItem() *controller.AddItemController {
 	return controller.NewAddItemController(usecase)
 
 }
+func (h *Handlers) RemoveItem() *controller.RemoveItemController {
+	usecase := usecase.NewRemoveItemUseCase(h.basketRedisRepository)
+	return controller.NewRemoveItemController(usecase)
+}
 
 type HelloResponse struct {
 	Message string `json:"message"`

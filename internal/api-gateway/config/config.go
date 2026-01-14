@@ -156,6 +156,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/baskets/add-item": {
 			Permissions: PermissionNone,
 		},
+		"/baskets/remove-item/:product_id": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {

@@ -20,6 +20,8 @@ func (r *Router) Register(app *fiber.App) {
 	//api := app.Group("/api/v1")
 
 	addItem := r.handlers.AddItem()
+	removeItem := r.handlers.RemoveItem()
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/add-item", handler.HandleWithFiber[controller.AddItemRequest, controller.AddItemResponse](addItem))
+	app.Delete("/remove-item/:product_id", handler.HandleWithFiber[controller.RemoveItemRequest, controller.RemoveItemResponse](removeItem))
 }
