@@ -10,7 +10,7 @@ import (
 
 type AddItemRequest struct {
 	ProductID uuid.UUID `json:"product_id"`
-	Title     string    `json:"title"`
+	Name      string    `json:"name"`
 	Price     float64   `json:"price"`
 	Quantity  int       `json:"quantity"`
 	ImageURL  string    `json:"image_url"`
@@ -38,7 +38,7 @@ func (c *AddItemController) Handle(fiberCtx *fiber.Ctx, req *AddItemRequest) (*A
 
 	p := &domain.BasketItem{
 		ProductID: req.ProductID,
-		Title:     req.Title,
+		Name:      req.Name,
 		Price:     req.Price,
 		Quantity:  req.Quantity,
 		ImageURL:  req.ImageURL,

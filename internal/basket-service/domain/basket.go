@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type BasketItem struct {
 	ProductID uuid.UUID `json:"product_id"`
-	Title     string    `json:"title"`
+	Name      string    `json:"name"`
 	Price     float64   `json:"price"`
 	Quantity  int       `json:"quantity"`
 	ImageURL  string    `json:"image_url"`
