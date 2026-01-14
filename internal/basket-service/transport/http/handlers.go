@@ -37,6 +37,11 @@ func (h *Handlers) RemoveItem() *controller.RemoveItemController {
 	return controller.NewRemoveItemController(usecase)
 }
 
+func (h *Handlers) DecrementItem() *controller.DecrementItemController {
+	usecase := usecase.NewDecrementItemUseCase(h.basketRedisRepository)
+	return controller.NewDecrementItemController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

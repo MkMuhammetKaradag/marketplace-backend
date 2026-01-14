@@ -159,6 +159,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/baskets/remove-item/:product_id": {
 			Permissions: PermissionNone,
 		},
+		"/baskets/decrement-item/:product_id": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {
