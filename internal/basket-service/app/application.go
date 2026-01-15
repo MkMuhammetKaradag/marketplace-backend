@@ -7,6 +7,7 @@ import (
 	"log"
 	"marketplace/internal/basket-service/config"
 	"marketplace/internal/basket-service/domain"
+	"marketplace/internal/basket-service/grpc_client"
 	"marketplace/internal/basket-service/pkg/graceful"
 	"marketplace/internal/basket-service/repository/basket"
 	"marketplace/internal/basket-service/repository/postgres"
@@ -71,8 +72,12 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init redis repository: %w", err)
 	}
-
-	httpHandlers := httptransport.NewHandlers(repo, redisRepo)
+	grpcAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcPort)
+	grpcProductClient, err := grpc_client.NewProductClient(grpcAddress)
+	if err != nil {
+		log.Fatalf("failed to initialise gRPC client: %v", err)
+	}
+	httpHandlers := httptransport.NewHandlers(repo, redisRepo, grpcProductClient)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
@@ -82,7 +87,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	httpServer := server.New(serverCfg, router)
+	httpServer := server.New(serverCfg, router, grpcProductClient)
 
 	return &container{
 		BasketPostgresRepository: repo,

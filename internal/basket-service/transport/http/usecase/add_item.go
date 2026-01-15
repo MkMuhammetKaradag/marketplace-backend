@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"marketplace/internal/basket-service/domain"
-	"marketplace/internal/basket-service/grpc_client"
 
 	"github.com/google/uuid"
 )
@@ -14,18 +13,20 @@ type AddItemUseCase interface {
 }
 
 type addItemUseCase struct {
-	basketRepository domain.BasketRedisRepository
+	basketRepository  domain.BasketRedisRepository
+	grpcProductClient domain.ProductClient
 }
 
-func NewAddItemUseCase(basketRepository domain.BasketRedisRepository) AddItemUseCase {
+func NewAddItemUseCase(basketRepository domain.BasketRedisRepository, grpcProductClient domain.ProductClient) AddItemUseCase {
 	return &addItemUseCase{
-		basketRepository: basketRepository,
+		basketRepository:  basketRepository,
+		grpcProductClient: grpcProductClient,
 	}
 }
 
 func (u *addItemUseCase) Execute(ctx context.Context, userID uuid.UUID, p *domain.BasketItem) error {
 	// 1. Ürünü gRPC ile doğrula
-	product, err := grpc_client.GetProductForBasket(p.ProductID.String())
+	product, err := u.grpcProductClient.GetProductForBasket(ctx, p.ProductID.String())
 	if err != nil {
 		return err
 	}

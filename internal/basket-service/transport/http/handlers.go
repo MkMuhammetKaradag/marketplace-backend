@@ -12,10 +12,11 @@ import (
 type Handlers struct {
 	basketPostgresRepository domain.BasketPostgresRepository
 	basketRedisRepository    domain.BasketRedisRepository
+	grpcProductClient        domain.ProductClient
 }
 
-func NewHandlers(postgresRepository domain.BasketPostgresRepository, redisRepository domain.BasketRedisRepository) *Handlers {
-	return &Handlers{basketPostgresRepository: postgresRepository, basketRedisRepository: redisRepository}
+func NewHandlers(postgresRepository domain.BasketPostgresRepository, redisRepository domain.BasketRedisRepository, grpcProductClient domain.ProductClient) *Handlers {
+	return &Handlers{basketPostgresRepository: postgresRepository, basketRedisRepository: redisRepository, grpcProductClient: grpcProductClient}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -28,7 +29,7 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) AddItem() *controller.AddItemController {
-	usecase := usecase.NewAddItemUseCase(h.basketRedisRepository)
+	usecase := usecase.NewAddItemUseCase(h.basketRedisRepository, h.grpcProductClient)
 	return controller.NewAddItemController(usecase)
 
 }
@@ -40,6 +41,11 @@ func (h *Handlers) RemoveItem() *controller.RemoveItemController {
 func (h *Handlers) DecrementItem() *controller.DecrementItemController {
 	usecase := usecase.NewDecrementItemUseCase(h.basketRedisRepository)
 	return controller.NewDecrementItemController(usecase)
+}
+
+func (h *Handlers) IncrementItem() *controller.IncrementItemController {
+	usecase := usecase.NewIncrementItemUseCase(h.basketRedisRepository, h.grpcProductClient)
+	return controller.NewIncrementItemController(usecase)
 }
 
 type HelloResponse struct {

@@ -1,12 +1,11 @@
-// internal/basket-service/grpc_client/product_client.go (Yeni dosya)
+// internal/basket-service/grpc_client/product_client.go
 
 package grpc_client
 
 import (
 	"context"
-	"log"
-	"time"
 
+	"marketplace/internal/basket-service/domain"
 	pb "marketplace/pkg/proto/Product"
 
 	"google.golang.org/grpc"
@@ -14,41 +13,32 @@ import (
 )
 
 var ProductServiceClient pb.ProductServiceClient
-
 var conn *grpc.ClientConn
 
-func InitProductServiceClient(grpcAddress string) error {
-	var err error
-
-	conn, err = grpc.Dial(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return err
-	}
-
-	ProductServiceClient = pb.NewProductServiceClient(conn)
-	log.Printf("✅ Gateway, Product Servisine gRPC ile bağlandı: %s", grpcAddress)
-	return nil
+type productClient struct {
+	client pb.ProductServiceClient
+	conn   *grpc.ClientConn
 }
 
-func CloseProductServiceClient() {
-	if conn != nil {
-		conn.Close()
-	}
-}
+func NewProductClient(grpcAddress string) (domain.ProductClient, error) {
 
-func GetProductForBasket(id string) (Product *pb.ProductResponse, err error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer cancel()
-
-	req := &pb.GetProductRequest{Id: id}
-
-	resp, err := ProductServiceClient.GetProductForBasket(ctx, req)
-
+	conn, err := grpc.Dial(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Printf("🔒 gRPC doğrulama çağrısı başarısız: %v", err)
 		return nil, err
 	}
 
-	return resp, nil
+	return &productClient{
+		client: pb.NewProductServiceClient(conn),
+		conn:   conn,
+	}, nil
+}
+
+func (c *productClient) GetProductForBasket(ctx context.Context, id string) (*pb.ProductResponse, error) {
+
+	req := &pb.GetProductRequest{Id: id}
+	return c.client.GetProductForBasket(ctx, req)
+}
+
+func (c *productClient) Close() error {
+	return c.conn.Close()
 }

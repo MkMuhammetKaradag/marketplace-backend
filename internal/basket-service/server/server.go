@@ -4,8 +4,7 @@ package server
 import (
 	"fmt"
 	"log"
-	"marketplace/internal/basket-service/grpc_client"
-	"net/http"
+	"marketplace/internal/basket-service/domain"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,11 +25,12 @@ type Config struct {
 }
 
 type Server struct {
-	app *fiber.App
-	cfg Config
+	app               *fiber.App
+	cfg               Config
+	grpcProductClient domain.ProductClient
 }
 
-func New(cfg Config, registrar RouteRegistrar) *Server {
+func New(cfg Config, registrar RouteRegistrar, pClient domain.ProductClient) *Server {
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  cfg.IdleTimeout,
 		ReadTimeout:  cfg.ReadTimeout,
@@ -55,22 +55,26 @@ func New(cfg Config, registrar RouteRegistrar) *Server {
 	}
 
 	return &Server{
-		app: app,
-		cfg: cfg,
+		app:               app,
+		cfg:               cfg,
+		grpcProductClient: pClient,
 	}
 }
 
 func (s *Server) Start() error {
-	go func() {
-		if err := s.Run(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("gRPC sunucusu hatası: %v", err)
-		}
-	}()
+	// go func() {
+	// 	if err := s.Run(); err != nil && err != http.ErrServerClosed {
+	// 		log.Fatalf("gRPC sunucusu hatası: %v", err)
+	// 	}
+	// }()
 	log.Printf("🌐 HTTP sunucusu %s adresinde dinliyor...", s.cfg.Port)
 	return s.app.Listen(s.Address())
 }
 
 func (s *Server) Shutdown(timeout time.Duration) error {
+	if s.grpcProductClient != nil {
+		s.grpcProductClient.Close()
+	}
 
 	return s.app.ShutdownWithTimeout(timeout)
 }
@@ -82,12 +86,13 @@ func (s *Server) FiberApp() *fiber.App {
 func (s *Server) Address() string {
 	return fmt.Sprintf("0.0.0.0:%s", s.cfg.Port)
 }
-func (s *Server) Run() error {
-	grpcAddress := "localhost:3004" // Docker'da ise servis adı, yerelde ise localhost:50051
 
-	if err := grpc_client.InitProductServiceClient(grpcAddress); err != nil {
-		log.Fatalf("gRPC istemcisi başlatılamadı: %v", err)
-		return err
-	}
-	return nil
-}
+// func (s *Server) Run() error {
+// 	grpcAddress := "localhost:3004" // Docker'da ise servis adı, yerelde ise localhost:50051
+
+// 	if err := s.grpcProductClient.InitProductServiceClient(grpcAddress); err != nil {
+// 		log.Fatalf("gRPC istemcisi başlatılamadı: %v", err)
+// 		return err
+// 	}
+// 	return nil
+// }
