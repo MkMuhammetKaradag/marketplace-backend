@@ -34,20 +34,20 @@ func (r *BasketRedisRepository) Close() error {
 	return nil
 }
 
-// Redis anahtarı oluşturma yardımcı fonksiyonu
+// Helper function to create Redis key
 func (r *BasketRedisRepository) getBasketKey(userID string) string {
 	return fmt.Sprintf("basket:%s", userID)
 }
 
-// UpdateBasket hem yeni ürün eklemek hem de miktar güncellemek için kullanılır
+// UpdateBasket is used to both add new products and update quantities
 func (r *BasketRedisRepository) UpdateBasket(ctx context.Context, basket *domain.Basket) error {
-	// 1. Sepeti JSON stringine çevir
+	// 1. Convert the basket to a JSON string
 	jsonData, err := json.Marshal(basket)
 	if err != nil {
 		return fmt.Errorf("failed to marshal basket: %w", err)
 	}
 
-	// 2. Redis'e kaydet (Örnek: 7 gün ömür biçiyoruz)
+	// 2. Save to Redis (Example: We're giving it a 7-day lifespan)
 	key := r.getBasketKey(basket.UserID.String())
 	err = r.client.Set(ctx, key, jsonData, 7*24*time.Hour).Err()
 	if err != nil {
@@ -57,13 +57,13 @@ func (r *BasketRedisRepository) UpdateBasket(ctx context.Context, basket *domain
 	return nil
 }
 
-// GetBasket kullanıcı id'sine göre sepeti getirir
+// GetBasket returns the user's basket based on user id
 func (r *BasketRedisRepository) GetBasket(ctx context.Context, userID string) (*domain.Basket, error) {
 	key := r.getBasketKey(userID)
 
 	val, err := r.client.Get(ctx, key).Result()
 	if err == redis.Nil {
-		// Sepet yoksa boş bir sepet dönüyoruz (Hata değil)
+		// If there's no basket, we're returning an empty basket (Not a mistake)
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -76,4 +76,17 @@ func (r *BasketRedisRepository) GetBasket(ctx context.Context, userID string) (*
 	}
 
 	return &basket, nil
+}
+
+// ClearBasket completely deletes the user's basket key from Redis.
+func (r *BasketRedisRepository) ClearBasket(ctx context.Context, userID string) error {
+	key := r.getBasketKey(userID)
+
+	// Delete the key from Redis
+	err := r.client.Del(ctx, key).Err()
+	if err != nil {
+		return fmt.Errorf("failed to clear basket from redis: %w", err)
+	}
+
+	return nil
 }

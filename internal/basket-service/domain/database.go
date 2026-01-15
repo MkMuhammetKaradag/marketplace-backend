@@ -10,4 +10,5 @@ type BasketRedisRepository interface {
 	Close() error
 	GetBasket(ctx context.Context, userID string) (*Basket, error)
 	UpdateBasket(ctx context.Context, basket *Basket) error
+	ClearBasket(ctx context.Context, userID string) error
 }

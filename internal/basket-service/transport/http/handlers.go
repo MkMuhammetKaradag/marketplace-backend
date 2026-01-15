@@ -47,6 +47,10 @@ func (h *Handlers) IncrementItem() *controller.IncrementItemController {
 	usecase := usecase.NewIncrementItemUseCase(h.basketRedisRepository, h.grpcProductClient)
 	return controller.NewIncrementItemController(usecase)
 }
+func (h *Handlers) ClearBasket() *controller.ClearBasketController {
+	usecase := usecase.NewClearBasketUseCase(h.basketRedisRepository)
+	return controller.NewClearBasketController(usecase)
+}
 
 type HelloResponse struct {
 	Message string `json:"message"`
