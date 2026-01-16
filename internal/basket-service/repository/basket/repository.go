@@ -90,3 +90,52 @@ func (r *BasketRedisRepository) ClearBasket(ctx context.Context, userID string) 
 
 	return nil
 }
+func (r *BasketRedisRepository) UpdateProductPriceInAllBaskets(ctx context.Context, productID string, newPrice float64) error {
+	// 1. "basket:*" desenine uyan tüm anahtarları tara
+	var cursor uint64
+	for {
+		keys, nextCursor, err := r.client.Scan(ctx, cursor, "basket:*", 100).Result()
+		if err != nil {
+			return fmt.Errorf("scan failed: %w", err)
+		}
+
+		for _, key := range keys {
+			// 2. Her sepeti çek
+			val, err := r.client.Get(ctx, key).Result()
+			if err != nil {
+				continue // Hatalı anahtarı atla
+			}
+
+			var basket domain.Basket
+			if err := json.Unmarshal([]byte(val), &basket); err != nil {
+				continue
+			}
+
+			// 3. Sepet içinde ürünü ara ve güncelle
+			updated := false
+			for i := range basket.Items {
+				if basket.Items[i].ProductID.String() == productID {
+					basket.Items[i].Price = newPrice
+					updated = true
+				}
+			}
+
+			// 4. Eğer sepet güncellendiyse geri kaydet
+			if updated {
+				jsonData, _ := json.Marshal(basket)
+				// Mevcut TTL'i (ömrü) koruyarak kaydetmek en iyisidir
+				ttl, _ := r.client.TTL(ctx, key).Result()
+				if ttl < 0 {
+					ttl = 7 * 24 * time.Hour
+				}
+				r.client.Set(ctx, key, jsonData, ttl)
+			}
+		}
+
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return nil
+}

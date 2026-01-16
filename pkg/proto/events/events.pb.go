@@ -26,12 +26,15 @@ const (
 type MessageType int32
 
 const (
-	MessageType_UNKNOWN_MESSAGE_TYPE MessageType = 0
-	MessageType_USER_CREATED         MessageType = 1
-	MessageType_USER_DELETED         MessageType = 2
-	MessageType_USER_UPDATED         MessageType = 3
-	MessageType_SELLER_APPROVED      MessageType = 4
-	MessageType_SELLER_REJECTED      MessageType = 5 // Diğer mesaj tiplerini buraya ekleyin
+	MessageType_UNKNOWN_MESSAGE_TYPE  MessageType = 0
+	MessageType_USER_CREATED          MessageType = 1
+	MessageType_USER_DELETED          MessageType = 2
+	MessageType_USER_UPDATED          MessageType = 3
+	MessageType_SELLER_APPROVED       MessageType = 4
+	MessageType_SELLER_REJECTED       MessageType = 5
+	MessageType_PRODUCT_PRICE_UPDATED MessageType = 6
+	MessageType_PRODUCT_STOCK_ZERO    MessageType = 7
+	MessageType_PRODUCT_DELETED       MessageType = 8 // Diğer mesaj tiplerini buraya ekleyin
 )
 
 // Enum value maps for MessageType.
@@ -43,14 +46,20 @@ var (
 		3: "USER_UPDATED",
 		4: "SELLER_APPROVED",
 		5: "SELLER_REJECTED",
+		6: "PRODUCT_PRICE_UPDATED",
+		7: "PRODUCT_STOCK_ZERO",
+		8: "PRODUCT_DELETED",
 	}
 	MessageType_value = map[string]int32{
-		"UNKNOWN_MESSAGE_TYPE": 0,
-		"USER_CREATED":         1,
-		"USER_DELETED":         2,
-		"USER_UPDATED":         3,
-		"SELLER_APPROVED":      4,
-		"SELLER_REJECTED":      5,
+		"UNKNOWN_MESSAGE_TYPE":  0,
+		"USER_CREATED":          1,
+		"USER_DELETED":          2,
+		"USER_UPDATED":          3,
+		"SELLER_APPROVED":       4,
+		"SELLER_REJECTED":       5,
+		"PRODUCT_PRICE_UPDATED": 6,
+		"PRODUCT_STOCK_ZERO":    7,
+		"PRODUCT_DELETED":       8,
 	}
 )
 
@@ -90,7 +99,8 @@ const (
 	ServiceType_SELLER_SERVICE      ServiceType = 3
 	ServiceType_PRODUCT_SERVICE     ServiceType = 4
 	ServiceType_ORDER_SERVICE       ServiceType = 5
-	ServiceType_RETRY_SERVICE       ServiceType = 6 // Diğer servis tiplerini buraya ekleyin
+	ServiceType_RETRY_SERVICE       ServiceType = 6
+	ServiceType_BASKET_SERVICE      ServiceType = 7 // Diğer servis tiplerini buraya ekleyin
 )
 
 // Enum value maps for ServiceType.
@@ -103,6 +113,7 @@ var (
 		4: "PRODUCT_SERVICE",
 		5: "ORDER_SERVICE",
 		6: "RETRY_SERVICE",
+		7: "BASKET_SERVICE",
 	}
 	ServiceType_value = map[string]int32{
 		"UNKNOWN_SERVICE":     0,
@@ -112,6 +123,7 @@ var (
 		"PRODUCT_SERVICE":     4,
 		"ORDER_SERVICE":       5,
 		"RETRY_SERVICE":       6,
+		"BASKET_SERVICE":      7,
 	}
 )
 
@@ -162,6 +174,9 @@ type Message struct {
 	//	*Message_UserCreatedData
 	//	*Message_SellerApprovedData
 	//	*Message_SellerRejectedData
+	//	*Message_ProductPriceUpdatedData
+	//	*Message_ProductStockZeroData
+	//	*Message_ProductDeletedData
 	Payload       isMessage_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -308,6 +323,33 @@ func (x *Message) GetSellerRejectedData() *SellerRejectedData {
 	return nil
 }
 
+func (x *Message) GetProductPriceUpdatedData() *ProductPriceUpdatedData {
+	if x != nil {
+		if x, ok := x.Payload.(*Message_ProductPriceUpdatedData); ok {
+			return x.ProductPriceUpdatedData
+		}
+	}
+	return nil
+}
+
+func (x *Message) GetProductStockZeroData() *ProductStockZeroData {
+	if x != nil {
+		if x, ok := x.Payload.(*Message_ProductStockZeroData); ok {
+			return x.ProductStockZeroData
+		}
+	}
+	return nil
+}
+
+func (x *Message) GetProductDeletedData() *ProductDeletedData {
+	if x != nil {
+		if x, ok := x.Payload.(*Message_ProductDeletedData); ok {
+			return x.ProductDeletedData
+		}
+	}
+	return nil
+}
+
 type isMessage_Payload interface {
 	isMessage_Payload()
 }
@@ -321,7 +363,19 @@ type Message_SellerApprovedData struct {
 }
 
 type Message_SellerRejectedData struct {
-	SellerRejectedData *SellerRejectedData `protobuf:"bytes,14,opt,name=seller_rejected_data,json=sellerRejectedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
+	SellerRejectedData *SellerRejectedData `protobuf:"bytes,14,opt,name=seller_rejected_data,json=sellerRejectedData,proto3,oneof"`
+}
+
+type Message_ProductPriceUpdatedData struct {
+	ProductPriceUpdatedData *ProductPriceUpdatedData `protobuf:"bytes,15,opt,name=product_price_updated_data,json=productPriceUpdatedData,proto3,oneof"`
+}
+
+type Message_ProductStockZeroData struct {
+	ProductStockZeroData *ProductStockZeroData `protobuf:"bytes,16,opt,name=product_stock_zero_data,json=productStockZeroData,proto3,oneof"`
+}
+
+type Message_ProductDeletedData struct {
+	ProductDeletedData *ProductDeletedData `protobuf:"bytes,17,opt,name=product_deleted_data,json=productDeletedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
 }
 
 func (*Message_UserCreatedData) isMessage_Payload() {}
@@ -329,6 +383,12 @@ func (*Message_UserCreatedData) isMessage_Payload() {}
 func (*Message_SellerApprovedData) isMessage_Payload() {}
 
 func (*Message_SellerRejectedData) isMessage_Payload() {}
+
+func (*Message_ProductPriceUpdatedData) isMessage_Payload() {}
+
+func (*Message_ProductStockZeroData) isMessage_Payload() {}
+
+func (*Message_ProductDeletedData) isMessage_Payload() {}
 
 type UserCreatedData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -518,11 +578,151 @@ func (x *SellerRejectedData) GetUserId() string {
 	return ""
 }
 
+type ProductPriceUpdatedData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Price         float32                `protobuf:"fixed32,2,opt,name=price,proto3" json:"price,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductPriceUpdatedData) Reset() {
+	*x = ProductPriceUpdatedData{}
+	mi := &file_events_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductPriceUpdatedData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductPriceUpdatedData) ProtoMessage() {}
+
+func (x *ProductPriceUpdatedData) ProtoReflect() protoreflect.Message {
+	mi := &file_events_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductPriceUpdatedData.ProtoReflect.Descriptor instead.
+func (*ProductPriceUpdatedData) Descriptor() ([]byte, []int) {
+	return file_events_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ProductPriceUpdatedData) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *ProductPriceUpdatedData) GetPrice() float32 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+type ProductStockZeroData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductStockZeroData) Reset() {
+	*x = ProductStockZeroData{}
+	mi := &file_events_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductStockZeroData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductStockZeroData) ProtoMessage() {}
+
+func (x *ProductStockZeroData) ProtoReflect() protoreflect.Message {
+	mi := &file_events_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductStockZeroData.ProtoReflect.Descriptor instead.
+func (*ProductStockZeroData) Descriptor() ([]byte, []int) {
+	return file_events_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ProductStockZeroData) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+type ProductDeletedData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductDeletedData) Reset() {
+	*x = ProductDeletedData{}
+	mi := &file_events_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductDeletedData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductDeletedData) ProtoMessage() {}
+
+func (x *ProductDeletedData) ProtoReflect() protoreflect.Message {
+	mi := &file_events_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductDeletedData.ProtoReflect.Descriptor instead.
+func (*ProductDeletedData) Descriptor() ([]byte, []int) {
+	return file_events_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProductDeletedData) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
 var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\x81\x06\n" +
+	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\x88\b\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.events.MessageTypeR\x04type\x124\n" +
@@ -542,7 +742,10 @@ const file_events_proto_rawDesc = "" +
 	"last_error\x18\v \x01(\tR\tlastError\x12E\n" +
 	"\x11user_created_data\x18\f \x01(\v2\x17.events.UserCreatedDataH\x00R\x0fuserCreatedData\x12N\n" +
 	"\x14seller_approved_data\x18\r \x01(\v2\x1a.events.SellerApprovedDataH\x00R\x12sellerApprovedData\x12N\n" +
-	"\x14seller_rejected_data\x18\x0e \x01(\v2\x1a.events.SellerRejectedDataH\x00R\x12sellerRejectedData\x1a:\n" +
+	"\x14seller_rejected_data\x18\x0e \x01(\v2\x1a.events.SellerRejectedDataH\x00R\x12sellerRejectedData\x12^\n" +
+	"\x1aproduct_price_updated_data\x18\x0f \x01(\v2\x1f.events.ProductPriceUpdatedDataH\x00R\x17productPriceUpdatedData\x12U\n" +
+	"\x17product_stock_zero_data\x18\x10 \x01(\v2\x1c.events.ProductStockZeroDataH\x00R\x14productStockZeroData\x12N\n" +
+	"\x14product_deleted_data\x18\x11 \x01(\v2\x1a.events.ProductDeletedDataH\x00R\x12productDeletedData\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
@@ -561,14 +764,27 @@ const file_events_proto_rawDesc = "" +
 	"\vrejected_by\x18\x02 \x01(\tR\n" +
 	"rejectedBy\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x17\n" +
-	"\auser_id\x18\x04 \x01(\tR\x06userId*\x87\x01\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId\"N\n" +
+	"\x17ProductPriceUpdatedData\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x12\x14\n" +
+	"\x05price\x18\x02 \x01(\x02R\x05price\"5\n" +
+	"\x14ProductStockZeroData\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\"3\n" +
+	"\x12ProductDeletedData\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId*\xcf\x01\n" +
 	"\vMessageType\x12\x18\n" +
 	"\x14UNKNOWN_MESSAGE_TYPE\x10\x00\x12\x10\n" +
 	"\fUSER_CREATED\x10\x01\x12\x10\n" +
 	"\fUSER_DELETED\x10\x02\x12\x10\n" +
 	"\fUSER_UPDATED\x10\x03\x12\x13\n" +
 	"\x0fSELLER_APPROVED\x10\x04\x12\x13\n" +
-	"\x0fSELLER_REJECTED\x10\x05*\x9c\x01\n" +
+	"\x0fSELLER_REJECTED\x10\x05\x12\x19\n" +
+	"\x15PRODUCT_PRICE_UPDATED\x10\x06\x12\x16\n" +
+	"\x12PRODUCT_STOCK_ZERO\x10\a\x12\x13\n" +
+	"\x0fPRODUCT_DELETED\x10\b*\xb0\x01\n" +
 	"\vServiceType\x12\x13\n" +
 	"\x0fUNKNOWN_SERVICE\x10\x00\x12\x17\n" +
 	"\x13API_GATEWAY_SERVICE\x10\x01\x12\x10\n" +
@@ -576,7 +792,8 @@ const file_events_proto_rawDesc = "" +
 	"\x0eSELLER_SERVICE\x10\x03\x12\x13\n" +
 	"\x0fPRODUCT_SERVICE\x10\x04\x12\x11\n" +
 	"\rORDER_SERVICE\x10\x05\x12\x11\n" +
-	"\rRETRY_SERVICE\x10\x06B\n" +
+	"\rRETRY_SERVICE\x10\x06\x12\x12\n" +
+	"\x0eBASKET_SERVICE\x10\aB\n" +
 	"Z\b./eventsb\x06proto3"
 
 var (
@@ -592,32 +809,38 @@ func file_events_proto_rawDescGZIP() []byte {
 }
 
 var file_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_events_proto_goTypes = []any{
-	(MessageType)(0),              // 0: events.MessageType
-	(ServiceType)(0),              // 1: events.ServiceType
-	(*Message)(nil),               // 2: events.Message
-	(*UserCreatedData)(nil),       // 3: events.UserCreatedData
-	(*SellerApprovedData)(nil),    // 4: events.SellerApprovedData
-	(*SellerRejectedData)(nil),    // 5: events.SellerRejectedData
-	nil,                           // 6: events.Message.HeadersEntry
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(MessageType)(0),                // 0: events.MessageType
+	(ServiceType)(0),                // 1: events.ServiceType
+	(*Message)(nil),                 // 2: events.Message
+	(*UserCreatedData)(nil),         // 3: events.UserCreatedData
+	(*SellerApprovedData)(nil),      // 4: events.SellerApprovedData
+	(*SellerRejectedData)(nil),      // 5: events.SellerRejectedData
+	(*ProductPriceUpdatedData)(nil), // 6: events.ProductPriceUpdatedData
+	(*ProductStockZeroData)(nil),    // 7: events.ProductStockZeroData
+	(*ProductDeletedData)(nil),      // 8: events.ProductDeletedData
+	nil,                             // 9: events.Message.HeadersEntry
+	(*timestamppb.Timestamp)(nil),   // 10: google.protobuf.Timestamp
 }
 var file_events_proto_depIdxs = []int32{
-	0, // 0: events.Message.type:type_name -> events.MessageType
-	7, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
-	1, // 2: events.Message.from_service:type_name -> events.ServiceType
-	1, // 3: events.Message.to_services:type_name -> events.ServiceType
-	6, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
-	7, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
-	3, // 6: events.Message.user_created_data:type_name -> events.UserCreatedData
-	4, // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
-	5, // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	0,  // 0: events.Message.type:type_name -> events.MessageType
+	10, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
+	1,  // 2: events.Message.from_service:type_name -> events.ServiceType
+	1,  // 3: events.Message.to_services:type_name -> events.ServiceType
+	9,  // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
+	10, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
+	3,  // 6: events.Message.user_created_data:type_name -> events.UserCreatedData
+	4,  // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
+	5,  // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
+	6,  // 9: events.Message.product_price_updated_data:type_name -> events.ProductPriceUpdatedData
+	7,  // 10: events.Message.product_stock_zero_data:type_name -> events.ProductStockZeroData
+	8,  // 11: events.Message.product_deleted_data:type_name -> events.ProductDeletedData
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_events_proto_init() }
@@ -629,6 +852,9 @@ func file_events_proto_init() {
 		(*Message_UserCreatedData)(nil),
 		(*Message_SellerApprovedData)(nil),
 		(*Message_SellerRejectedData)(nil),
+		(*Message_ProductPriceUpdatedData)(nil),
+		(*Message_ProductStockZeroData)(nil),
+		(*Message_ProductDeletedData)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -636,7 +862,7 @@ func file_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_events_proto_rawDesc), len(file_events_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

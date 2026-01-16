@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"marketplace/internal/product-service/domain"
+	pb "marketplace/pkg/proto/events"
 
 	"github.com/google/uuid"
 )
@@ -16,12 +17,14 @@ type UpdateProductUseCase interface {
 type updateProductUseCase struct {
 	productRepository domain.ProductRepository
 	aiProvider        domain.AiProvider
+	messaging         domain.Messaging
 }
 
-func NewUpdateProductUseCase(productRepository domain.ProductRepository, aiProvider domain.AiProvider) UpdateProductUseCase {
+func NewUpdateProductUseCase(productRepository domain.ProductRepository, aiProvider domain.AiProvider, messaging domain.Messaging) UpdateProductUseCase {
 	return &updateProductUseCase{
 		productRepository: productRepository,
 		aiProvider:        aiProvider,
+		messaging:         messaging,
 	}
 }
 
@@ -79,6 +82,22 @@ func (u *updateProductUseCase) Execute(ctx context.Context, userID uuid.UUID, p 
 
 			u.productRepository.UpdateProductEmbedding(context.Background(), pID, vector)
 		}(existingProduct.ID, existingProduct.Name, existingProduct.Description)
+	}
+
+	if p.Price != nil {
+		go func(pID uuid.UUID, price float64) {
+			u.messaging.PublishMessage(context.Background(), &pb.Message{
+				Type:        pb.MessageType_PRODUCT_PRICE_UPDATED,
+				FromService: pb.ServiceType_PRODUCT_SERVICE,
+				Critical:    false,
+				RetryCount:  2,
+				ToServices:  []pb.ServiceType{pb.ServiceType_BASKET_SERVICE},
+				Payload: &pb.Message_ProductPriceUpdatedData{ProductPriceUpdatedData: &pb.ProductPriceUpdatedData{
+					ProductId: pID.String(),
+					Price:     float32(price),
+				}},
+			})
+		}(existingProduct.ID, *p.Price)
 	}
 
 	return nil

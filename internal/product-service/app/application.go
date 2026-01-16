@@ -16,8 +16,11 @@ import (
 	httptransport "marketplace/internal/product-service/transport/http"
 	"marketplace/internal/product-service/transport/kafka"
 	messaginghandler "marketplace/internal/product-service/transport/messaging"
+	"marketplace/pkg/messaging"
 
 	"time"
+
+	pb "marketplace/pkg/proto/events"
 
 	"github.com/hibiken/asynq"
 )
@@ -76,6 +79,24 @@ type container struct {
 	worker        domain.Worker
 }
 
+func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
+	broker := cfg.Brokers[0]
+	if broker == "" {
+		broker = "localhost:29092"
+	}
+	kafkaBrokers := []string{broker}
+	return messaging.KafkaConfig{
+		Brokers:              kafkaBrokers,
+		Topic:                "main-events", // Ana olay topic'i
+		RetryTopic:           "main-events-retry",
+		DLQTopic:             "main-events-dlq",
+		ServiceType:          pb.ServiceType_PRODUCT_SERVICE,
+		EnableRetry:          true,
+		MaxRetries:           10,
+		ConnectionTimeout:    10 * time.Second,
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_PRODUCT_PRICE_UPDATED},
+	}
+}
 func buildContainer(cfg config.Config) (*container, error) {
 	repo, err := postgres.NewRepository(cfg)
 	if err != nil {
@@ -99,8 +120,15 @@ func buildContainer(cfg config.Config) (*container, error) {
 	asynqClient := asynq.NewClient(redisOpt)
 
 	wrk := worker.NewWorker(asynqClient)
-	httpHandlers := httptransport.NewHandlers(productService, repo, cloudinarySvc, aiProvider, wrk)
 	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
+
+	messagingConfig := createMessagingConfig(cfg.Messaging)
+	messaging, err := messaging.NewKafkaClient(messagingConfig)
+	if err != nil {
+		return nil, fmt.Errorf("init kafka messaging: %w", err)
+	}
+	httpHandlers := httptransport.NewHandlers(productService, repo, cloudinarySvc, aiProvider, wrk, messaging)
+
 	router := httptransport.NewRouter(httpHandlers)
 
 	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)

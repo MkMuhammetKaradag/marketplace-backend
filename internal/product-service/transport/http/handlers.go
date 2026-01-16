@@ -15,10 +15,11 @@ type Handlers struct {
 	cloudinarySvc     domain.ImageService
 	aiProvider        domain.AiProvider
 	worker            domain.Worker
+	messaging         domain.Messaging
 }
 
-func NewHandlers(userService domain.ProductService, repository domain.ProductRepository, cloudinarySvc domain.ImageService, aiProvider domain.AiProvider, worker domain.Worker) *Handlers {
-	return &Handlers{userService: userService, productRepository: repository, cloudinarySvc: cloudinarySvc, aiProvider: aiProvider, worker: worker}
+func NewHandlers(userService domain.ProductService, repository domain.ProductRepository, cloudinarySvc domain.ImageService, aiProvider domain.AiProvider, worker domain.Worker, messaging domain.Messaging) *Handlers {
+	return &Handlers{userService: userService, productRepository: repository, cloudinarySvc: cloudinarySvc, aiProvider: aiProvider, worker: worker, messaging: messaging}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -71,7 +72,7 @@ func (h *Handlers) GetUserFavorites() *controller.GetFavoritesController {
 }
 
 func (h *Handlers) UpdateProduct() *controller.UpdateProductController {
-	usecase := usecase.NewUpdateProductUseCase(h.productRepository, h.aiProvider)
+	usecase := usecase.NewUpdateProductUseCase(h.productRepository, h.aiProvider, h.messaging)
 	return controller.NewUpdateProductController(usecase)
 }
 

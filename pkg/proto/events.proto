@@ -14,6 +14,9 @@ enum MessageType {
     USER_UPDATED  = 3;
     SELLER_APPROVED   = 4;
     SELLER_REJECTED   = 5;
+    PRODUCT_PRICE_UPDATED = 6;
+    PRODUCT_STOCK_ZERO = 7;
+    PRODUCT_DELETED = 8;
     // Diğer mesaj tiplerini buraya ekleyin
 }
 
@@ -25,6 +28,7 @@ enum ServiceType {
     PRODUCT_SERVICE = 4;
     ORDER_SERVICE = 5;
     RETRY_SERVICE = 6;
+    BASKET_SERVICE = 7;
     // Diğer servis tiplerini buraya ekleyin
 }
 
@@ -46,6 +50,9 @@ message Message {
         UserCreatedData user_created_data = 12;
         SellerApprovedData seller_approved_data = 13;
         SellerRejectedData seller_rejected_data = 14;
+        ProductPriceUpdatedData product_price_updated_data = 15;
+        ProductStockZeroData product_stock_zero_data = 16;
+        ProductDeletedData product_deleted_data = 17;
         // Diğer olay tipleri için buraya payload'lar eklenecek
        
 
@@ -70,6 +77,16 @@ message SellerRejectedData {
     string reason = 3;
     string user_id = 4;
 
+}
+message ProductPriceUpdatedData {
+    string product_id = 1;
+    float price = 2;
+}
+message ProductStockZeroData {
+    string product_id = 1;
+}
+message ProductDeletedData {
+    string product_id = 1;
 }
 
 

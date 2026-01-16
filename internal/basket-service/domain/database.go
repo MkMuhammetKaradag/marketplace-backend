@@ -11,4 +11,5 @@ type BasketRedisRepository interface {
 	GetBasket(ctx context.Context, userID string) (*Basket, error)
 	UpdateBasket(ctx context.Context, basket *Basket) error
 	ClearBasket(ctx context.Context, userID string) error
+	UpdateProductPriceInAllBaskets(ctx context.Context, productID string, newPrice float64) error
 }

@@ -13,7 +13,8 @@ import (
 	"marketplace/internal/basket-service/repository/postgres"
 	"marketplace/internal/basket-service/server"
 	httptransport "marketplace/internal/basket-service/transport/http"
-
+	"marketplace/internal/basket-service/transport/kafka"
+	messaginghandler "marketplace/internal/basket-service/transport/messaging"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type App struct {
 	server                   *server.Server
 	BasketPostgresRepository domain.BasketPostgresRepository
 	BasketRedisRepository    domain.BasketRedisRepository
+	consumer                 *kafka.Consumer
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -35,6 +37,7 @@ func NewApp(cfg config.Config) (*App, error) {
 		server:                   container.server,
 		BasketPostgresRepository: container.BasketPostgresRepository,
 		BasketRedisRepository:    container.BasketRedisRepository,
+		consumer:                 container.consumer,
 	}, nil
 }
 
@@ -43,7 +46,7 @@ func (a *App) Start() error {
 	defer cancel()
 
 	go graceful.WaitForShutdown(a.server.FiberApp(), 5*time.Second, ctx)
-
+	a.consumer.Start(ctx)
 	log.Printf("starting user-service on %s", a.server.Address())
 	if err := a.server.Start(); err != nil {
 		return fmt.Errorf("server exited with error: %w", err)
@@ -60,6 +63,7 @@ type container struct {
 	BasketPostgresRepository domain.BasketPostgresRepository
 	BasketRedisRepository    domain.BasketRedisRepository
 	server                   *server.Server
+	consumer                 *kafka.Consumer
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
@@ -86,12 +90,17 @@ func buildContainer(cfg config.Config) (*container, error) {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-
+	messsagingHnadlers := messaginghandler.SetupMessageHandlers(redisRepo)
+	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
+	if err != nil {
+		return nil, fmt.Errorf("init kafka consumer: %w", err)
+	}
 	httpServer := server.New(serverCfg, router, grpcProductClient)
 
 	return &container{
 		BasketPostgresRepository: repo,
 		BasketRedisRepository:    redisRepo,
 		server:                   httpServer,
+		consumer:                 kafkaConsumer,
 	}, nil
 }

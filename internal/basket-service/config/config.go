@@ -18,7 +18,9 @@ type PostgresConfig struct {
 	DB       string `mapstructure:"db"`
 	Host     string `mapstructure:"host"`
 }
-
+type MessagingConfig struct {
+	Brokers []string `mapstructure:"brokers"`
+}
 type RedisConfig struct {
 	Addr     string `mapstructure:"addr"`
 	Password string `mapstructure:"password"`
@@ -32,9 +34,10 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	Postgres PostgresConfig `mapstructure:"postgres"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	Server   ServerConfig   `mapstructure:"server"`
+	Postgres  PostgresConfig  `mapstructure:"postgres"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Messaging MessagingConfig `mapstructure:"messaging"`
 }
 
 func Read() Config {
