@@ -57,6 +57,11 @@ func (h *Handlers) GetBasket() *controller.GetBasketController {
 	return controller.NewGetBasketController(usecase)
 }
 
+func (h *Handlers) BasketCount() *controller.BasketCountController {
+	usecase := usecase.NewBasketCountUseCase(h.basketRedisRepository)
+	return controller.NewBasketCountController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`

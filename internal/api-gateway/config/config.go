@@ -171,19 +171,20 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/baskets/basket": {
 			Permissions: PermissionNone,
 		},
+		"/baskets/count": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {
 	v := viper.New()
 
-	// Bu dosyanın kendi klasörünü al (internal/user-service/config)
 	configDir := getCurrentConfigDir()
 	fmt.Println(configDir)
 
-	v.AddConfigPath(configDir) // artık kesin doğru yer
+	v.AddConfigPath(configDir)
 	v.SetConfigType("yaml")
 
-	// Dosyaları sırayla yükle (varsa)
 	files := []string{"server.yaml", "redisCache.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
@@ -192,7 +193,6 @@ func Read() Config {
 		}
 	}
 
-	// ENV override (en son gelir)
 	v.SetEnvPrefix("USER")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()

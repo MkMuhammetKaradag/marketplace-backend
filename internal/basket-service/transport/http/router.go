@@ -24,6 +24,7 @@ func (r *Router) Register(app *fiber.App) {
 	incrementItem := r.handlers.IncrementItem()
 	clearBasket := r.handlers.ClearBasket()
 	getBasket := r.handlers.GetBasket()
+	basketCount := r.handlers.BasketCount()
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/add-item", handler.HandleWithFiber[controller.AddItemRequest, controller.AddItemResponse](addItem))
 	app.Delete("/remove-item/:product_id", handler.HandleWithFiber[controller.RemoveItemRequest, controller.RemoveItemResponse](removeItem))
@@ -31,4 +32,5 @@ func (r *Router) Register(app *fiber.App) {
 	app.Patch("/increment-item/:product_id", handler.HandleWithFiber[controller.IncrementItemRequest, controller.IncrementItemResponse](incrementItem))
 	app.Delete("/clear-basket", handler.HandleWithFiber[controller.ClearBasketRequest, controller.ClearBasketResponse](clearBasket))
 	app.Get("/basket", handler.HandleWithFiber[controller.GetBasketRequest, controller.GetBasketResponse](getBasket))
+	app.Get("/count", handler.HandleWithFiber[controller.BasketCountRequest, controller.BasketCountResponse](basketCount))
 }
