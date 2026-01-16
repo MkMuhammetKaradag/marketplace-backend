@@ -168,6 +168,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/baskets/clear-basket": {
 			Permissions: PermissionNone,
 		},
+		"/baskets/basket": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {

@@ -52,6 +52,11 @@ func (h *Handlers) ClearBasket() *controller.ClearBasketController {
 	return controller.NewClearBasketController(usecase)
 }
 
+func (h *Handlers) GetBasket() *controller.GetBasketController {
+	usecase := usecase.NewGetBasketUseCase(h.basketRedisRepository)
+	return controller.NewGetBasketController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`
