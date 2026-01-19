@@ -1,4 +1,4 @@
-// internal/user-service/config/config.go
+// internal/product-service/config/config.go
 
 package config
 

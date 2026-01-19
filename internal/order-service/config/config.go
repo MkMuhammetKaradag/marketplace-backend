@@ -17,9 +17,16 @@ type ServerConfig struct {
 	Host        string `mapstructure:"host"`
 	Description string `mapstructure:"description"`
 }
-
+type DatabaseConfig struct {
+	Port     string `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	DB       string `mapstructure:"db"`
+	Host     string `mapstructure:"host"`
+}
 type Config struct {
-	Server ServerConfig `mapstructure:"server"`
+	Server   ServerConfig   `mapstructure:"server"`
+	Database DatabaseConfig `mapstructure:"database"`
 }
 
 func Read() Config {
@@ -31,7 +38,7 @@ func Read() Config {
 	v.AddConfigPath(configDir)
 	v.SetConfigType("yaml")
 
-	files := []string{"server.yaml"}
+	files := []string{"server.yaml", "database.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {

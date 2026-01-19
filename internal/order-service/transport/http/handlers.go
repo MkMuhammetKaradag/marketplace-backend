@@ -2,14 +2,19 @@
 package http
 
 import (
+	"marketplace/internal/order-service/domain"
+
 	"github.com/gofiber/fiber/v2"
 )
 
 type Handlers struct {
+	orderRepository domain.OrderRepository
 }
 
-func NewHandlers() *Handlers {
-	return &Handlers{}
+func NewHandlers(repo domain.OrderRepository) *Handlers {
+	return &Handlers{
+		orderRepository: repo,
+	}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {

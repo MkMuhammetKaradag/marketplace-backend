@@ -6,15 +6,18 @@ import (
 	"fmt"
 	"log"
 	"marketplace/internal/order-service/config"
+	"marketplace/internal/order-service/domain"
 	"marketplace/internal/order-service/pkg/graceful"
+	"marketplace/internal/order-service/repository/postgres"
 	"marketplace/internal/order-service/server"
 	httptransport "marketplace/internal/order-service/transport/http"
 	"time"
 )
 
 type App struct {
-	cfg    config.Config
-	server *server.Server
+	cfg        config.Config
+	server     *server.Server
+	repository domain.OrderRepository
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -24,8 +27,9 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 
 	return &App{
-		cfg:    cfg,
-		server: container.server,
+		cfg:        cfg,
+		server:     container.server,
+		repository: container.repository,
 	}, nil
 }
 
@@ -40,16 +44,20 @@ func (a *App) Start() error {
 	}
 
 	log.Println("server stopped, closing repository")
-	return nil
+	return a.repository.Close()
 }
 
 type container struct {
-	server *server.Server
+	server     *server.Server
+	repository domain.OrderRepository
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
-
-	httpHandlers := httptransport.NewHandlers()
+	repo, err := postgres.NewRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("init postgres repository: %w", err)
+	}
+	httpHandlers := httptransport.NewHandlers(repo)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
@@ -63,6 +71,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 
 	return &container{
 
-		server: httpServer,
+		server:     httpServer,
+		repository: repo,
 	}, nil
 }
