@@ -12,10 +12,12 @@ import (
 )
 
 type ServerConfig struct {
-	Port        string `mapstructure:"port"`
-	GrpcPort    string `mapstructure:"grpcPort"`
-	Host        string `mapstructure:"host"`
-	Description string `mapstructure:"description"`
+	Port            string `mapstructure:"port"`
+	GrpcPort        string `mapstructure:"grpcPort"`
+	GrpcBasketPort  string `mapstructure:"grpcBasketPort"`
+	GrpcProductPort string `mapstructure:"grpcProductPort"`
+	Host            string `mapstructure:"host"`
+	Description     string `mapstructure:"description"`
 }
 type DatabaseConfig struct {
 	Port     string `mapstructure:"port"`

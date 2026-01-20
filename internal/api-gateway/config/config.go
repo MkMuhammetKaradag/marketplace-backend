@@ -174,6 +174,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/baskets/count": {
 			Permissions: PermissionNone,
 		},
+		"/orders/order": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {

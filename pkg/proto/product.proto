@@ -7,8 +7,9 @@ package product;
 
 
 service ProductService {
-  // Sepete ürün eklerken ürün bilgilerini doğrulamak için
+ 
   rpc GetProductForBasket (GetProductRequest) returns (ProductResponse);
+  rpc GetProductsByIds (GetProductsByIdsRequest) returns (GetProductsByIdsResponse);
 }
 
 message GetProductRequest {
@@ -21,7 +22,15 @@ message ProductResponse {
   double price = 3;
   int32  stock = 4;
   bool   is_active = 5;
+  string image_url = 6; 
+  string seller_id = 7; 
+}
+message GetProductsByIdsRequest {
+  repeated string ids = 1;
 }
 
+message GetProductsByIdsResponse {
+  repeated ProductResponse products = 1;
+}
 
 //protoc --go_out=. --go-grpc_out=. product.proto

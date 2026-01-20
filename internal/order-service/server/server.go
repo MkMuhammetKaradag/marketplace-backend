@@ -4,6 +4,7 @@ package server
 import (
 	"fmt"
 	"log"
+	"marketplace/internal/order-service/domain"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,11 +25,13 @@ type Config struct {
 }
 
 type Server struct {
-	app *fiber.App
-	cfg Config
+	app               *fiber.App
+	cfg               Config
+	grpcBasketClient  domain.BasketClient
+	grpcProductClient domain.ProductClient
 }
 
-func New(cfg Config, registrar RouteRegistrar) *Server {
+func New(cfg Config, registrar RouteRegistrar, grpcBasketClient domain.BasketClient, grpcProductClient domain.ProductClient) *Server {
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  cfg.IdleTimeout,
 		ReadTimeout:  cfg.ReadTimeout,
@@ -53,8 +56,10 @@ func New(cfg Config, registrar RouteRegistrar) *Server {
 	}
 
 	return &Server{
-		app: app,
-		cfg: cfg,
+		app:               app,
+		cfg:               cfg,
+		grpcBasketClient:  grpcBasketClient,
+		grpcProductClient: grpcProductClient,
 	}
 }
 
@@ -64,6 +69,12 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown(timeout time.Duration) error {
+	if s.grpcProductClient != nil {
+		s.grpcProductClient.Close()
+	}
+	if s.grpcBasketClient != nil {
+		s.grpcBasketClient.Close()
+	}
 	return s.app.ShutdownWithTimeout(timeout)
 }
 

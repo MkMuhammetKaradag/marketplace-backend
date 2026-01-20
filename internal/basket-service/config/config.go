@@ -27,10 +27,11 @@ type RedisConfig struct {
 	DB       int    `mapstructure:"db"`
 }
 type ServerConfig struct {
-	Port        string `mapstructure:"port"`
-	GrpcPort    string `mapstructure:"grpcPort"`
-	Host        string `mapstructure:"host"`
-	Description string `mapstructure:"description"`
+	Port            string `mapstructure:"port"`
+	GrpcProductPort string `mapstructure:"grpcProductPort"`
+	GrpcPort        string `mapstructure:"grpcPort"`
+	Host            string `mapstructure:"host"`
+	Description     string `mapstructure:"description"`
 }
 
 type Config struct {

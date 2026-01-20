@@ -7,6 +7,7 @@ import (
 	"log"
 	"marketplace/internal/order-service/config"
 	"marketplace/internal/order-service/domain"
+	"marketplace/internal/order-service/grpc_client"
 	"marketplace/internal/order-service/pkg/graceful"
 	"marketplace/internal/order-service/repository/postgres"
 	"marketplace/internal/order-service/server"
@@ -57,7 +58,20 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init postgres repository: %w", err)
 	}
-	httpHandlers := httptransport.NewHandlers(repo)
+
+	grpcProductAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcProductPort)
+	grpcProductClient, err := grpc_client.NewProductClient(grpcProductAddress)
+	if err != nil {
+		log.Fatalf("failed to initialise gRPC product client: %v", err)
+	}
+
+	grpcBasketAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcBasketPort)
+	grpcBasketClient, err := grpc_client.NewBasketClient(grpcBasketAddress)
+	if err != nil {
+		log.Fatalf("failed to initialise gRPC basket client: %v", err)
+	}
+
+	httpHandlers := httptransport.NewHandlers(repo, grpcProductClient, grpcBasketClient)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
@@ -67,7 +81,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	httpServer := server.New(serverCfg, router)
+	httpServer := server.New(serverCfg, router, grpcBasketClient, grpcProductClient)
 
 	return &container{
 

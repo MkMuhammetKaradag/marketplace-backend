@@ -12,6 +12,7 @@ import (
 	"marketplace/internal/basket-service/repository/basket"
 	"marketplace/internal/basket-service/repository/postgres"
 	"marketplace/internal/basket-service/server"
+	grpctransport "marketplace/internal/basket-service/transport/grpc"
 	httptransport "marketplace/internal/basket-service/transport/http"
 	"marketplace/internal/basket-service/transport/kafka"
 	messaginghandler "marketplace/internal/basket-service/transport/messaging"
@@ -76,7 +77,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init redis repository: %w", err)
 	}
-	grpcAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcPort)
+	grpcAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcProductPort)
 	grpcProductClient, err := grpc_client.NewProductClient(grpcAddress)
 	if err != nil {
 		log.Fatalf("failed to initialise gRPC client: %v", err)
@@ -85,6 +86,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
+		GrpcPort:     cfg.Server.GrpcPort,
 		Port:         cfg.Server.Port,
 		IdleTimeout:  5 * time.Second,
 		ReadTimeout:  10 * time.Second,
@@ -95,7 +97,9 @@ func buildContainer(cfg config.Config) (*container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("init kafka consumer: %w", err)
 	}
-	httpServer := server.New(serverCfg, router, grpcProductClient)
+
+	grpcHandler := grpctransport.NewBasketGrpcHandler(redisRepo)
+	httpServer := server.New(serverCfg, router, grpcProductClient, grpcHandler)
 
 	return &container{
 		BasketPostgresRepository: repo,

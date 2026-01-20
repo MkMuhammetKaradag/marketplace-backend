@@ -34,6 +34,7 @@ func main() {
 	application.RegisterService("chat-service", []string{"http://localhost:8085"}, "/chat")
 	application.RegisterService("product-service", []string{"http://localhost:8084"}, "/products")
 	application.RegisterService("basket-service", []string{"http://localhost:8085"}, "/baskets")
+	application.RegisterService("order-service", []string{"http://localhost:8086"}, "/orders")
 
 	log.Printf("🚀 Gateway started on %s", config.GatewayPort)
 	log.Printf("ℹ️  Usage:")
