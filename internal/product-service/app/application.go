@@ -150,7 +150,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 		WriteTimeout: 10 * time.Second,
 		GrpcPort:     cfg.Server.GrpcPort,
 	}
-	grpcHandler := grpctransport.NewAuthGrpcHandler(repo)
+	grpcHandler := grpctransport.NewProductGrpcHandler(repo)
 	httpServer := server.New(serverCfg, router, grpcHandler)
 
 	return &container{

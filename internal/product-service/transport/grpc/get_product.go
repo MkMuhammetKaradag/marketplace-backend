@@ -9,21 +9,21 @@ import (
 	"google.golang.org/grpc"
 )
 
-type AuthGrpcHandler struct {
+type ProductGrpcHandler struct {
 	pb.UnimplementedProductServiceServer
 	SessionRepo domain.ProductRepository
 }
 
-func NewAuthGrpcHandler(repo domain.ProductRepository) *AuthGrpcHandler {
-	return &AuthGrpcHandler{
+func NewProductGrpcHandler(repo domain.ProductRepository) *ProductGrpcHandler {
+	return &ProductGrpcHandler{
 		SessionRepo: repo,
 	}
 }
-func (h *AuthGrpcHandler) Register(gRPCServer *grpc.Server) {
+func (h *ProductGrpcHandler) Register(gRPCServer *grpc.Server) {
 	pb.RegisterProductServiceServer(gRPCServer, h)
 }
 
-func (h *AuthGrpcHandler) GetProductForBasket(ctx context.Context, req *pb.GetProductRequest) (*pb.ProductResponse, error) {
+func (h *ProductGrpcHandler) GetProductForBasket(ctx context.Context, req *pb.GetProductRequest) (*pb.ProductResponse, error) {
 	productIDstr := req.GetId()
 	if productIDstr == "" {
 		return nil, nil
@@ -48,7 +48,7 @@ func (h *AuthGrpcHandler) GetProductForBasket(ctx context.Context, req *pb.GetPr
 	}, nil
 }
 
-func (h *AuthGrpcHandler) GetProductsByIds(ctx context.Context, req *pb.GetProductsByIdsRequest) (*pb.GetProductsByIdsResponse, error) {
+func (h *ProductGrpcHandler) GetProductsByIds(ctx context.Context, req *pb.GetProductsByIdsRequest) (*pb.GetProductsByIdsResponse, error) {
 	productIDs := req.GetIds()
 	if len(productIDs) == 0 {
 		return nil, nil
@@ -64,10 +64,18 @@ func (h *AuthGrpcHandler) GetProductsByIds(ctx context.Context, req *pb.GetProdu
 			return nil, err
 		}
 		IsActive := product.Status == "active"
+		imageUrl := ""
+		if len(product.Images) > 0 {
+			imageUrl = product.Images[0].ImageURL
+		} else {
+			imageUrl = "https://placehold.co/150"
+		}
 		productResponses = append(productResponses, &pb.ProductResponse{
 			Id:       product.ID.String(),
 			Name:     product.Name,
 			Price:    product.Price,
+			ImageUrl: imageUrl,
+			SellerId: product.SellerID.String(),
 			Stock:    int32(product.StockCount),
 			IsActive: IsActive,
 		})
