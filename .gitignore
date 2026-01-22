@@ -2,6 +2,7 @@
 .env
 cloudinary.yaml
 aiProvider.yaml
+stripe.yaml
 *.txt
 generate_docs.bat
 **/init/

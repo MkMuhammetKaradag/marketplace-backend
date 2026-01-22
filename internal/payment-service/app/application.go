@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"marketplace/internal/payment-service/config"
+	"marketplace/internal/payment-service/infrastructure/payment"
 	"marketplace/internal/payment-service/pkg/graceful"
 	"marketplace/internal/payment-service/server"
 	httptransport "marketplace/internal/payment-service/transport/http"
@@ -49,7 +50,9 @@ type container struct {
 
 func buildContainer(cfg config.Config) (*container, error) {
 
-	httpHandlers := httptransport.NewHandlers()
+	stripeService := payment.NewStripeService(cfg.Stripe.SecretKey, cfg.Stripe.WebhookSecret)
+
+	httpHandlers := httptransport.NewHandlers(stripeService)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{

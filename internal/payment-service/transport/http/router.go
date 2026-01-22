@@ -16,4 +16,6 @@ func NewRouter(handlers *Handlers) *Router {
 func (r *Router) Register(app *fiber.App) {
 
 	app.Get("/hello", r.handlers.Hello)
+	app.Post("/create-payment-session", r.handlers.CreatePaymentSession)
+	app.Post("/payment/webhook", r.handlers.StripeWebhook)
 }

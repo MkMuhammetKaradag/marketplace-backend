@@ -20,6 +20,6 @@ type PaymentCompletedEvent struct {
 }
 
 type StripeService interface {
-
 	CreatePaymentSession(req CreatePaymentSessionRequest) (string, error)
+	GetWebhookSecret() string
 }

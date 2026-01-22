@@ -8,12 +8,13 @@ import (
 )
 
 type StripeService struct {
-	SecretKey string
+	secretKey     string
+	webhookSecret string
 }
 
-func NewStripeService(key string) *StripeService {
+func NewStripeService(key string, webhookSecret string) *StripeService {
 	stripe.Key = key
-	return &StripeService{SecretKey: key}
+	return &StripeService{secretKey: key, webhookSecret: webhookSecret}
 }
 
 func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequest) (string, error) {
@@ -23,11 +24,11 @@ func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequ
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("tr"),
+					Currency: stripe.String("usd"),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 						Name: stripe.String("Order #" + req.OrderID.String()),
 					},
-					UnitAmount: stripe.Int64(int64(req.Amount * 100)), // Stripe cent çalışır (100 = 1$)
+					UnitAmount: stripe.Int64(int64(req.Amount * 100)),
 				},
 				Quantity: stripe.Int64(1),
 			},
@@ -47,4 +48,8 @@ func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequ
 	}
 
 	return sess.URL, nil
+}
+
+func (s *StripeService) GetWebhookSecret() string {
+	return s.webhookSecret
 }

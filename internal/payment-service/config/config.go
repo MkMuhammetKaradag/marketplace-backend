@@ -18,8 +18,15 @@ type ServerConfig struct {
 	Description string `mapstructure:"description"`
 }
 
+type StripeConfig struct {
+	SecretKey      string `mapstructure:"secret_key"`
+	PublishableKey string `mapstructure:"publishable_key"`
+	WebhookSecret  string `mapstructure:"webhook_secret"`
+}
+
 type Config struct {
 	Server ServerConfig `mapstructure:"server"`
+	Stripe StripeConfig `mapstructure:"stripe"`
 }
 
 func Read() Config {
@@ -31,7 +38,7 @@ func Read() Config {
 	v.AddConfigPath(configDir)
 	v.SetConfigType("yaml")
 
-	files := []string{"server.yaml"}
+	files := []string{"server.yaml", "stripe.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {
