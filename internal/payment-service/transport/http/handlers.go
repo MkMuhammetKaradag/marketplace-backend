@@ -85,6 +85,7 @@ func (h *Handlers) StripeWebhook(c *fiber.Ctx) error {
 		userID := session.Metadata["user_id"]
 
 		fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
+		fmt.Println("body:", payload)
 
 		// 3. ŞİMDİ SIRADAKİ HAMLE: KAFKA'YA MESAJ ATMAK
 		// Buraya birazdan Kafka Producer kodunu bağlayacağız

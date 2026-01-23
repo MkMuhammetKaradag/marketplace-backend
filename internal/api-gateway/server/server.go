@@ -62,6 +62,8 @@ func New(cfg config.Config, cacheManager *cache.CacheManager) *Server {
 	// 3. Rate Limit
 	f.Use(middleware.RateLimitMiddleware(rateLimiter, metrics, config.GetDefaultRouteConfigs()))
 
+	f.Use(middleware.WebhookSecurityMiddleware())
+
 	// Handlers
 	proxyHandler := handlers.NewProxyHandler(registry, metrics, cacheManager)
 	manageHandler := handlers.NewManageHandler(registry, metrics)
