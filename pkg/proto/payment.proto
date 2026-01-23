@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "./payment";
+
+package payment;
+
+service PaymentService {
+  rpc CreatePaymentSession (CreatePaymentRequest) returns (CreatePaymentResponse);
+}
+
+message CreatePaymentRequest {
+  string order_id = 1;
+  string user_id = 2;
+  double amount = 3;
+  string user_email = 4;
+}
+
+message CreatePaymentResponse {
+  string payment_url = 1;
+  string session_id = 2;
+}
+
+//protoc --go_out=. --go-grpc_out=. payment.proto
