@@ -71,7 +71,13 @@ func buildContainer(cfg config.Config) (*container, error) {
 		log.Fatalf("failed to initialise gRPC basket client: %v", err)
 	}
 
-	httpHandlers := httptransport.NewHandlers(repo, grpcProductClient, grpcBasketClient)
+	grpcPaymentAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcPaymentPort)
+	grpcPaymentClient, err := grpc_client.NewPaymentClient(grpcPaymentAddress)
+	if err != nil {
+		log.Fatalf("failed to initialise gRPC basket client: %v", err)
+	}
+
+	httpHandlers := httptransport.NewHandlers(repo, grpcProductClient, grpcBasketClient, grpcPaymentClient)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{

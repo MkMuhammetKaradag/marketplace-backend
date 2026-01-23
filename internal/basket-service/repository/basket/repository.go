@@ -9,6 +9,7 @@ import (
 	"marketplace/internal/basket-service/domain"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -63,8 +64,10 @@ func (r *BasketRedisRepository) GetBasket(ctx context.Context, userID string) (*
 
 	val, err := r.client.Get(ctx, key).Result()
 	if err == redis.Nil {
-		// If there's no basket, we're returning an empty basket (Not a mistake)
-		return nil, nil
+		return &domain.Basket{
+			UserID: uuid.MustParse(userID),
+			Items:  []domain.BasketItem{}, // Boş slice, nil değil!
+		}, nil
 	} else if err != nil {
 		return nil, err
 	}

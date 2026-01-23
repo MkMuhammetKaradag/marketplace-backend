@@ -13,13 +13,15 @@ type Handlers struct {
 	orderRepository   domain.OrderRepository
 	grpcProductClient domain.ProductClient
 	grpcBasketClient  domain.BasketClient
+	grpcPaymentClient domain.PaymentClient
 }
 
-func NewHandlers(repo domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient) *Handlers {
+func NewHandlers(repo domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient) *Handlers {
 	return &Handlers{
 		orderRepository:   repo,
 		grpcProductClient: grpcProductClient,
 		grpcBasketClient:  grpcBasketClient,
+		grpcPaymentClient: grpcPaymentClient,
 	}
 }
 
@@ -33,7 +35,7 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) CreateOrder() *controller.CreateOrderController {
-	usecase := usecase.NewCreateOrderUseCase(h.orderRepository, h.grpcProductClient, h.grpcBasketClient)
+	usecase := usecase.NewCreateOrderUseCase(h.orderRepository, h.grpcProductClient, h.grpcBasketClient, h.grpcPaymentClient)
 	return controller.NewCreateOrderController(usecase)
 }
 

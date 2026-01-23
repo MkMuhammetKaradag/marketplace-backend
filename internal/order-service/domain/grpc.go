@@ -5,6 +5,7 @@ import (
 
 	pp "marketplace/pkg/proto/Product"
 	pb "marketplace/pkg/proto/basket"
+	pPayment "marketplace/pkg/proto/payment"
 )
 
 type BasketClient interface {
@@ -14,5 +15,9 @@ type BasketClient interface {
 
 type ProductClient interface {
 	GetProductsByIds(ctx context.Context, ids []string) (*pp.GetProductsByIdsResponse, error)
+	Close() error
+}
+type PaymentClient interface {
+	CreatePaymentSession(ctx context.Context, orderID, userID, email string, amount float64) (*pPayment.CreatePaymentResponse, error)
 	Close() error
 }

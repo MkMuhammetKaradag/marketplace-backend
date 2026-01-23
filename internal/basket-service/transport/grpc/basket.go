@@ -37,6 +37,7 @@ func (h *BasketGrpcHandler) GetBasket(ctx context.Context, req *pb.GetBasketRequ
 	if err != nil {
 		return nil, nil
 	}
+
 	products := make([]*pb.BasketItem, len(basket.Items))
 	var totalPrice float64
 	for i, product := range basket.Items {

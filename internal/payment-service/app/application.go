@@ -8,7 +8,9 @@ import (
 	"marketplace/internal/payment-service/config"
 	"marketplace/internal/payment-service/infrastructure/payment"
 	"marketplace/internal/payment-service/pkg/graceful"
+	"marketplace/internal/payment-service/repository/postgres"
 	"marketplace/internal/payment-service/server"
+	grpctransport "marketplace/internal/payment-service/transport/grpc"
 	httptransport "marketplace/internal/payment-service/transport/http"
 	"time"
 )
@@ -49,20 +51,27 @@ type container struct {
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
-
+	repo, err := postgres.NewRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("init postgres repository: %w", err)
+	}
 	stripeService := payment.NewStripeService(cfg.Stripe.SecretKey, cfg.Stripe.WebhookSecret)
 
 	httpHandlers := httptransport.NewHandlers(stripeService)
 	router := httptransport.NewRouter(httpHandlers)
 
 	serverCfg := server.Config{
-		Port:         cfg.Server.Port,
+		Port: cfg.Server.Port,
+
 		IdleTimeout:  5 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
+		GrpcPort:     cfg.Server.GrpcPort,
 	}
 
-	httpServer := server.New(serverCfg, router)
+	grpcHandler := grpctransport.NewProductGrpcHandler(repo, stripeService)
+
+	httpServer := server.New(serverCfg, router, grpcHandler)
 
 	return &container{
 

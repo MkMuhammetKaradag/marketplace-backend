@@ -4,11 +4,14 @@ package server
 import (
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"google.golang.org/grpc"
 )
 
 type RouteRegistrar interface {
@@ -24,11 +27,15 @@ type Config struct {
 }
 
 type Server struct {
-	app *fiber.App
-	cfg Config
+	app        *fiber.App
+	cfg        Config
+	grpcServer *grpc.Server
+}
+type GrpcServerRegistrar interface {
+	Register(server *grpc.Server)
 }
 
-func New(cfg Config, registrar RouteRegistrar) *Server {
+func New(cfg Config, registrar RouteRegistrar, grpcRegistrar GrpcServerRegistrar) *Server {
 	app := fiber.New(fiber.Config{
 		IdleTimeout:  cfg.IdleTimeout,
 		ReadTimeout:  cfg.ReadTimeout,
@@ -51,19 +58,41 @@ func New(cfg Config, registrar RouteRegistrar) *Server {
 	if registrar != nil {
 		registrar.Register(app)
 	}
+	grpcSrv := grpc.NewServer()
 
+	if grpcRegistrar != nil {
+		grpcRegistrar.Register(grpcSrv)
+	}
 	return &Server{
-		app: app,
-		cfg: cfg,
+		app:        app,
+		cfg:        cfg,
+		grpcServer: grpcSrv,
 	}
 }
 
+func (s *Server) startGrpc() error {
+	listen, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", s.cfg.GrpcPort))
+	if err != nil {
+		return fmt.Errorf("gRPC dinlemede hata: %w", err)
+	}
+	log.Printf("👂 gRPC sunucusu %s adresinde dinliyor...", s.cfg.GrpcPort)
+
+	return s.grpcServer.Serve(listen)
+}
+
 func (s *Server) Start() error {
+
+	go func() {
+		if err := s.startGrpc(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("gRPC sunucusu hatası: %v", err)
+		}
+	}()
 	log.Printf("🌐 HTTP sunucusu %s adresinde dinliyor...", s.cfg.Port)
 	return s.app.Listen(s.Address())
 }
 
 func (s *Server) Shutdown(timeout time.Duration) error {
+	s.grpcServer.GracefulStop()
 	return s.app.ShutdownWithTimeout(timeout)
 }
 

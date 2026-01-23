@@ -3,4 +3,5 @@ server:
   grpcPort: '3006'
   grpcBasketPort: '3005'
   grpcProductPort: '3004'
+  grpcPaymentPort: '3007'
   host: '0.0.0.0'

@@ -17,13 +17,15 @@ type createOrderUseCase struct {
 	basketRepository  domain.OrderRepository
 	grpcProductClient domain.ProductClient
 	grpcBasketClient  domain.BasketClient
+	grpcPaymentClient domain.PaymentClient
 }
 
-func NewCreateOrderUseCase(basketRepository domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient) CreateOrderUseCase {
+func NewCreateOrderUseCase(basketRepository domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient) CreateOrderUseCase {
 	return &createOrderUseCase{
 		basketRepository:  basketRepository,
 		grpcProductClient: grpcProductClient,
 		grpcBasketClient:  grpcBasketClient,
+		grpcPaymentClient: grpcPaymentClient,
 	}
 }
 
@@ -91,6 +93,12 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) erro
 	if err != nil {
 		return fmt.Errorf("failed to save order: %v", err)
 	}
+
+	payment, err := u.grpcPaymentClient.CreatePaymentSession(ctx, orderID.String(), userID.String(), "email@test.com", totalPrice)
+	if err != nil {
+		return err
+	}
+	fmt.Println(payment)
 
 	//  SON ADIM: Kafka'ya "OrderCreated" eventi at
 

@@ -16,6 +16,7 @@ type ServerConfig struct {
 	GrpcPort        string `mapstructure:"grpcPort"`
 	GrpcBasketPort  string `mapstructure:"grpcBasketPort"`
 	GrpcProductPort string `mapstructure:"grpcProductPort"`
+	GrpcPaymentPort string `mapstructure:"grpcPaymentPort"`
 	Host            string `mapstructure:"host"`
 	Description     string `mapstructure:"description"`
 }
