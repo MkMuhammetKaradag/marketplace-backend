@@ -2,15 +2,13 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"marketplace/internal/payment-service/domain"
+	"marketplace/internal/payment-service/transport/http/controller"
+	"marketplace/internal/payment-service/transport/http/usecase"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-
-	"github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/webhook"
 )
 
 type Handlers struct {
@@ -52,47 +50,10 @@ func (h *Handlers) CreatePaymentSession(c *fiber.Ctx) error {
 		"payment_url": paymentURL,
 	})
 }
+func (h *Handlers) StripeWebhook() *controller.StripeWebhookController {
+	usecase := usecase.NewStripeWebhookUseCase(h.stripeService)
+	return controller.NewStripeWebhookController(usecase)
 
-func (h *Handlers) StripeWebhook(c *fiber.Ctx) error {
-	payload := c.Body()
-	sigHeader := c.Get("Stripe-Signature")
-	endpointSecret := h.stripeService.GetWebhookSecret()
-
-	// 1. Gelen isteğin gerçekten Stripe'tan geldiğini doğrula
-	event, err := webhook.ConstructEventWithOptions(
-		payload,
-		sigHeader,
-		endpointSecret,
-		webhook.ConstructEventOptions{
-			IgnoreAPIVersionMismatch: true, // Hatanın çözümü tam olarak burası
-		},
-	)
-	if err != nil {
-		fmt.Printf("⚠️ Webhook doğrulama hatası: %v\n", err)
-		return c.Status(400).SendString("Geçersiz imza")
-	}
-
-	// 2. Sadece "Ödeme Başarılı" (checkout.session.completed) olayıyla ilgileniyoruz
-	if event.Type == "checkout.session.completed" {
-		var session stripe.CheckoutSession
-		err := json.Unmarshal(event.Data.Raw, &session)
-		if err != nil {
-			return c.Status(400).SendString("Data parse hatası")
-		}
-
-		// Stripe Session oluştururken içine koyduğumuz Metadata'yı geri alıyoruz
-		orderID := session.Metadata["order_id"]
-		userID := session.Metadata["user_id"]
-
-		fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
-		fmt.Println("body:", payload)
-
-		// 3. ŞİMDİ SIRADAKİ HAMLE: KAFKA'YA MESAJ ATMAK
-		// Buraya birazdan Kafka Producer kodunu bağlayacağız
-		// h.kafkaProducer.PublishPaymentSuccess(orderID, userID)
-	}
-
-	return c.SendStatus(200)
 }
 
 type HelloResponse struct {

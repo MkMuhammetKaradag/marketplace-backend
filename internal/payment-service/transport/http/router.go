@@ -2,6 +2,9 @@
 package http
 
 import (
+	"marketplace/internal/payment-service/handler"
+	"marketplace/internal/payment-service/transport/http/controller"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,7 +18,9 @@ func NewRouter(handlers *Handlers) *Router {
 
 func (r *Router) Register(app *fiber.App) {
 
+	webhookController := r.handlers.StripeWebhook()
 	app.Get("/hello", r.handlers.Hello)
 	app.Post("/create-payment-session", r.handlers.CreatePaymentSession)
-	app.Post("/payment/webhook", r.handlers.StripeWebhook)
+	// app.Post("/payment/webhook", webhookController.Handle)
+	app.Post("/payment/webhook", handler.HandleWithFiber[controller.StripeWebhookRequest, controller.StripeWebhookResponse](webhookController))
 }

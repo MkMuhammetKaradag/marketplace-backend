@@ -10,7 +10,7 @@ import (
 )
 
 type CreateOrderUseCase interface {
-	Execute(ctx context.Context, userID uuid.UUID) error
+	Execute(ctx context.Context, userID uuid.UUID) (string, error)
 }
 
 type createOrderUseCase struct {
@@ -29,11 +29,11 @@ func NewCreateOrderUseCase(basketRepository domain.OrderRepository, grpcProductC
 	}
 }
 
-func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) error {
+func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (string, error) {
 
 	basket, err := u.grpcBasketClient.GetBasket(ctx, userID.String())
 	if err != nil || basket == nil {
-		return fmt.Errorf("basket service error or basket empty: %v", err)
+		return "", fmt.Errorf("basket service error or basket empty: %v", err)
 	}
 
 	var ids []string
@@ -43,7 +43,7 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) erro
 
 	productResponse, err := u.grpcProductClient.GetProductsByIds(ctx, ids)
 	if err != nil || productResponse == nil {
-		return fmt.Errorf("product service error: %v", err)
+		return "", fmt.Errorf("product service error: %v", err)
 	}
 
 	productMap := make(map[string]*pp.ProductResponse)
@@ -58,11 +58,11 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) erro
 	for _, bItem := range basket.Items {
 		productDetail, ok := productMap[bItem.ProductId]
 		if !ok {
-			return fmt.Errorf("product %s not found in product service", bItem.ProductId)
+			return "", fmt.Errorf("product %s not found in product service", bItem.ProductId)
 		}
 
 		if productDetail.Stock < bItem.Quantity {
-			return fmt.Errorf("not enough stock for product: %s", productDetail.Name)
+			return "", fmt.Errorf("not enough stock for product: %s", productDetail.Name)
 		}
 
 		itemPrice := productDetail.Price * float64(bItem.Quantity)
@@ -91,17 +91,17 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) erro
 
 	err = u.basketRepository.CreateOrder(ctx, newOrder)
 	if err != nil {
-		return fmt.Errorf("failed to save order: %v", err)
+		return "", fmt.Errorf("failed to save order: %v", err)
 	}
 
 	payment, err := u.grpcPaymentClient.CreatePaymentSession(ctx, orderID.String(), userID.String(), "email@test.com", totalPrice)
 	if err != nil {
-		return err
+		return "", err
 	}
 	fmt.Println(payment)
 
 	//  SON ADIM: Kafka'ya "OrderCreated" eventi at
 
-	return nil
+	return payment.PaymentUrl,nil
 
 }

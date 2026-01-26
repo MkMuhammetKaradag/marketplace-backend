@@ -11,7 +11,8 @@ type CreateOrderRequest struct {
 }
 
 type CreateOrderResponse struct {
-	Message string `json:"message"`
+	Message    string `json:"message"`
+	PaymentUrl string `json:"payment_url"`
 }
 type CreateOrderController struct {
 	usecase usecase.CreateOrderUseCase
@@ -30,11 +31,11 @@ func (c *CreateOrderController) Handle(fiberCtx *fiber.Ctx, req *CreateOrderRequ
 		return nil, err
 	}
 
-	err = c.usecase.Execute(fiberCtx.UserContext(), userId)
+	paymentUrl, err := c.usecase.Execute(fiberCtx.UserContext(), userId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &CreateOrderResponse{Message: "Order created successfully"}, nil
+	return &CreateOrderResponse{Message: "Order created successfully", PaymentUrl: paymentUrl}, nil
 
 }
