@@ -13,11 +13,13 @@ import (
 
 type Handlers struct {
 	stripeService domain.StripeService
+	messaging     domain.Messaging
 }
 
-func NewHandlers(stripeService domain.StripeService) *Handlers {
+func NewHandlers(stripeService domain.StripeService, messaging domain.Messaging) *Handlers {
 	return &Handlers{
 		stripeService: stripeService,
+		messaging:     messaging,
 	}
 }
 
@@ -51,7 +53,7 @@ func (h *Handlers) CreatePaymentSession(c *fiber.Ctx) error {
 	})
 }
 func (h *Handlers) StripeWebhook() *controller.StripeWebhookController {
-	usecase := usecase.NewStripeWebhookUseCase(h.stripeService)
+	usecase := usecase.NewStripeWebhookUseCase(h.stripeService, h.messaging)
 	return controller.NewStripeWebhookController(usecase)
 
 }

@@ -117,9 +117,22 @@ const (
             PRIMARY KEY (user_id, product_id)
         )
     `
+	createProductReservationsTable = `
+        CREATE TABLE IF NOT EXISTS product_reservations (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+            order_id UUID NOT NULL,
+            quantity INTEGER NOT NULL,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+    
+    `
 
 	createIndex = `
         CREATE INDEX ON products USING hnsw (embedding vector_cosine_ops)
+        CREATE INDEX IF NOT EXISTS idx_res_product_id ON product_reservations(product_id)
+    CREATE INDEX IF NOT EXISTS idx_res_expires_at ON product_reservations(expires_at)
         `
 
 	createCleanupProductFunction = `

@@ -14,14 +14,16 @@ type Handlers struct {
 	grpcProductClient domain.ProductClient
 	grpcBasketClient  domain.BasketClient
 	grpcPaymentClient domain.PaymentClient
+	messaging         domain.Messaging
 }
 
-func NewHandlers(repo domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient) *Handlers {
+func NewHandlers(repo domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient, messaging domain.Messaging) *Handlers {
 	return &Handlers{
 		orderRepository:   repo,
 		grpcProductClient: grpcProductClient,
 		grpcBasketClient:  grpcBasketClient,
 		grpcPaymentClient: grpcPaymentClient,
+		messaging:         messaging,
 	}
 }
 

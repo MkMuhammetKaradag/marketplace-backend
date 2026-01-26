@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"marketplace/internal/payment-service/domain"
+	eventsProto "marketplace/pkg/proto/events"
 
 	"github.com/stripe/stripe-go/v84"
 	"github.com/stripe/stripe-go/v84/webhook"
@@ -16,11 +17,13 @@ type StripeWebhookUseCase interface {
 
 type stripeWebhookUseCase struct {
 	stripeService domain.StripeService
+	messaging     domain.Messaging
 }
 
-func NewStripeWebhookUseCase(stripeService domain.StripeService) StripeWebhookUseCase {
+func NewStripeWebhookUseCase(stripeService domain.StripeService, messaging domain.Messaging) StripeWebhookUseCase {
 	return &stripeWebhookUseCase{
 		stripeService: stripeService,
+		messaging:     messaging,
 	}
 }
 
@@ -51,10 +54,21 @@ func (u *stripeWebhookUseCase) Execute(ctx context.Context, payload []byte, sigH
 		userID := session.Metadata["user_id"]
 
 		fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
-		// fmt.Println("body:", payload)
-		// 3. ŞİMDİ SIRADAKİ HAMLE: KAFKA'YA MESAJ ATMAK
-		// Buraya birazdan Kafka Producer kodunu bağlayacağız
-		// h.kafkaProducer.PublishPaymentSuccess(orderID, userID)
+
+		msg := &eventsProto.Message{
+			Type:        eventsProto.MessageType_PAYMENT_SUCCESSFUL,
+			FromService: eventsProto.ServiceType_PAYMENT_SERVICE,
+			RetryCount:  5,
+			ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE},
+			Payload: &eventsProto.Message_PaymentSuccessfulData{PaymentSuccessfulData: &eventsProto.PaymentSuccessfulData{
+				OrderId:         orderID,
+				UserId:          userID,
+				Amount:          float64(session.AmountTotal),
+				StripeSessionId: session.ID,
+			}},
+		}
+
+		u.messaging.PublishMessage(ctx, msg)
 	}
 
 	return nil

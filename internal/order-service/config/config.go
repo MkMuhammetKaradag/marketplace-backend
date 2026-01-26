@@ -28,8 +28,12 @@ type DatabaseConfig struct {
 	Host     string `mapstructure:"host"`
 }
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Database  DatabaseConfig  `mapstructure:"database"`
+	Messaging MessagingConfig `mapstructure:"messaging"`
+}
+type MessagingConfig struct {
+	Brokers []string `mapstructure:"brokers"`
 }
 
 func Read() Config {
@@ -41,7 +45,7 @@ func Read() Config {
 	v.AddConfigPath(configDir)
 	v.SetConfigType("yaml")
 
-	files := []string{"server.yaml", "database.yaml"}
+	files := []string{"server.yaml", "database.yaml", "messaging.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {
@@ -60,6 +64,7 @@ func Read() Config {
 	v.SetDefault("database.user", "postgres")
 	v.SetDefault("database.password", "password")
 	v.SetDefault("database.db", "marketplace")
+	v.SetDefault("messaging.brokers", []string{"localhost:9092"})
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {

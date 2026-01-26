@@ -11,6 +11,9 @@ import (
 	"github.com/spf13/viper"
 )
 
+type MessagingConfig struct {
+	Brokers []string `mapstructure:"brokers"`
+}
 type ServerConfig struct {
 	Port        string `mapstructure:"port"`
 	GrpcPort    string `mapstructure:"grpcPort"`
@@ -31,9 +34,10 @@ type DatabaseConfig struct {
 	Host     string `mapstructure:"host"`
 }
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Stripe   StripeConfig   `mapstructure:"stripe"`
-	Database DatabaseConfig `mapstructure:"database"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Stripe    StripeConfig    `mapstructure:"stripe"`
+	Database  DatabaseConfig  `mapstructure:"database"`
+	Messaging MessagingConfig `mapstructure:"messaging"`
 }
 
 func Read() Config {
@@ -45,7 +49,7 @@ func Read() Config {
 	v.AddConfigPath(configDir)
 	v.SetConfigType("yaml")
 
-	files := []string{"server.yaml", "stripe.yaml","database.yaml"}
+	files := []string{"server.yaml", "stripe.yaml", "database.yaml", "messaging.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {
@@ -53,7 +57,7 @@ func Read() Config {
 		}
 	}
 
-	v.SetEnvPrefix("USER")
+	v.SetEnvPrefix("PAYMENT")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 
@@ -64,7 +68,7 @@ func Read() Config {
 	v.SetDefault("database.user", "postgres")
 	v.SetDefault("database.password", "password")
 	v.SetDefault("database.db", "marketplace")
-
+	v.SetDefault("messaging.brokers", []string{"localhost:9092"})
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		panic("Config unmarshal error: " + err.Error())

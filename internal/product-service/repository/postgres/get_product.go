@@ -36,30 +36,47 @@ func (r *Repository) GetProduct(ctx context.Context, id uuid.UUID, userID *uuid.
 	var embeddingStr string
 
 	const query = `
-        SELECT 
-            p.id, p.seller_id, p.category_id, COALESCE(c.name, ''),
-            p.name, p.description, p.price, p.stock_count, p.status, 
-            p.attributes, p.embedding::text, 
-            COALESCE(json_agg(pi.*) FILTER (WHERE pi.id IS NOT NULL), '[]'),
-            p.created_at, p.updated_at,
-            -- Favori kontrolü: Eğer userID varsa favorites tablosuna bak
-            CASE WHEN $2::uuid IS NOT NULL THEN
-                EXISTS (SELECT 1 FROM favorites WHERE user_id = $2 AND product_id = p.id)
-            ELSE false END as is_favorited
-            
-        FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.deleted_at IS NULL
-        WHERE p.id = $1
-        GROUP BY p.id, c.name;
+       SELECT 
+		p.id, 
+		p.seller_id, 
+		p.category_id, 
+		COALESCE(c.name, '') as category_name,
+		p.name, 
+		p.description, 
+		p.price, 
+		p.stock_count,
+		-- Mevcut stoktan rezervasyon toplamını çıkarıyoruz
+		(p.stock_count - COALESCE(res.total_reserved, 0)) as available_stock, 
+		p.status, 
+		p.attributes, 
+		p.embedding::text, 
+		COALESCE(json_agg(pi.*) FILTER (WHERE pi.id IS NOT NULL), '[]') as images,
+		p.created_at, 
+		p.updated_at,
+		CASE WHEN $2::uuid IS NOT NULL THEN
+			EXISTS (SELECT 1 FROM favorites WHERE user_id = $2 AND product_id = p.id)
+		ELSE false END as is_favorited
+	FROM products p
+	LEFT JOIN categories c ON p.category_id = c.id
+	LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.deleted_at IS NULL
+	-- REZERVASYONLARI BURADA HESAPLIYORUZ:
+	LEFT JOIN (
+		SELECT product_id, SUM(quantity) as total_reserved 
+		FROM product_reservations 
+		WHERE expires_at > NOW() 
+		GROUP BY product_id
+	) res ON p.id = res.product_id
+	WHERE p.id = $1
+	GROUP BY p.id, c.name, res.total_reserved;
     `
-
+	var availableStock int
 	err := r.db.QueryRowContext(ctx, query, id, userID).Scan(
 		&p.ID, &p.SellerID, &p.CategoryID, &p.CategoryName,
-		&p.Name, &p.Description, &p.Price, &p.StockCount, &p.Status,
+		&p.Name, &p.Description, &p.Price, &p.StockCount, &availableStock, &p.Status,
 		&attributesJSON, &embeddingStr, &imagesJSON, &p.CreatedAt, &p.UpdatedAt,
 		&p.IsFavorited,
 	)
+	fmt.Println("Available Stock:", availableStock)
 	if err != nil {
 		return nil, err
 	}
