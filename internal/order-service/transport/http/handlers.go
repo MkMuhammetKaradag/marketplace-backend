@@ -37,7 +37,7 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) CreateOrder() *controller.CreateOrderController {
-	usecase := usecase.NewCreateOrderUseCase(h.orderRepository, h.grpcProductClient, h.grpcBasketClient, h.grpcPaymentClient)
+	usecase := usecase.NewCreateOrderUseCase(h.orderRepository, h.grpcProductClient, h.grpcBasketClient, h.grpcPaymentClient, h.messaging)
 	return controller.NewCreateOrderController(usecase)
 }
 

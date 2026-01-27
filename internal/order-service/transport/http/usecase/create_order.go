@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"marketplace/internal/order-service/domain"
 	pp "marketplace/pkg/proto/Product"
+	eventsProto "marketplace/pkg/proto/events"
 
 	"github.com/google/uuid"
 )
@@ -18,14 +19,16 @@ type createOrderUseCase struct {
 	grpcProductClient domain.ProductClient
 	grpcBasketClient  domain.BasketClient
 	grpcPaymentClient domain.PaymentClient
+	messaging         domain.Messaging
 }
 
-func NewCreateOrderUseCase(basketRepository domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient) CreateOrderUseCase {
+func NewCreateOrderUseCase(basketRepository domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient, messaging domain.Messaging) CreateOrderUseCase {
 	return &createOrderUseCase{
 		basketRepository:  basketRepository,
 		grpcProductClient: grpcProductClient,
 		grpcBasketClient:  grpcBasketClient,
 		grpcPaymentClient: grpcPaymentClient,
+		messaging:         messaging,
 	}
 }
 
@@ -88,6 +91,13 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 		Status:     domain.OrderPending,
 		Items:      orderItems,
 	}
+	orderItemsData := []*eventsProto.OrderItemData{}
+	for _, item := range orderItems {
+		orderItemsData = append(orderItemsData, &eventsProto.OrderItemData{
+			ProductId: item.ProductID.String(),
+			Quantity:  int32(item.Quantity),
+		})
+	}
 
 	err = u.basketRepository.CreateOrder(ctx, newOrder)
 	if err != nil {
@@ -102,6 +112,21 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 
 	//  SON ADIM: Kafka'ya "OrderCreated" eventi at
 
-	return payment.PaymentUrl,nil
+	msg := &eventsProto.Message{
+		Type:        eventsProto.MessageType_ORDER_CREATED,
+		FromService: eventsProto.ServiceType_ORDER_SERVICE,
+		RetryCount:  5,
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_PRODUCT_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PAYMENT_SERVICE},
+		Payload: &eventsProto.Message_OrderCreatedData{OrderCreatedData: &eventsProto.OrderCreatedData{
+			OrderId:    orderID.String(),
+			UserId:     userID.String(),
+			TotalPrice: totalPrice,
+			Items:      orderItemsData,
+		}},
+	}
+
+	u.messaging.PublishMessage(ctx, msg)
+
+	return payment.PaymentUrl, nil
 
 }
