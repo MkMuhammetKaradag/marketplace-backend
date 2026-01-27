@@ -28,5 +28,7 @@ type ProductRepository interface {
 	UpdateProduct(ctx context.Context, p *Product) error
 	SoftDeleteProduct(ctx context.Context, productID uuid.UUID) error
 	SoftDeleteAllProductImages(ctx context.Context, productID uuid.UUID) error
+
+	ReserveStocks(ctx context.Context, orderID uuid.UUID, items []OrderItemReserve) error
 	Close() error
 }

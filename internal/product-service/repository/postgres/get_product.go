@@ -69,14 +69,14 @@ func (r *Repository) GetProduct(ctx context.Context, id uuid.UUID, userID *uuid.
 	WHERE p.id = $1
 	GROUP BY p.id, c.name, res.total_reserved;
     `
-	var availableStock int
+
 	err := r.db.QueryRowContext(ctx, query, id, userID).Scan(
 		&p.ID, &p.SellerID, &p.CategoryID, &p.CategoryName,
-		&p.Name, &p.Description, &p.Price, &p.StockCount, &availableStock, &p.Status,
+		&p.Name, &p.Description, &p.Price, &p.StockCount, &p.AvailableStock, &p.Status,
 		&attributesJSON, &embeddingStr, &imagesJSON, &p.CreatedAt, &p.UpdatedAt,
 		&p.IsFavorited,
 	)
-	fmt.Println("Available Stock:", availableStock)
+
 	if err != nil {
 		return nil, err
 	}

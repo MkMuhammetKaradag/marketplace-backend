@@ -24,7 +24,23 @@ func NewOrderCreatedUseCase(repository domain.ProductRepository) OrderCreatedUse
 
 func (u *orderCreatedUseCase) Execute(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, items []*eventsProto.OrderItemData) error {
 
-	fmt.Println("OrderCreatedUseCase Execute", orderID, userID, items)
+	var reserveItems []domain.OrderItemReserve
+	for _, item := range items {
+		pID, _ := uuid.Parse(item.ProductId)
+		reserveItems = append(reserveItems, domain.OrderItemReserve{
+			ProductID: pID,
+			Quantity:  int(item.Quantity),
+		})
+	}
 
+	err := u.repository.ReserveStocks(ctx, orderID, reserveItems)
+	if err != nil {
+		fmt.Println("The reservation failed, a cancel order event can be triggered:", err)
+
+		return err
+	}
+
+	fmt.Printf("Products reserved for order %s.\n", orderID)
 	return nil
+
 }
