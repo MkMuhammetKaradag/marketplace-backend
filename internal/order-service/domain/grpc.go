@@ -3,9 +3,9 @@ package domain
 import (
 	"context"
 
-	pp "marketplace/pkg/proto/Product"
 	pb "marketplace/pkg/proto/basket"
 	pPayment "marketplace/pkg/proto/payment"
+	pp "marketplace/pkg/proto/product"
 )
 
 type BasketClient interface {

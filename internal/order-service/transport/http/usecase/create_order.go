@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"marketplace/internal/order-service/domain"
-	pp "marketplace/pkg/proto/Product"
 	eventsProto "marketplace/pkg/proto/events"
+	pp "marketplace/pkg/proto/product"
 
 	"github.com/google/uuid"
 )

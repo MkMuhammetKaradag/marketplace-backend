@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"marketplace/internal/basket-service/domain"
-	pb "marketplace/pkg/proto/Product"
+	pb "marketplace/pkg/proto/product"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
