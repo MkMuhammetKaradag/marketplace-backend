@@ -39,7 +39,7 @@ func (r *Repository) ReserveStocks(ctx context.Context, orderID uuid.UUID, items
 
 		const reserveQuery = `
 			INSERT INTO product_reservations (product_id, order_id, quantity, expires_at)
-			VALUES ($1, $2, $3, NOW() + INTERVAL '3 minutes')
+			VALUES ($1, $2, $3, NOW() + INTERVAL '30 minutes')
 		`
 		_, err = tx.ExecContext(ctx, reserveQuery, item.ProductID, orderID, item.Quantity)
 		if err != nil {

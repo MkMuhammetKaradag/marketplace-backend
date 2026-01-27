@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"marketplace/internal/order-service/domain"
 
 	"github.com/google/uuid"
@@ -23,6 +22,9 @@ func NewPaymentSuccessUseCase(repository domain.OrderRepository) PaymentSuccessU
 
 func (u *paymentSuccessUseCase) Execute(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, amount float64, stripeSessionID string) error {
 
-	fmt.Println("PaymentSuccessUseCase Execute", orderID, userID, amount, stripeSessionID)
+	err := u.repository.UpdateOrderStatus(ctx, orderID, domain.OrderPaid)
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -2,6 +2,7 @@ package payment
 
 import (
 	"marketplace/internal/payment-service/domain"
+	"time"
 
 	"github.com/stripe/stripe-go/v84"
 	"github.com/stripe/stripe-go/v84/checkout/session"
@@ -18,6 +19,7 @@ func NewStripeService(key string, webhookSecret string) *StripeService {
 }
 
 func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequest) (string, error) {
+	expiresAt := time.Now().Add(2 * time.Minute).Unix()
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerEmail:      stripe.String(req.UserEmail),
@@ -40,6 +42,7 @@ func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequ
 			"order_id": req.OrderID.String(),
 			"user_id":  req.UserID.String(),
 		},
+		ExpiresAt: stripe.Int64(expiresAt),
 	}
 
 	sess, err := session.New(params)
