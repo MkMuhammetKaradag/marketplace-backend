@@ -19,7 +19,7 @@ func NewStripeService(key string, webhookSecret string) *StripeService {
 }
 
 func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequest) (string, error) {
-	expiresAt := time.Now().Add(2 * time.Minute).Unix()
+	expiresAt := time.Now().Add(30 * time.Minute).Unix()
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		CustomerEmail:      stripe.String(req.UserEmail),
