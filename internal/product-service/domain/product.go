@@ -56,3 +56,13 @@ type UpdateProduct struct {
 	CategoryID  *uuid.UUID
 	Attributes  map[string]interface{}
 }
+
+type ProductInfo struct {
+	ID         uuid.UUID
+	SellerID   uuid.UUID
+	Name       string
+	Price      float64
+	StockCount int
+	Available  int
+	ImageURL   string
+}

@@ -29,7 +29,7 @@ type ProductRepository interface {
 	SoftDeleteProduct(ctx context.Context, productID uuid.UUID) error
 	SoftDeleteAllProductImages(ctx context.Context, productID uuid.UUID) error
 
-	ReserveStocks(ctx context.Context, orderID uuid.UUID, items []OrderItemReserve) error
+	ReserveStocks(ctx context.Context, orderID uuid.UUID, items []OrderItemReserve) ([]ProductInfo, error)
 	ConfirmStock(ctx context.Context, orderID uuid.UUID) error
 	Close() error
 }

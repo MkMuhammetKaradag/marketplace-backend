@@ -33,7 +33,7 @@ func (u *orderCreatedUseCase) Execute(ctx context.Context, orderID uuid.UUID, us
 		})
 	}
 
-	err := u.repository.ReserveStocks(ctx, orderID, reserveItems)
+	_, err := u.repository.ReserveStocks(ctx, orderID, reserveItems)
 	if err != nil {
 		fmt.Println("The reservation failed, a cancel order event can be triggered:", err)
 

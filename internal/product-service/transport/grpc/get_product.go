@@ -89,31 +89,45 @@ func (h *ProductGrpcHandler) GetProductsByIds(ctx context.Context, req *pb.GetPr
 func (h *ProductGrpcHandler) ReserveStock(ctx context.Context, req *pb.ReserveStockRequest) (*pb.ReserveStockResponse, error) {
 	items := req.GetItems()
 	if len(items) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("items cannot be empty")
 	}
+
 	orderID, err := uuid.Parse(req.GetOrderId())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid order id: %w", err)
 	}
 
 	var reserveItems []domain.OrderItemReserve
 	for _, item := range items {
 		pID, err := uuid.Parse(item.ProductId)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid product id: %w", err)
 		}
 		reserveItems = append(reserveItems, domain.OrderItemReserve{
 			ProductID: pID,
 			Quantity:  int(item.Quantity),
 		})
 	}
-	err = h.productRepo.ReserveStocks(ctx, orderID, reserveItems)
-	if err != nil {
-		fmt.Println("The reservation failed, a cancel order event can be triggered:", err)
 
+	reservedProducts, err := h.productRepo.ReserveStocks(ctx, orderID, reserveItems)
+	if err != nil {
+		fmt.Printf("Reservation failed for order %s: %v\n", orderID, err)
 		return nil, err
 	}
+
+	var protoProducts []*pb.ProductResponse
+	for _, p := range reservedProducts {
+		protoProducts = append(protoProducts, &pb.ProductResponse{
+			Id:       p.ID.String(),
+			Name:     p.Name,
+			Price:    p.Price,
+			ImageUrl: p.ImageURL,
+			SellerId: p.SellerID.String(),
+		})
+	}
+
 	return &pb.ReserveStockResponse{
-		Success: true,
+		Success:  true,
+		Products: protoProducts,
 	}, nil
 }

@@ -6,7 +6,6 @@ import (
 	"marketplace/internal/order-service/domain"
 	cp "marketplace/pkg/proto/common"
 	eventsProto "marketplace/pkg/proto/events"
-	pp "marketplace/pkg/proto/product"
 
 	"github.com/google/uuid"
 )
@@ -36,53 +35,41 @@ func NewCreateOrderUseCase(orderRepository domain.OrderRepository, grpcProductCl
 func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (string, error) {
 
 	basket, err := u.grpcBasketClient.GetBasket(ctx, userID.String())
-	if err != nil || basket == nil {
-		return "", fmt.Errorf("basket service error or basket empty: %v", err)
-	}
-
-	var ids []string
-	for _, item := range basket.Items {
-		ids = append(ids, item.ProductId)
-	}
-
-	productResponse, err := u.grpcProductClient.GetProductsByIds(ctx, ids)
-	if err != nil || productResponse == nil {
-		return "", fmt.Errorf("product service error: %v", err)
-	}
-
-	productMap := make(map[string]*pp.ProductResponse)
-	for _, p := range productResponse.Products {
-		productMap[p.Id] = p
+	if err != nil || basket == nil || len(basket.Items) == 0 {
+		return "", fmt.Errorf("basket empty or error: %v", err)
 	}
 
 	orderID := uuid.New()
 	var orderItems []domain.OrderItem
-	var totalPrice float64
+	var orderItemsData []*cp.OrderItemData
 
 	for _, bItem := range basket.Items {
-		productDetail, ok := productMap[bItem.ProductId]
-		if !ok {
-			return "", fmt.Errorf("product %s not found in product service", bItem.ProductId)
+		pID := uuid.MustParse(bItem.ProductId)
+		item := domain.OrderItem{
+			ID:        uuid.New(),
+			OrderID:   orderID,
+			ProductID: pID,
+			Quantity:  int(bItem.Quantity),
+			Status:    domain.OrderPending,
 		}
+		orderItems = append(orderItems, item)
 
-		if productDetail.Stock < bItem.Quantity {
-			return "", fmt.Errorf("not enough stock for product: %s", productDetail.Name)
-		}
-
-		itemPrice := productDetail.Price * float64(bItem.Quantity)
-		totalPrice += itemPrice
-
-		orderItems = append(orderItems, domain.OrderItem{
-			ID:              uuid.New(),
-			OrderID:         orderID,
-			ProductID:       uuid.MustParse(bItem.ProductId),
-			ProductName:     productDetail.Name,
-			ProductImageUrl: productDetail.ImageUrl,
-			UnitPrice:       productDetail.Price,
-			Quantity:        int(bItem.Quantity),
-			SellerID:        uuid.MustParse(productDetail.SellerId),
-			Status:          domain.OrderPending,
+		orderItemsData = append(orderItemsData, &cp.OrderItemData{
+			ProductId: bItem.ProductId,
+			Quantity:  int32(bItem.Quantity),
 		})
+	}
+
+	productResponse, err := u.grpcProductClient.ReserveStock(ctx, orderID.String(), orderItemsData)
+	if err != nil {
+		return "", fmt.Errorf("stock reservation failed: %w", err)
+	}
+
+	var totalPrice float64
+	for i, item := range productResponse.Products {
+		orderItems[i].UnitPrice = item.Price
+		orderItems[i].ProductName = item.Name
+		totalPrice += item.Price * float64(orderItems[i].Quantity)
 	}
 
 	newOrder := &domain.Order{
@@ -92,45 +79,30 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 		Status:     domain.OrderPending,
 		Items:      orderItems,
 	}
-	orderItemsData := []*cp.OrderItemData{}
-	for _, item := range orderItems {
-		orderItemsData = append(orderItemsData, &cp.OrderItemData{
-			ProductId: item.ProductID.String(),
-			Quantity:  int32(item.Quantity),
-		})
-	}
 
-	_, err = u.grpcProductClient.ReserveStock(ctx, orderID.String(), orderItemsData)
-	if err != nil {
-		return "", fmt.Errorf("product service error: %v", err)
-	}
+	if err := u.orderRepository.CreateOrder(ctx, newOrder); err != nil {
 
-	err = u.orderRepository.CreateOrder(ctx, newOrder)
-	if err != nil {
 		return "", fmt.Errorf("failed to save order: %v", err)
 	}
 
-	payment, err := u.grpcPaymentClient.CreatePaymentSession(ctx, orderID.String(), userID.String(), "email@test.com", totalPrice)
+	payment, err := u.grpcPaymentClient.CreatePaymentSession(ctx, orderID.String(), userID.String(), "user@mail.com", totalPrice)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(payment)
 
 	msg := &eventsProto.Message{
 		Type:        eventsProto.MessageType_ORDER_CREATED,
 		FromService: eventsProto.ServiceType_ORDER_SERVICE,
-		RetryCount:  5,
-		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PAYMENT_SERVICE},
-		Payload: &eventsProto.Message_OrderCreatedData{OrderCreatedData: &eventsProto.OrderCreatedData{
-			OrderId:    orderID.String(),
-			UserId:     userID.String(),
-			TotalPrice: totalPrice,
-			Items:      orderItemsData,
-		}},
+		Payload: &eventsProto.Message_OrderCreatedData{
+			OrderCreatedData: &eventsProto.OrderCreatedData{
+				OrderId:    orderID.String(),
+				UserId:     userID.String(),
+				TotalPrice: totalPrice,
+				Items:      orderItemsData,
+			},
+		},
 	}
-
 	u.messaging.PublishMessage(ctx, msg)
 
 	return payment.PaymentUrl, nil
-
 }

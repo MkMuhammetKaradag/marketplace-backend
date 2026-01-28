@@ -41,6 +41,8 @@ message ReserveStockRequest {
 
 message ReserveStockResponse {
   bool success = 1;
+  repeated ProductResponse products = 2;
 }
 //protoc --go_out=. --go-grpc_out=. product.proto
 //protoc -I pkg/proto ` --go_out=. --go_opt=module=marketplace ` --go-grpc_out=. --go-grpc_opt=module=marketplace ` pkg/proto/common.proto pkg/proto/product.proto pkg/proto/events.proto
+//protoc -I pkg/proto ` --go_out=. --go_opt=module=marketplace ` --go-grpc_out=. --go-grpc_opt=module=marketplace ` pkg/proto/product.proto

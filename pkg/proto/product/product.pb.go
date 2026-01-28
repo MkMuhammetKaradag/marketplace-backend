@@ -301,6 +301,7 @@ func (x *ReserveStockRequest) GetItems() []*common.OrderItemData {
 type ReserveStockResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Products      []*ProductResponse     `protobuf:"bytes,2,rep,name=products,proto3" json:"products,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -342,6 +343,13 @@ func (x *ReserveStockResponse) GetSuccess() bool {
 	return false
 }
 
+func (x *ReserveStockResponse) GetProducts() []*ProductResponse {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
 var File_product_proto protoreflect.FileDescriptor
 
 const file_product_proto_rawDesc = "" +
@@ -363,9 +371,10 @@ const file_product_proto_rawDesc = "" +
 	"\bproducts\x18\x01 \x03(\v2\x18.product.ProductResponseR\bproducts\"]\n" +
 	"\x13ReserveStockRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12+\n" +
-	"\x05items\x18\x02 \x03(\v2\x15.common.OrderItemDataR\x05items\"0\n" +
+	"\x05items\x18\x02 \x03(\v2\x15.common.OrderItemDataR\x05items\"f\n" +
 	"\x14ReserveStockResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\x83\x02\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x124\n" +
+	"\bproducts\x18\x02 \x03(\v2\x18.product.ProductResponseR\bproducts2\x83\x02\n" +
 	"\x0eProductService\x12K\n" +
 	"\x13GetProductForBasket\x12\x1a.product.GetProductRequest\x1a\x18.product.ProductResponse\x12W\n" +
 	"\x10GetProductsByIds\x12 .product.GetProductsByIdsRequest\x1a!.product.GetProductsByIdsResponse\x12K\n" +
@@ -396,17 +405,18 @@ var file_product_proto_goTypes = []any{
 var file_product_proto_depIdxs = []int32{
 	1, // 0: product.GetProductsByIdsResponse.products:type_name -> product.ProductResponse
 	6, // 1: product.ReserveStockRequest.items:type_name -> common.OrderItemData
-	0, // 2: product.ProductService.GetProductForBasket:input_type -> product.GetProductRequest
-	2, // 3: product.ProductService.GetProductsByIds:input_type -> product.GetProductsByIdsRequest
-	4, // 4: product.ProductService.ReserveStock:input_type -> product.ReserveStockRequest
-	1, // 5: product.ProductService.GetProductForBasket:output_type -> product.ProductResponse
-	3, // 6: product.ProductService.GetProductsByIds:output_type -> product.GetProductsByIdsResponse
-	5, // 7: product.ProductService.ReserveStock:output_type -> product.ReserveStockResponse
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 2: product.ReserveStockResponse.products:type_name -> product.ProductResponse
+	0, // 3: product.ProductService.GetProductForBasket:input_type -> product.GetProductRequest
+	2, // 4: product.ProductService.GetProductsByIds:input_type -> product.GetProductsByIdsRequest
+	4, // 5: product.ProductService.ReserveStock:input_type -> product.ReserveStockRequest
+	1, // 6: product.ProductService.GetProductForBasket:output_type -> product.ProductResponse
+	3, // 7: product.ProductService.GetProductsByIds:output_type -> product.GetProductsByIdsResponse
+	5, // 8: product.ProductService.ReserveStock:output_type -> product.ReserveStockResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_product_proto_init() }
