@@ -2,7 +2,7 @@ package domain
 
 import (
 	"context"
-	pb "marketplace/pkg/proto/Product"
+	pb "marketplace/pkg/proto/product"
 )
 
 type ProductClient interface {

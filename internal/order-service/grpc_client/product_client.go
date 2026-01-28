@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"marketplace/internal/order-service/domain"
+	cp "marketplace/pkg/proto/common"
 	pb "marketplace/pkg/proto/product"
 
 	"google.golang.org/grpc"
@@ -37,6 +38,14 @@ func (c *productClient) GetProductsByIds(ctx context.Context, ids []string) (*pb
 
 	req := &pb.GetProductsByIdsRequest{Ids: ids}
 	return c.client.GetProductsByIds(ctx, req)
+}
+
+func (c *productClient) ReserveStock(ctx context.Context, orderID string, items []*cp.OrderItemData) (*pb.ReserveStockResponse, error) {
+	req := &pb.ReserveStockRequest{
+		OrderId: orderID,
+		Items:   items,
+	}
+	return c.client.ReserveStock(ctx, req)
 }
 
 func (c *productClient) Close() error {

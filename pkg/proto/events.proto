@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "./events";  
+option go_package = "marketplace/pkg/proto/events";  
 
 package events;
 
 import "google/protobuf/timestamp.proto"; // Timestamp için
-
+import "common.proto";
 // MessageType ve ServiceType enum'ları
 enum MessageType {
     UNKNOWN_MESSAGE_TYPE = 0;
@@ -104,13 +104,10 @@ message OrderCreatedData {
     string user_id = 2;
     double total_price = 3;
     
-    repeated OrderItemData items = 4; 
+    repeated common.OrderItemData items = 4; 
 }
 
-message OrderItemData {
-    string product_id = 1;
-    int32 quantity = 2;
-}
+
 
 message PaymentSuccessfulData {
     string order_id = 1;

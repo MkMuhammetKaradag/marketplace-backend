@@ -2,8 +2,9 @@ package grpc_transport
 
 import (
 	"context"
+	"fmt"
 	"marketplace/internal/product-service/domain"
-	pb "marketplace/pkg/proto/Product"
+	pb "marketplace/pkg/proto/product"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -11,12 +12,12 @@ import (
 
 type ProductGrpcHandler struct {
 	pb.UnimplementedProductServiceServer
-	SessionRepo domain.ProductRepository
+	productRepo domain.ProductRepository
 }
 
 func NewProductGrpcHandler(repo domain.ProductRepository) *ProductGrpcHandler {
 	return &ProductGrpcHandler{
-		SessionRepo: repo,
+		productRepo: repo,
 	}
 }
 func (h *ProductGrpcHandler) Register(gRPCServer *grpc.Server) {
@@ -33,7 +34,7 @@ func (h *ProductGrpcHandler) GetProductForBasket(ctx context.Context, req *pb.Ge
 		return nil, nil
 	}
 
-	product, err := h.SessionRepo.GetProduct(ctx, productID, nil)
+	product, err := h.productRepo.GetProduct(ctx, productID, nil)
 	if err != nil {
 		return nil, nil
 	}
@@ -59,7 +60,7 @@ func (h *ProductGrpcHandler) GetProductsByIds(ctx context.Context, req *pb.GetPr
 		if err != nil {
 			return nil, err
 		}
-		product, err := h.SessionRepo.GetProduct(ctx, productID, nil)
+		product, err := h.productRepo.GetProduct(ctx, productID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -83,5 +84,36 @@ func (h *ProductGrpcHandler) GetProductsByIds(ctx context.Context, req *pb.GetPr
 
 	return &pb.GetProductsByIdsResponse{
 		Products: productResponses,
+	}, nil
+}
+func (h *ProductGrpcHandler) ReserveStock(ctx context.Context, req *pb.ReserveStockRequest) (*pb.ReserveStockResponse, error) {
+	items := req.GetItems()
+	if len(items) == 0 {
+		return nil, nil
+	}
+	orderID, err := uuid.Parse(req.GetOrderId())
+	if err != nil {
+		return nil, err
+	}
+
+	var reserveItems []domain.OrderItemReserve
+	for _, item := range items {
+		pID, err := uuid.Parse(item.ProductId)
+		if err != nil {
+			return nil, err
+		}
+		reserveItems = append(reserveItems, domain.OrderItemReserve{
+			ProductID: pID,
+			Quantity:  int(item.Quantity),
+		})
+	}
+	err = h.productRepo.ReserveStocks(ctx, orderID, reserveItems)
+	if err != nil {
+		fmt.Println("The reservation failed, a cancel order event can be triggered:", err)
+
+		return nil, err
+	}
+	return &pb.ReserveStockResponse{
+		Success: true,
 	}, nil
 }

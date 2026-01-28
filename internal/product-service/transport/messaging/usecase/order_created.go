@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"marketplace/internal/product-service/domain"
-	eventsProto "marketplace/pkg/proto/events"
+	cp "marketplace/pkg/proto/common"
 
 	"github.com/google/uuid"
 )
 
 type OrderCreatedUseCase interface {
-	Execute(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, items []*eventsProto.OrderItemData) error
+	Execute(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, items []*cp.OrderItemData) error
 }
 type orderCreatedUseCase struct {
 	repository domain.ProductRepository
@@ -22,7 +22,7 @@ func NewOrderCreatedUseCase(repository domain.ProductRepository) OrderCreatedUse
 	}
 }
 
-func (u *orderCreatedUseCase) Execute(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, items []*eventsProto.OrderItemData) error {
+func (u *orderCreatedUseCase) Execute(ctx context.Context, orderID uuid.UUID, userID uuid.UUID, items []*cp.OrderItemData) error {
 
 	var reserveItems []domain.OrderItemReserve
 	for _, item := range items {

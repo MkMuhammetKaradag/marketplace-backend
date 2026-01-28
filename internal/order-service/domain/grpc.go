@@ -6,6 +6,7 @@ import (
 	pb "marketplace/pkg/proto/basket"
 	pPayment "marketplace/pkg/proto/payment"
 	pp "marketplace/pkg/proto/product"
+	cp "marketplace/pkg/proto/common"
 )
 
 type BasketClient interface {
@@ -15,6 +16,7 @@ type BasketClient interface {
 
 type ProductClient interface {
 	GetProductsByIds(ctx context.Context, ids []string) (*pp.GetProductsByIdsResponse, error)
+	ReserveStock(ctx context.Context, orderID string, items []*cp.OrderItemData) (*pp.ReserveStockResponse, error)
 	Close() error
 }
 type PaymentClient interface {

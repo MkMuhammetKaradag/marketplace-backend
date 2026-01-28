@@ -1,0 +1,8 @@
+syntax = "proto3";
+package common;
+
+option go_package = "marketplace/pkg/proto/common";
+message OrderItemData {
+    string product_id = 1;
+    int32 quantity = 2;
+}

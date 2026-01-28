@@ -1,15 +1,16 @@
 syntax = "proto3";
 
 
-option go_package = "./product";
+option go_package = "marketplace/pkg/proto/product";
 
 package product;
-
+import "common.proto";
 
 service ProductService {
  
   rpc GetProductForBasket (GetProductRequest) returns (ProductResponse);
   rpc GetProductsByIds (GetProductsByIdsRequest) returns (GetProductsByIdsResponse);
+  rpc ReserveStock (ReserveStockRequest) returns (ReserveStockResponse);
 }
 
 message GetProductRequest {
@@ -33,4 +34,13 @@ message GetProductsByIdsResponse {
   repeated ProductResponse products = 1;
 }
 
+message ReserveStockRequest {
+  string order_id = 1;
+  repeated common.OrderItemData items = 2;
+}
+
+message ReserveStockResponse {
+  bool success = 1;
+}
 //protoc --go_out=. --go-grpc_out=. product.proto
+//protoc -I pkg/proto ` --go_out=. --go_opt=module=marketplace ` --go-grpc_out=. --go-grpc_opt=module=marketplace ` pkg/proto/common.proto pkg/proto/product.proto pkg/proto/events.proto

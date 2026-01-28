@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"marketplace/internal/order-service/domain"
+	cp "marketplace/pkg/proto/common"
 	eventsProto "marketplace/pkg/proto/events"
 	pp "marketplace/pkg/proto/product"
 
@@ -15,16 +16,16 @@ type CreateOrderUseCase interface {
 }
 
 type createOrderUseCase struct {
-	basketRepository  domain.OrderRepository
+	orderRepository   domain.OrderRepository
 	grpcProductClient domain.ProductClient
 	grpcBasketClient  domain.BasketClient
 	grpcPaymentClient domain.PaymentClient
 	messaging         domain.Messaging
 }
 
-func NewCreateOrderUseCase(basketRepository domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient, messaging domain.Messaging) CreateOrderUseCase {
+func NewCreateOrderUseCase(orderRepository domain.OrderRepository, grpcProductClient domain.ProductClient, grpcBasketClient domain.BasketClient, grpcPaymentClient domain.PaymentClient, messaging domain.Messaging) CreateOrderUseCase {
 	return &createOrderUseCase{
-		basketRepository:  basketRepository,
+		orderRepository:   orderRepository,
 		grpcProductClient: grpcProductClient,
 		grpcBasketClient:  grpcBasketClient,
 		grpcPaymentClient: grpcPaymentClient,
@@ -91,15 +92,20 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 		Status:     domain.OrderPending,
 		Items:      orderItems,
 	}
-	orderItemsData := []*eventsProto.OrderItemData{}
+	orderItemsData := []*cp.OrderItemData{}
 	for _, item := range orderItems {
-		orderItemsData = append(orderItemsData, &eventsProto.OrderItemData{
+		orderItemsData = append(orderItemsData, &cp.OrderItemData{
 			ProductId: item.ProductID.String(),
 			Quantity:  int32(item.Quantity),
 		})
 	}
 
-	err = u.basketRepository.CreateOrder(ctx, newOrder)
+	_, err = u.grpcProductClient.ReserveStock(ctx, orderID.String(), orderItemsData)
+	if err != nil {
+		return "", fmt.Errorf("product service error: %v", err)
+	}
+
+	err = u.orderRepository.CreateOrder(ctx, newOrder)
 	if err != nil {
 		return "", fmt.Errorf("failed to save order: %v", err)
 	}
@@ -110,13 +116,11 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 	}
 	fmt.Println(payment)
 
-	//  SON ADIM: Kafka'ya "OrderCreated" eventi at
-
 	msg := &eventsProto.Message{
 		Type:        eventsProto.MessageType_ORDER_CREATED,
 		FromService: eventsProto.ServiceType_ORDER_SERVICE,
 		RetryCount:  5,
-		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_PRODUCT_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PAYMENT_SERVICE},
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PAYMENT_SERVICE},
 		Payload: &eventsProto.Message_OrderCreatedData{OrderCreatedData: &eventsProto.OrderCreatedData{
 			OrderId:    orderID.String(),
 			UserId:     userID.String(),

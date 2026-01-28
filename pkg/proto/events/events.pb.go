@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	common "marketplace/pkg/proto/common"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -788,11 +789,11 @@ func (x *ProductDeletedData) GetProductId() string {
 }
 
 type OrderCreatedData struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	TotalPrice    float64                `protobuf:"fixed64,3,opt,name=total_price,json=totalPrice,proto3" json:"total_price,omitempty"`
-	Items         []*OrderItemData       `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	OrderId       string                  `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	UserId        string                  `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TotalPrice    float64                 `protobuf:"fixed64,3,opt,name=total_price,json=totalPrice,proto3" json:"total_price,omitempty"`
+	Items         []*common.OrderItemData `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -848,63 +849,11 @@ func (x *OrderCreatedData) GetTotalPrice() float64 {
 	return 0
 }
 
-func (x *OrderCreatedData) GetItems() []*OrderItemData {
+func (x *OrderCreatedData) GetItems() []*common.OrderItemData {
 	if x != nil {
 		return x.Items
 	}
 	return nil
-}
-
-type OrderItemData struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *OrderItemData) Reset() {
-	*x = OrderItemData{}
-	mi := &file_events_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OrderItemData) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OrderItemData) ProtoMessage() {}
-
-func (x *OrderItemData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OrderItemData.ProtoReflect.Descriptor instead.
-func (*OrderItemData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *OrderItemData) GetProductId() string {
-	if x != nil {
-		return x.ProductId
-	}
-	return ""
-}
-
-func (x *OrderItemData) GetQuantity() int32 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
 }
 
 type PaymentSuccessfulData struct {
@@ -919,7 +868,7 @@ type PaymentSuccessfulData struct {
 
 func (x *PaymentSuccessfulData) Reset() {
 	*x = PaymentSuccessfulData{}
-	mi := &file_events_proto_msgTypes[9]
+	mi := &file_events_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -931,7 +880,7 @@ func (x *PaymentSuccessfulData) String() string {
 func (*PaymentSuccessfulData) ProtoMessage() {}
 
 func (x *PaymentSuccessfulData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[9]
+	mi := &file_events_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -944,7 +893,7 @@ func (x *PaymentSuccessfulData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PaymentSuccessfulData.ProtoReflect.Descriptor instead.
 func (*PaymentSuccessfulData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{9}
+	return file_events_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PaymentSuccessfulData) GetOrderId() string {
@@ -987,7 +936,7 @@ type PaymentFailedData struct {
 
 func (x *PaymentFailedData) Reset() {
 	*x = PaymentFailedData{}
-	mi := &file_events_proto_msgTypes[10]
+	mi := &file_events_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -999,7 +948,7 @@ func (x *PaymentFailedData) String() string {
 func (*PaymentFailedData) ProtoMessage() {}
 
 func (x *PaymentFailedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[10]
+	mi := &file_events_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1012,7 +961,7 @@ func (x *PaymentFailedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PaymentFailedData.ProtoReflect.Descriptor instead.
 func (*PaymentFailedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{10}
+	return file_events_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PaymentFailedData) GetOrderId() string {
@@ -1047,7 +996,7 @@ var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf8\t\n" +
+	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"\xf8\t\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.events.MessageTypeR\x04type\x124\n" +
@@ -1108,11 +1057,7 @@ const file_events_proto_rawDesc = "" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1f\n" +
 	"\vtotal_price\x18\x03 \x01(\x01R\n" +
 	"totalPrice\x12+\n" +
-	"\x05items\x18\x04 \x03(\v2\x15.events.OrderItemDataR\x05items\"J\n" +
-	"\rOrderItemData\x12\x1d\n" +
-	"\n" +
-	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\"\x8f\x01\n" +
+	"\x05items\x18\x04 \x03(\v2\x15.common.OrderItemDataR\x05items\"\x8f\x01\n" +
 	"\x15PaymentSuccessfulData\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12*\n" +
@@ -1149,8 +1094,7 @@ const file_events_proto_rawDesc = "" +
 	"\rORDER_SERVICE\x10\x05\x12\x11\n" +
 	"\rRETRY_SERVICE\x10\x06\x12\x12\n" +
 	"\x0eBASKET_SERVICE\x10\a\x12\x13\n" +
-	"\x0fPAYMENT_SERVICE\x10\bB\n" +
-	"Z\b./eventsb\x06proto3"
+	"\x0fPAYMENT_SERVICE\x10\bB\x1eZ\x1cmarketplace/pkg/proto/eventsb\x06proto3"
 
 var (
 	file_events_proto_rawDescOnce sync.Once
@@ -1165,7 +1109,7 @@ func file_events_proto_rawDescGZIP() []byte {
 }
 
 var file_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_events_proto_goTypes = []any{
 	(MessageType)(0),                // 0: events.MessageType
 	(ServiceType)(0),                // 1: events.ServiceType
@@ -1177,19 +1121,19 @@ var file_events_proto_goTypes = []any{
 	(*ProductStockZeroData)(nil),    // 7: events.ProductStockZeroData
 	(*ProductDeletedData)(nil),      // 8: events.ProductDeletedData
 	(*OrderCreatedData)(nil),        // 9: events.OrderCreatedData
-	(*OrderItemData)(nil),           // 10: events.OrderItemData
-	(*PaymentSuccessfulData)(nil),   // 11: events.PaymentSuccessfulData
-	(*PaymentFailedData)(nil),       // 12: events.PaymentFailedData
-	nil,                             // 13: events.Message.HeadersEntry
-	(*timestamppb.Timestamp)(nil),   // 14: google.protobuf.Timestamp
+	(*PaymentSuccessfulData)(nil),   // 10: events.PaymentSuccessfulData
+	(*PaymentFailedData)(nil),       // 11: events.PaymentFailedData
+	nil,                             // 12: events.Message.HeadersEntry
+	(*timestamppb.Timestamp)(nil),   // 13: google.protobuf.Timestamp
+	(*common.OrderItemData)(nil),    // 14: common.OrderItemData
 }
 var file_events_proto_depIdxs = []int32{
 	0,  // 0: events.Message.type:type_name -> events.MessageType
-	14, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
+	13, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
 	1,  // 2: events.Message.from_service:type_name -> events.ServiceType
 	1,  // 3: events.Message.to_services:type_name -> events.ServiceType
-	13, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
-	14, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
+	12, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
+	13, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
 	3,  // 6: events.Message.user_created_data:type_name -> events.UserCreatedData
 	4,  // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
 	5,  // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
@@ -1197,9 +1141,9 @@ var file_events_proto_depIdxs = []int32{
 	7,  // 10: events.Message.product_stock_zero_data:type_name -> events.ProductStockZeroData
 	8,  // 11: events.Message.product_deleted_data:type_name -> events.ProductDeletedData
 	9,  // 12: events.Message.order_created_data:type_name -> events.OrderCreatedData
-	11, // 13: events.Message.payment_successful_data:type_name -> events.PaymentSuccessfulData
-	12, // 14: events.Message.payment_failed_data:type_name -> events.PaymentFailedData
-	10, // 15: events.OrderCreatedData.items:type_name -> events.OrderItemData
+	10, // 13: events.Message.payment_successful_data:type_name -> events.PaymentSuccessfulData
+	11, // 14: events.Message.payment_failed_data:type_name -> events.PaymentFailedData
+	14, // 15: events.OrderCreatedData.items:type_name -> common.OrderItemData
 	16, // [16:16] is the sub-list for method output_type
 	16, // [16:16] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
@@ -1229,7 +1173,7 @@ func file_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_events_proto_rawDesc), len(file_events_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
