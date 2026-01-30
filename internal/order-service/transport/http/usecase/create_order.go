@@ -6,6 +6,7 @@ import (
 	"marketplace/internal/order-service/domain"
 	cp "marketplace/pkg/proto/common"
 	eventsProto "marketplace/pkg/proto/events"
+	pp "marketplace/pkg/proto/product"
 
 	"github.com/google/uuid"
 )
@@ -66,10 +67,19 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 	}
 
 	var totalPrice float64
-	for i, item := range productResponse.Products {
-		orderItems[i].UnitPrice = item.Price
-		orderItems[i].ProductName = item.Name
-		totalPrice += item.Price * float64(orderItems[i].Quantity)
+	productInfoMap := make(map[string]*pp.ProductResponse)
+	for _, p := range productResponse.Products {
+		productInfoMap[p.Id] = p
+	}
+	for i := range orderItems {
+		pIDstr := orderItems[i].ProductID.String()
+		if info, ok := productInfoMap[pIDstr]; ok {
+			orderItems[i].UnitPrice = info.Price
+			orderItems[i].ProductName = info.Name
+			orderItems[i].ProductImageUrl = info.ImageUrl
+			orderItems[i].SellerID = uuid.MustParse(info.SellerId)
+			totalPrice += info.Price * float64(orderItems[i].Quantity)
+		}
 	}
 
 	newOrder := &domain.Order{

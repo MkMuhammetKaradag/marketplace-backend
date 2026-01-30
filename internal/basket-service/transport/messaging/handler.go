@@ -20,7 +20,11 @@ func SetupMessageHandlers(repository domain.BasketRedisRepository) map[pb.Messag
 
 	productPriceUpdatedUseCase := usecase.NewProductPriceUpdatedUseCase(repository)
 	productPriceUpdatedHandler := controller.NewProductPriceUpdatedHandler(productPriceUpdatedUseCase)
+
+	paymentSuccessUseCase := usecase.NewPaymentSuccessUseCase(repository)
+	paymentSuccessHandler := controller.NewPaymentSuccessHandler(paymentSuccessUseCase)
 	return map[pb.MessageType]domain.MessageHandler{
 		pb.MessageType_PRODUCT_PRICE_UPDATED: productPriceUpdatedHandler,
+		pb.MessageType_PAYMENT_SUCCESSFUL:    paymentSuccessHandler,
 	}
 }

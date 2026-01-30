@@ -95,8 +95,9 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		AllowedMessageTypes: map[pb.ServiceType][]pb.MessageType{
 			pb.ServiceType_BASKET_SERVICE: {
 				pb.MessageType_PRODUCT_PRICE_UPDATED,
+				pb.MessageType_PAYMENT_SUCCESSFUL,
 			},
 		},
-		CriticalMessageTypes: []pb.MessageType{pb.MessageType_PRODUCT_PRICE_UPDATED},
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_PRODUCT_PRICE_UPDATED, pb.MessageType_PAYMENT_SUCCESSFUL},
 	}
 }
