@@ -19,6 +19,8 @@ func NewRouter(handlers *Handlers) *Router {
 func (r *Router) Register(app *fiber.App) {
 
 	createOrder := r.handlers.CreateOrder()
+	getOrdersByUser := r.handlers.GetOrdersByUser()
 	app.Post("/order", handler.HandleWithFiber[controller.CreateOrderRequest, controller.CreateOrderResponse](createOrder))
+	app.Get("/user", handler.HandleWithFiber[controller.GetOrdersByUserRequest, controller.GetOrdersByUserResponse](getOrdersByUser))
 	app.Get("/hello", r.handlers.Hello)
 }

@@ -51,7 +51,7 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 			OrderID:   orderID,
 			ProductID: pID,
 			Quantity:  int(bItem.Quantity),
-			Status:    domain.OrderPending,
+			Status:    domain.OrderItemPending,
 		}
 		orderItems = append(orderItems, item)
 

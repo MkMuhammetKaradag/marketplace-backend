@@ -177,6 +177,9 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/orders/order": {
 			Permissions: PermissionNone,
 		},
+		"/orders/user": {
+			Permissions: PermissionNone,
+		},
 	}
 }
 func Read() Config {

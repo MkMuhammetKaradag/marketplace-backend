@@ -7,6 +7,7 @@ import (
 )
 
 type OrderStatus int
+type OrderItemStatus int
 
 const (
 	OrderPending   OrderStatus = 1
@@ -14,6 +15,12 @@ const (
 	OrderShipped   OrderStatus = 3
 	OrderCancelled OrderStatus = 4
 	OrderCompleted OrderStatus = 5
+
+	OrderItemPending   OrderItemStatus = 1
+	OrderItemPaid      OrderItemStatus = 2
+	OrderItemShipped   OrderItemStatus = 3
+	OrderItemCancelled OrderItemStatus = 4
+	OrderItemCompleted OrderItemStatus = 5
 )
 
 type Order struct {
@@ -28,13 +35,13 @@ type Order struct {
 }
 
 type OrderItem struct {
-	ID              uuid.UUID   `json:"id" gorm:"primaryKey"`
-	OrderID         uuid.UUID   `json:"order_id"`
-	ProductID       uuid.UUID   `json:"product_id"`
-	SellerID        uuid.UUID   `json:"seller_id"`
-	Quantity        int         `json:"quantity"`
-	ProductName     string      `json:"product_name"`
-	ProductImageUrl string      `json:"product_image_url"`
-	UnitPrice       float64     `json:"unit_price"`
-	Status          OrderStatus `json:"status"`
+	ID              uuid.UUID       `json:"id" gorm:"primaryKey"`
+	OrderID         uuid.UUID       `json:"order_id"`
+	ProductID       uuid.UUID       `json:"product_id"`
+	SellerID        uuid.UUID       `json:"seller_id"`
+	Quantity        int             `json:"quantity"`
+	ProductName     string          `json:"product_name"`
+	ProductImageUrl string          `json:"product_image_url"`
+	UnitPrice       float64         `json:"unit_price"`
+	Status          OrderItemStatus `json:"status"`
 }

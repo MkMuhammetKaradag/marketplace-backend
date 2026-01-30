@@ -41,6 +41,11 @@ func (h *Handlers) CreateOrder() *controller.CreateOrderController {
 	return controller.NewCreateOrderController(usecase)
 }
 
+func (h *Handlers) GetOrdersByUser() *controller.GetOrdersByUserController {
+	usecase := usecase.NewGetOrderByUserUseCase(h.orderRepository)
+	return controller.NewGetOrdersByUserController(usecase)
+}
+
 type HelloResponse struct {
 	Message string `json:"message"`
 	Info    string `json:"info"`
