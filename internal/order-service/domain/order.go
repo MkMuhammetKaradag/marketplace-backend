@@ -15,6 +15,7 @@ const (
 	OrderShipped   OrderStatus = 3
 	OrderCancelled OrderStatus = 4
 	OrderCompleted OrderStatus = 5
+	OrderFailed    OrderStatus = 6
 
 	OrderItemPending   OrderItemStatus = 1
 	OrderItemPaid      OrderItemStatus = 2

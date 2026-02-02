@@ -20,7 +20,10 @@ func SetupMessageHandlers(repository domain.OrderRepository) map[eventsProto.Mes
 	paymentSuccessUseCase := usecase.NewPaymentSuccessUseCase(repository)
 	paymentSuccessHandler := controller.NewPaymentSuccessHandler(paymentSuccessUseCase)
 
+	paymentFailureUseCase := usecase.NewPaymentFailureUseCase(repository)
+	paymentFailureHandler := controller.NewPaymentFailureHandler(paymentFailureUseCase)
 	return map[eventsProto.MessageType]domain.MessageHandler{
 		eventsProto.MessageType_PAYMENT_SUCCESSFUL: paymentSuccessHandler,
+		eventsProto.MessageType_PAYMENT_FAILED:     paymentFailureHandler,
 	}
 }

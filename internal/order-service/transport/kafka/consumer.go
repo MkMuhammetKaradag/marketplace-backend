@@ -93,8 +93,8 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		ConnectionTimeout:     10 * time.Second,
 		MaxConcurrentHandlers: 10,
 		AllowedMessageTypes: map[eventsProto.ServiceType][]eventsProto.MessageType{
-			eventsProto.ServiceType_ORDER_SERVICE: {eventsProto.MessageType_PAYMENT_SUCCESSFUL},
+			eventsProto.ServiceType_ORDER_SERVICE: {eventsProto.MessageType_PAYMENT_SUCCESSFUL, eventsProto.MessageType_PAYMENT_FAILED},
 		},
-		CriticalMessageTypes: []eventsProto.MessageType{eventsProto.MessageType_PAYMENT_SUCCESSFUL},
+		CriticalMessageTypes: []eventsProto.MessageType{eventsProto.MessageType_PAYMENT_SUCCESSFUL, eventsProto.MessageType_PAYMENT_FAILED},
 	}
 }

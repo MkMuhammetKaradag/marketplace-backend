@@ -42,35 +42,70 @@ func (u *stripeWebhookUseCase) Execute(ctx context.Context, payload []byte, sigH
 	if err != nil {
 		return err
 	}
+	var session stripe.CheckoutSession
+	if event.Type == "checkout.session.completed" ||
+		event.Type == "checkout.session.expired" ||
+		event.Type == "checkout.session.async_payment_failed" {
 
-	if event.Type == "checkout.session.completed" {
-		var session stripe.CheckoutSession
 		err := json.Unmarshal(event.Data.Raw, &session)
 		if err != nil {
 			return err
 		}
+	}
 
-		orderID := session.Metadata["order_id"]
-		userID := session.Metadata["user_id"]
+	orderID := session.Metadata["order_id"]
+	userID := session.Metadata["user_id"]
+	amount := float64(session.AmountTotal)
 
-		fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
+	if orderID == "" || userID == "" {
+		return fmt.Errorf("order id or user id is empty")
+	}
+	switch event.Type {
+	case "checkout.session.completed":
 
-		msg := &eventsProto.Message{
-			Type:        eventsProto.MessageType_PAYMENT_SUCCESSFUL,
-			FromService: eventsProto.ServiceType_PAYMENT_SERVICE,
-			RetryCount:  5,
-			ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE},
-			Payload: &eventsProto.Message_PaymentSuccessfulData{PaymentSuccessfulData: &eventsProto.PaymentSuccessfulData{
-				OrderId:         orderID,
-				UserId:          userID,
-				Amount:          float64(session.AmountTotal),
-				StripeSessionId: session.ID,
-			}},
-		}
+		//return u.handleFailure(ctx, orderID, userID, string(event.Type))
+		return u.handleSuccessful(ctx, orderID, userID, amount)
 
-		u.messaging.PublishMessage(ctx, msg)
+	case "checkout.session.expired", "checkout.session.async_payment_failed":
+		return u.handleFailure(ctx, orderID, userID, string(event.Type))
 	}
 
 	return nil
 
+}
+
+func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userID string, eventType string) error {
+	fmt.Printf("❌ Ödeme Başarısız veya Süre Doldu! Order ID: %s\n", orderID)
+
+	msg := &eventsProto.Message{
+		Type:        eventsProto.MessageType_PAYMENT_FAILED,
+		FromService: eventsProto.ServiceType_PAYMENT_SERVICE,
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE},
+		Payload: &eventsProto.Message_PaymentFailedData{PaymentFailedData: &eventsProto.PaymentFailedData{
+			OrderId:      orderID,
+			ErrorMessage: eventType,
+			UserId:       userID,
+			FailureCode:  "",
+		}},
+	}
+	return u.messaging.PublishMessage(ctx, msg)
+}
+
+func (u *stripeWebhookUseCase) handleSuccessful(ctx context.Context, orderID, userID string, amount float64) error {
+	fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
+
+	msg := &eventsProto.Message{
+		Type:        eventsProto.MessageType_PAYMENT_SUCCESSFUL,
+		FromService: eventsProto.ServiceType_PAYMENT_SERVICE,
+		RetryCount:  5,
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE},
+		Payload: &eventsProto.Message_PaymentSuccessfulData{PaymentSuccessfulData: &eventsProto.PaymentSuccessfulData{
+			OrderId:         orderID,
+			UserId:          userID,
+			Amount:          amount,
+			StripeSessionId: "session.ID",
+		}},
+	}
+
+	return u.messaging.PublishMessage(ctx, msg)
 }

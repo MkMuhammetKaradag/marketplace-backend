@@ -31,5 +31,6 @@ type ProductRepository interface {
 
 	ReserveStocks(ctx context.Context, orderID uuid.UUID, items []OrderItemReserve) ([]ProductInfo, error)
 	ConfirmStock(ctx context.Context, orderID uuid.UUID) error
+	ReleaseStock(ctx context.Context, orderID uuid.UUID) error
 	Close() error
 }

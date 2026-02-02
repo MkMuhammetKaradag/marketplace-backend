@@ -99,6 +99,7 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 				pb.MessageType_USER_CREATED,
 				pb.MessageType_ORDER_CREATED,
 				pb.MessageType_PAYMENT_SUCCESSFUL,
+				pb.MessageType_PAYMENT_FAILED,
 			},
 		},
 		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_CREATED, pb.MessageType_SELLER_APPROVED},

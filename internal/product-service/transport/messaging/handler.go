@@ -29,10 +29,13 @@ func SetupMessageHandlers(repository domain.ProductRepository) map[pb.MessageTyp
 	paymentSuccessUseCase := usecase.NewPaymentSuccessUseCase(repository)
 	paymentSuccessHandler := controller.NewPaymentSuccessHandler(paymentSuccessUseCase)
 
+	paymentFailureUseCase := usecase.NewPaymentFailureUseCase(repository)
+	paymentFailureHandler := controller.NewPaymentFailureHandler(paymentFailureUseCase)
 	return map[pb.MessageType]domain.MessageHandler{
-		pb.MessageType_SELLER_APPROVED:    sellerApprovedHandler,
-		pb.MessageType_USER_CREATED:       userCreatedHandler,
+		pb.MessageType_SELLER_APPROVED: sellerApprovedHandler,
+		pb.MessageType_USER_CREATED:    userCreatedHandler,
 		// pb.MessageType_ORDER_CREATED:      orderCreatedHandler,
 		pb.MessageType_PAYMENT_SUCCESSFUL: paymentSuccessHandler,
+		pb.MessageType_PAYMENT_FAILED:     paymentFailureHandler,
 	}
 }
