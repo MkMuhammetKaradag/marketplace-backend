@@ -41,7 +41,8 @@ const (
 	MessageType_ORDER_DELETED         MessageType = 11
 	MessageType_PAYMENT_CREATED       MessageType = 12
 	MessageType_PAYMENT_FAILED        MessageType = 13
-	MessageType_PAYMENT_SUCCESSFUL    MessageType = 14 // Diğer mesaj tiplerini buraya ekleyin
+	MessageType_PAYMENT_SUCCESSFUL    MessageType = 14
+	MessageType_USER_ACTIVATION_EMAIL MessageType = 15 // Diğer mesaj tiplerini buraya ekleyin
 )
 
 // Enum value maps for MessageType.
@@ -62,6 +63,7 @@ var (
 		12: "PAYMENT_CREATED",
 		13: "PAYMENT_FAILED",
 		14: "PAYMENT_SUCCESSFUL",
+		15: "USER_ACTIVATION_EMAIL",
 	}
 	MessageType_value = map[string]int32{
 		"UNKNOWN_MESSAGE_TYPE":  0,
@@ -79,6 +81,7 @@ var (
 		"PAYMENT_CREATED":       12,
 		"PAYMENT_FAILED":        13,
 		"PAYMENT_SUCCESSFUL":    14,
+		"USER_ACTIVATION_EMAIL": 15,
 	}
 )
 
@@ -112,15 +115,16 @@ func (MessageType) EnumDescriptor() ([]byte, []int) {
 type ServiceType int32
 
 const (
-	ServiceType_UNKNOWN_SERVICE     ServiceType = 0
-	ServiceType_API_GATEWAY_SERVICE ServiceType = 1
-	ServiceType_USER_SERVICE        ServiceType = 2
-	ServiceType_SELLER_SERVICE      ServiceType = 3
-	ServiceType_PRODUCT_SERVICE     ServiceType = 4
-	ServiceType_ORDER_SERVICE       ServiceType = 5
-	ServiceType_RETRY_SERVICE       ServiceType = 6
-	ServiceType_BASKET_SERVICE      ServiceType = 7
-	ServiceType_PAYMENT_SERVICE     ServiceType = 8 // Diğer servis tiplerini buraya ekleyin
+	ServiceType_UNKNOWN_SERVICE      ServiceType = 0
+	ServiceType_API_GATEWAY_SERVICE  ServiceType = 1
+	ServiceType_USER_SERVICE         ServiceType = 2
+	ServiceType_SELLER_SERVICE       ServiceType = 3
+	ServiceType_PRODUCT_SERVICE      ServiceType = 4
+	ServiceType_ORDER_SERVICE        ServiceType = 5
+	ServiceType_RETRY_SERVICE        ServiceType = 6
+	ServiceType_BASKET_SERVICE       ServiceType = 7
+	ServiceType_PAYMENT_SERVICE      ServiceType = 8
+	ServiceType_NOTIFICATION_SERVICE ServiceType = 9 // Diğer servis tiplerini buraya ekleyin
 )
 
 // Enum value maps for ServiceType.
@@ -135,17 +139,19 @@ var (
 		6: "RETRY_SERVICE",
 		7: "BASKET_SERVICE",
 		8: "PAYMENT_SERVICE",
+		9: "NOTIFICATION_SERVICE",
 	}
 	ServiceType_value = map[string]int32{
-		"UNKNOWN_SERVICE":     0,
-		"API_GATEWAY_SERVICE": 1,
-		"USER_SERVICE":        2,
-		"SELLER_SERVICE":      3,
-		"PRODUCT_SERVICE":     4,
-		"ORDER_SERVICE":       5,
-		"RETRY_SERVICE":       6,
-		"BASKET_SERVICE":      7,
-		"PAYMENT_SERVICE":     8,
+		"UNKNOWN_SERVICE":      0,
+		"API_GATEWAY_SERVICE":  1,
+		"USER_SERVICE":         2,
+		"SELLER_SERVICE":       3,
+		"PRODUCT_SERVICE":      4,
+		"ORDER_SERVICE":        5,
+		"RETRY_SERVICE":        6,
+		"BASKET_SERVICE":       7,
+		"PAYMENT_SERVICE":      8,
+		"NOTIFICATION_SERVICE": 9,
 	}
 )
 
@@ -202,6 +208,7 @@ type Message struct {
 	//	*Message_OrderCreatedData
 	//	*Message_PaymentSuccessfulData
 	//	*Message_PaymentFailedData
+	//	*Message_UserActivationEmailData
 	Payload       isMessage_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -402,6 +409,15 @@ func (x *Message) GetPaymentFailedData() *PaymentFailedData {
 	return nil
 }
 
+func (x *Message) GetUserActivationEmailData() *UserActivationEmailData {
+	if x != nil {
+		if x, ok := x.Payload.(*Message_UserActivationEmailData); ok {
+			return x.UserActivationEmailData
+		}
+	}
+	return nil
+}
+
 type isMessage_Payload interface {
 	isMessage_Payload()
 }
@@ -439,7 +455,11 @@ type Message_PaymentSuccessfulData struct {
 }
 
 type Message_PaymentFailedData struct {
-	PaymentFailedData *PaymentFailedData `protobuf:"bytes,20,opt,name=payment_failed_data,json=paymentFailedData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
+	PaymentFailedData *PaymentFailedData `protobuf:"bytes,20,opt,name=payment_failed_data,json=paymentFailedData,proto3,oneof"`
+}
+
+type Message_UserActivationEmailData struct {
+	UserActivationEmailData *UserActivationEmailData `protobuf:"bytes,21,opt,name=user_activation_email_data,json=userActivationEmailData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
 }
 
 func (*Message_UserCreatedData) isMessage_Payload() {}
@@ -459,6 +479,8 @@ func (*Message_OrderCreatedData) isMessage_Payload() {}
 func (*Message_PaymentSuccessfulData) isMessage_Payload() {}
 
 func (*Message_PaymentFailedData) isMessage_Payload() {}
+
+func (*Message_UserActivationEmailData) isMessage_Payload() {}
 
 type UserCreatedData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -520,6 +542,74 @@ func (x *UserCreatedData) GetEmail() string {
 	return ""
 }
 
+type UserActivationEmailData struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Username       string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Email          string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	ActivationCode string                 `protobuf:"bytes,3,opt,name=activation_code,json=activationCode,proto3" json:"activation_code,omitempty"`
+	ActivationId   string                 `protobuf:"bytes,4,opt,name=activation_id,json=activationId,proto3" json:"activation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *UserActivationEmailData) Reset() {
+	*x = UserActivationEmailData{}
+	mi := &file_events_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserActivationEmailData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserActivationEmailData) ProtoMessage() {}
+
+func (x *UserActivationEmailData) ProtoReflect() protoreflect.Message {
+	mi := &file_events_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserActivationEmailData.ProtoReflect.Descriptor instead.
+func (*UserActivationEmailData) Descriptor() ([]byte, []int) {
+	return file_events_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *UserActivationEmailData) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *UserActivationEmailData) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *UserActivationEmailData) GetActivationCode() string {
+	if x != nil {
+		return x.ActivationCode
+	}
+	return ""
+}
+
+func (x *UserActivationEmailData) GetActivationId() string {
+	if x != nil {
+		return x.ActivationId
+	}
+	return ""
+}
+
 type SellerApprovedData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SellerId      string                 `protobuf:"bytes,1,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
@@ -531,7 +621,7 @@ type SellerApprovedData struct {
 
 func (x *SellerApprovedData) Reset() {
 	*x = SellerApprovedData{}
-	mi := &file_events_proto_msgTypes[2]
+	mi := &file_events_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -543,7 +633,7 @@ func (x *SellerApprovedData) String() string {
 func (*SellerApprovedData) ProtoMessage() {}
 
 func (x *SellerApprovedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[2]
+	mi := &file_events_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -556,7 +646,7 @@ func (x *SellerApprovedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerApprovedData.ProtoReflect.Descriptor instead.
 func (*SellerApprovedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{2}
+	return file_events_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SellerApprovedData) GetSellerId() string {
@@ -592,7 +682,7 @@ type SellerRejectedData struct {
 
 func (x *SellerRejectedData) Reset() {
 	*x = SellerRejectedData{}
-	mi := &file_events_proto_msgTypes[3]
+	mi := &file_events_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -604,7 +694,7 @@ func (x *SellerRejectedData) String() string {
 func (*SellerRejectedData) ProtoMessage() {}
 
 func (x *SellerRejectedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[3]
+	mi := &file_events_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -617,7 +707,7 @@ func (x *SellerRejectedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerRejectedData.ProtoReflect.Descriptor instead.
 func (*SellerRejectedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{3}
+	return file_events_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SellerRejectedData) GetSellerId() string {
@@ -658,7 +748,7 @@ type ProductPriceUpdatedData struct {
 
 func (x *ProductPriceUpdatedData) Reset() {
 	*x = ProductPriceUpdatedData{}
-	mi := &file_events_proto_msgTypes[4]
+	mi := &file_events_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -670,7 +760,7 @@ func (x *ProductPriceUpdatedData) String() string {
 func (*ProductPriceUpdatedData) ProtoMessage() {}
 
 func (x *ProductPriceUpdatedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[4]
+	mi := &file_events_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -683,7 +773,7 @@ func (x *ProductPriceUpdatedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductPriceUpdatedData.ProtoReflect.Descriptor instead.
 func (*ProductPriceUpdatedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{4}
+	return file_events_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ProductPriceUpdatedData) GetProductId() string {
@@ -709,7 +799,7 @@ type ProductStockZeroData struct {
 
 func (x *ProductStockZeroData) Reset() {
 	*x = ProductStockZeroData{}
-	mi := &file_events_proto_msgTypes[5]
+	mi := &file_events_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -721,7 +811,7 @@ func (x *ProductStockZeroData) String() string {
 func (*ProductStockZeroData) ProtoMessage() {}
 
 func (x *ProductStockZeroData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[5]
+	mi := &file_events_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -734,7 +824,7 @@ func (x *ProductStockZeroData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductStockZeroData.ProtoReflect.Descriptor instead.
 func (*ProductStockZeroData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{5}
+	return file_events_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ProductStockZeroData) GetProductId() string {
@@ -753,7 +843,7 @@ type ProductDeletedData struct {
 
 func (x *ProductDeletedData) Reset() {
 	*x = ProductDeletedData{}
-	mi := &file_events_proto_msgTypes[6]
+	mi := &file_events_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -765,7 +855,7 @@ func (x *ProductDeletedData) String() string {
 func (*ProductDeletedData) ProtoMessage() {}
 
 func (x *ProductDeletedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[6]
+	mi := &file_events_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -778,7 +868,7 @@ func (x *ProductDeletedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductDeletedData.ProtoReflect.Descriptor instead.
 func (*ProductDeletedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{6}
+	return file_events_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ProductDeletedData) GetProductId() string {
@@ -800,7 +890,7 @@ type OrderCreatedData struct {
 
 func (x *OrderCreatedData) Reset() {
 	*x = OrderCreatedData{}
-	mi := &file_events_proto_msgTypes[7]
+	mi := &file_events_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -812,7 +902,7 @@ func (x *OrderCreatedData) String() string {
 func (*OrderCreatedData) ProtoMessage() {}
 
 func (x *OrderCreatedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[7]
+	mi := &file_events_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -825,7 +915,7 @@ func (x *OrderCreatedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderCreatedData.ProtoReflect.Descriptor instead.
 func (*OrderCreatedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{7}
+	return file_events_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *OrderCreatedData) GetOrderId() string {
@@ -868,7 +958,7 @@ type PaymentSuccessfulData struct {
 
 func (x *PaymentSuccessfulData) Reset() {
 	*x = PaymentSuccessfulData{}
-	mi := &file_events_proto_msgTypes[8]
+	mi := &file_events_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -880,7 +970,7 @@ func (x *PaymentSuccessfulData) String() string {
 func (*PaymentSuccessfulData) ProtoMessage() {}
 
 func (x *PaymentSuccessfulData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[8]
+	mi := &file_events_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -893,7 +983,7 @@ func (x *PaymentSuccessfulData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PaymentSuccessfulData.ProtoReflect.Descriptor instead.
 func (*PaymentSuccessfulData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{8}
+	return file_events_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PaymentSuccessfulData) GetOrderId() string {
@@ -936,7 +1026,7 @@ type PaymentFailedData struct {
 
 func (x *PaymentFailedData) Reset() {
 	*x = PaymentFailedData{}
-	mi := &file_events_proto_msgTypes[9]
+	mi := &file_events_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -948,7 +1038,7 @@ func (x *PaymentFailedData) String() string {
 func (*PaymentFailedData) ProtoMessage() {}
 
 func (x *PaymentFailedData) ProtoReflect() protoreflect.Message {
-	mi := &file_events_proto_msgTypes[9]
+	mi := &file_events_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -961,7 +1051,7 @@ func (x *PaymentFailedData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PaymentFailedData.ProtoReflect.Descriptor instead.
 func (*PaymentFailedData) Descriptor() ([]byte, []int) {
-	return file_events_proto_rawDescGZIP(), []int{9}
+	return file_events_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PaymentFailedData) GetOrderId() string {
@@ -996,7 +1086,8 @@ var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"\xf8\t\n" +
+	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"\xd8\n" +
+	"\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.events.MessageTypeR\x04type\x124\n" +
@@ -1022,7 +1113,8 @@ const file_events_proto_rawDesc = "" +
 	"\x14product_deleted_data\x18\x11 \x01(\v2\x1a.events.ProductDeletedDataH\x00R\x12productDeletedData\x12H\n" +
 	"\x12order_created_data\x18\x12 \x01(\v2\x18.events.OrderCreatedDataH\x00R\x10orderCreatedData\x12W\n" +
 	"\x17payment_successful_data\x18\x13 \x01(\v2\x1d.events.PaymentSuccessfulDataH\x00R\x15paymentSuccessfulData\x12K\n" +
-	"\x13payment_failed_data\x18\x14 \x01(\v2\x19.events.PaymentFailedDataH\x00R\x11paymentFailedData\x1a:\n" +
+	"\x13payment_failed_data\x18\x14 \x01(\v2\x19.events.PaymentFailedDataH\x00R\x11paymentFailedData\x12^\n" +
+	"\x1auser_activation_email_data\x18\x15 \x01(\v2\x1f.events.UserActivationEmailDataH\x00R\x17userActivationEmailData\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
@@ -1030,7 +1122,12 @@ const file_events_proto_rawDesc = "" +
 	"\x0fUserCreatedData\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\"k\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\"\x99\x01\n" +
+	"\x17UserActivationEmailData\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12'\n" +
+	"\x0factivation_code\x18\x03 \x01(\tR\x0eactivationCode\x12#\n" +
+	"\ractivation_id\x18\x04 \x01(\tR\factivationId\"k\n" +
 	"\x12SellerApprovedData\x12\x1b\n" +
 	"\tseller_id\x18\x01 \x01(\tR\bsellerId\x12\x1f\n" +
 	"\vapproved_by\x18\x02 \x01(\tR\n" +
@@ -1067,7 +1164,7 @@ const file_events_proto_rawDesc = "" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12!\n" +
-	"\ffailure_code\x18\x04 \x01(\tR\vfailureCode*\xc9\x02\n" +
+	"\ffailure_code\x18\x04 \x01(\tR\vfailureCode*\xe4\x02\n" +
 	"\vMessageType\x12\x18\n" +
 	"\x14UNKNOWN_MESSAGE_TYPE\x10\x00\x12\x10\n" +
 	"\fUSER_CREATED\x10\x01\x12\x10\n" +
@@ -1084,7 +1181,8 @@ const file_events_proto_rawDesc = "" +
 	"\rORDER_DELETED\x10\v\x12\x13\n" +
 	"\x0fPAYMENT_CREATED\x10\f\x12\x12\n" +
 	"\x0ePAYMENT_FAILED\x10\r\x12\x16\n" +
-	"\x12PAYMENT_SUCCESSFUL\x10\x0e*\xc5\x01\n" +
+	"\x12PAYMENT_SUCCESSFUL\x10\x0e\x12\x19\n" +
+	"\x15USER_ACTIVATION_EMAIL\x10\x0f*\xdf\x01\n" +
 	"\vServiceType\x12\x13\n" +
 	"\x0fUNKNOWN_SERVICE\x10\x00\x12\x17\n" +
 	"\x13API_GATEWAY_SERVICE\x10\x01\x12\x10\n" +
@@ -1094,7 +1192,8 @@ const file_events_proto_rawDesc = "" +
 	"\rORDER_SERVICE\x10\x05\x12\x11\n" +
 	"\rRETRY_SERVICE\x10\x06\x12\x12\n" +
 	"\x0eBASKET_SERVICE\x10\a\x12\x13\n" +
-	"\x0fPAYMENT_SERVICE\x10\bB\x1eZ\x1cmarketplace/pkg/proto/eventsb\x06proto3"
+	"\x0fPAYMENT_SERVICE\x10\b\x12\x18\n" +
+	"\x14NOTIFICATION_SERVICE\x10\tB\x1eZ\x1cmarketplace/pkg/proto/eventsb\x06proto3"
 
 var (
 	file_events_proto_rawDescOnce sync.Once
@@ -1109,46 +1208,48 @@ func file_events_proto_rawDescGZIP() []byte {
 }
 
 var file_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_events_proto_goTypes = []any{
 	(MessageType)(0),                // 0: events.MessageType
 	(ServiceType)(0),                // 1: events.ServiceType
 	(*Message)(nil),                 // 2: events.Message
 	(*UserCreatedData)(nil),         // 3: events.UserCreatedData
-	(*SellerApprovedData)(nil),      // 4: events.SellerApprovedData
-	(*SellerRejectedData)(nil),      // 5: events.SellerRejectedData
-	(*ProductPriceUpdatedData)(nil), // 6: events.ProductPriceUpdatedData
-	(*ProductStockZeroData)(nil),    // 7: events.ProductStockZeroData
-	(*ProductDeletedData)(nil),      // 8: events.ProductDeletedData
-	(*OrderCreatedData)(nil),        // 9: events.OrderCreatedData
-	(*PaymentSuccessfulData)(nil),   // 10: events.PaymentSuccessfulData
-	(*PaymentFailedData)(nil),       // 11: events.PaymentFailedData
-	nil,                             // 12: events.Message.HeadersEntry
-	(*timestamppb.Timestamp)(nil),   // 13: google.protobuf.Timestamp
-	(*common.OrderItemData)(nil),    // 14: common.OrderItemData
+	(*UserActivationEmailData)(nil), // 4: events.UserActivationEmailData
+	(*SellerApprovedData)(nil),      // 5: events.SellerApprovedData
+	(*SellerRejectedData)(nil),      // 6: events.SellerRejectedData
+	(*ProductPriceUpdatedData)(nil), // 7: events.ProductPriceUpdatedData
+	(*ProductStockZeroData)(nil),    // 8: events.ProductStockZeroData
+	(*ProductDeletedData)(nil),      // 9: events.ProductDeletedData
+	(*OrderCreatedData)(nil),        // 10: events.OrderCreatedData
+	(*PaymentSuccessfulData)(nil),   // 11: events.PaymentSuccessfulData
+	(*PaymentFailedData)(nil),       // 12: events.PaymentFailedData
+	nil,                             // 13: events.Message.HeadersEntry
+	(*timestamppb.Timestamp)(nil),   // 14: google.protobuf.Timestamp
+	(*common.OrderItemData)(nil),    // 15: common.OrderItemData
 }
 var file_events_proto_depIdxs = []int32{
 	0,  // 0: events.Message.type:type_name -> events.MessageType
-	13, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
+	14, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
 	1,  // 2: events.Message.from_service:type_name -> events.ServiceType
 	1,  // 3: events.Message.to_services:type_name -> events.ServiceType
-	12, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
-	13, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
+	13, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
+	14, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
 	3,  // 6: events.Message.user_created_data:type_name -> events.UserCreatedData
-	4,  // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
-	5,  // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
-	6,  // 9: events.Message.product_price_updated_data:type_name -> events.ProductPriceUpdatedData
-	7,  // 10: events.Message.product_stock_zero_data:type_name -> events.ProductStockZeroData
-	8,  // 11: events.Message.product_deleted_data:type_name -> events.ProductDeletedData
-	9,  // 12: events.Message.order_created_data:type_name -> events.OrderCreatedData
-	10, // 13: events.Message.payment_successful_data:type_name -> events.PaymentSuccessfulData
-	11, // 14: events.Message.payment_failed_data:type_name -> events.PaymentFailedData
-	14, // 15: events.OrderCreatedData.items:type_name -> common.OrderItemData
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	5,  // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
+	6,  // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
+	7,  // 9: events.Message.product_price_updated_data:type_name -> events.ProductPriceUpdatedData
+	8,  // 10: events.Message.product_stock_zero_data:type_name -> events.ProductStockZeroData
+	9,  // 11: events.Message.product_deleted_data:type_name -> events.ProductDeletedData
+	10, // 12: events.Message.order_created_data:type_name -> events.OrderCreatedData
+	11, // 13: events.Message.payment_successful_data:type_name -> events.PaymentSuccessfulData
+	12, // 14: events.Message.payment_failed_data:type_name -> events.PaymentFailedData
+	4,  // 15: events.Message.user_activation_email_data:type_name -> events.UserActivationEmailData
+	15, // 16: events.OrderCreatedData.items:type_name -> common.OrderItemData
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_events_proto_init() }
@@ -1166,6 +1267,7 @@ func file_events_proto_init() {
 		(*Message_OrderCreatedData)(nil),
 		(*Message_PaymentSuccessfulData)(nil),
 		(*Message_PaymentFailedData)(nil),
+		(*Message_UserActivationEmailData)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1173,7 +1275,7 @@ func file_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_events_proto_rawDesc), len(file_events_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

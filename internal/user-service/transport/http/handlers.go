@@ -30,7 +30,7 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 	return c.JSON(resp)
 }
 func (h *Handlers) SignUp() *controller.SignUpController {
-	signUpUseCase := usecase.NewSignUpUseCase(h.userRepository)
+	signUpUseCase := usecase.NewSignUpUseCase(h.userRepository, h.messaging)
 	return controller.NewSignUpController(signUpUseCase)
 }
 func (h *Handlers) UserActivate() *controller.UserActivateController {

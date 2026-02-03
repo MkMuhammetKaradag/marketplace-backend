@@ -3,7 +3,10 @@
 cloudinary.yaml
 aiProvider.yaml
 stripe.yaml
+email.yaml
 *.txt
 generate_docs.bat
 **/init/
 **/basic-service/
+**/user-service-2/
+**/test-service/

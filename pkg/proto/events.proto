@@ -23,6 +23,7 @@ enum MessageType {
     PAYMENT_CREATED = 12;
     PAYMENT_FAILED = 13;
     PAYMENT_SUCCESSFUL = 14;
+    USER_ACTIVATION_EMAIL = 15;
     // Diğer mesaj tiplerini buraya ekleyin
 }
 
@@ -36,6 +37,7 @@ enum ServiceType {
     RETRY_SERVICE = 6;
     BASKET_SERVICE = 7;
     PAYMENT_SERVICE = 8;
+    NOTIFICATION_SERVICE = 9;
     // Diğer servis tiplerini buraya ekleyin
 }
 
@@ -63,6 +65,7 @@ message Message {
         OrderCreatedData order_created_data = 18;
         PaymentSuccessfulData payment_successful_data = 19;
         PaymentFailedData payment_failed_data = 20;
+        UserActivationEmailData user_activation_email_data = 21;
         // Diğer olay tipleri için buraya payload'lar eklenecek
        
 
@@ -74,6 +77,13 @@ message UserCreatedData {
     string username = 2;
     string email = 3;
     // Diğer ilgili kullanıcı bilgileri
+}
+message UserActivationEmailData {
+    string username = 1;
+    string email = 2;
+    string activation_code = 3;
+    string activation_id = 4;
+
 }
 message SellerApprovedData {
     string seller_id = 1;
