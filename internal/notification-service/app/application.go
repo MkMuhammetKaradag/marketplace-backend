@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"marketplace/internal/notification-service/config"
+	"marketplace/internal/notification-service/domain"
 	email "marketplace/internal/notification-service/infrastructure"
 	"marketplace/internal/notification-service/pkg/graceful"
+	"marketplace/internal/notification-service/repository/postgres"
 	"marketplace/internal/notification-service/server"
 	httptransport "marketplace/internal/notification-service/transport/http"
 	"marketplace/internal/notification-service/transport/kafka"
@@ -18,9 +20,10 @@ import (
 )
 
 type App struct {
-	cfg      config.Config
-	server   *server.Server
-	consumer *kafka.Consumer
+	cfg        config.Config
+	server     *server.Server
+	consumer   *kafka.Consumer
+	repository domain.NotificationRepository
 }
 
 func NewApp(cfg config.Config) (*App, error) {
@@ -30,9 +33,10 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 
 	return &App{
-		cfg:      cfg,
-		consumer: container.consumer,
-		server:   container.server,
+		cfg:        cfg,
+		consumer:   container.consumer,
+		server:     container.server,
+		repository: container.repo,
 	}, nil
 }
 
@@ -48,10 +52,11 @@ func (a *App) Start() error {
 	}
 
 	log.Println("server stopped, closing repository")
-	return nil
+	return a.repository.Close()
 }
 
 type container struct {
+	repo     domain.NotificationRepository
 	server   *server.Server
 	consumer *kafka.Consumer
 }
@@ -71,11 +76,14 @@ func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		EnableRetry:          true,
 		MaxRetries:           10,
 		ConnectionTimeout:    10 * time.Second,
-		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_CREATED, pb.MessageType_USER_UPDATED, pb.MessageType_USER_DELETED},
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_ACTIVATION_EMAIL},
 	}
 }
 func buildContainer(cfg config.Config) (*container, error) {
-
+	repo, err := postgres.NewRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("init postgres repository: %w", err)
+	}
 	serverCfg := server.Config{
 		Port:         cfg.Server.Port,
 		IdleTimeout:  5 * time.Second,
@@ -84,7 +92,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 	}
 
 	resendProvider := email.NewResendProvider(cfg.Email.ApiKey)
-	messsagingHnadlers := messaginghandler.SetupMessageHandlers(resendProvider)
+	messsagingHnadlers := messaginghandler.SetupMessageHandlers(resendProvider, repo)
 
 	messagingConfig := createMessagingConfig(cfg.Messaging)
 	messaging, err := messaging.NewKafkaClient(messagingConfig)
@@ -102,6 +110,7 @@ func buildContainer(cfg config.Config) (*container, error) {
 	httpServer := server.New(serverCfg, router)
 
 	return &container{
+		repo:     repo,
 		consumer: kafkaConsumer,
 		server:   httpServer,
 	}, nil

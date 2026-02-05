@@ -39,8 +39,10 @@ func (s *StripeService) CreatePaymentSession(req domain.CreatePaymentSessionRequ
 		SuccessURL: stripe.String("http://localhost:3000/success?order_id=" + req.OrderID.String()),
 		CancelURL:  stripe.String("http://localhost:3000/cancel"),
 		Metadata: map[string]string{
-			"order_id": req.OrderID.String(),
-			"user_id":  req.UserID.String(),
+			"order_id":   req.OrderID.String(),
+			"user_id":    req.UserID.String(),
+			"user_name":  req.UserName,
+			"user_email": req.UserEmail,
 		},
 		ExpiresAt: stripe.Int64(expiresAt),
 	}

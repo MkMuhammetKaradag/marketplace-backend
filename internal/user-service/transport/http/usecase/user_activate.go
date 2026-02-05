@@ -42,7 +42,7 @@ func (u *UseractivateUseCase) Execute(ctx context.Context, activationID uuid.UUI
 		FromService: pb.ServiceType_USER_SERVICE,
 		Critical:    true,
 		RetryCount:  5,
-		ToServices:  []pb.ServiceType{pb.ServiceType_SELLER_SERVICE, pb.ServiceType_PRODUCT_SERVICE},
+		ToServices:  []pb.ServiceType{pb.ServiceType_SELLER_SERVICE, pb.ServiceType_PRODUCT_SERVICE, pb.ServiceType_NOTIFICATION_SERVICE},
 		Payload:     &pb.Message_UserCreatedData{UserCreatedData: data},
 	}
 	if err := u.messaging.PublishMessage(ctx, message); err != nil {

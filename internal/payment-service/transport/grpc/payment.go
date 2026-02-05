@@ -40,11 +40,16 @@ func (h *PaymentGrpcHandler) CreatePaymentSession(ctx context.Context, req *pp.C
 	if amount <= 0 {
 		return nil, errors.New("The amount cannot be 0.")
 	}
+	if req.GetUserEmail() == "" || req.GetUserName() == "" {
+		return nil, errors.New("User email and name cannot be empty.")
+	}
+
 	paymentSessionRequest := domain.CreatePaymentSessionRequest{
 		OrderID:   orderID,
 		UserID:    userID,
 		Amount:    amount,
-		UserEmail: "test@mail.com",
+		UserEmail: req.GetUserEmail(),
+		UserName:  req.GetUserName(),
 	}
 	paymentURL, err := h.stripeService.CreatePaymentSession(paymentSessionRequest)
 	if err != nil {

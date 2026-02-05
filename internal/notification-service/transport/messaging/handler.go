@@ -18,12 +18,20 @@ import (
 // 	}
 // }
 
-func SetupMessageHandlers(email domain.EmailProvider) map[pb.MessageType]domain.MessageHandler {
+func SetupMessageHandlers(email domain.EmailProvider, repository domain.NotificationRepository) map[pb.MessageType]domain.MessageHandler {
 
 	userActivatiomUseCase := usecase.NewUserActivationUseCase(email)
 	userActivationHandler := controller.NewUserActivationHandler(userActivatiomUseCase)
 
+	userCreatedUseCase := usecase.NewUserCreatedUseCase(repository)
+	userCreatedHandler := controller.NewUserCreatedHandler(userCreatedUseCase)
+
+	orderCreatedUseCase := usecase.NewOrderCreatedUseCase(email, repository)
+	orderCreatedHandler := controller.NewOrderCreatedHandler(orderCreatedUseCase)
+
 	return map[pb.MessageType]domain.MessageHandler{
 		pb.MessageType_USER_ACTIVATION_EMAIL: userActivationHandler,
+		pb.MessageType_USER_CREATED:          userCreatedHandler,
+		pb.MessageType_ORDER_CREATED:         orderCreatedHandler,
 	}
 }

@@ -40,6 +40,7 @@ func (c *paymentClient) CreatePaymentSession(ctx context.Context, orderID, userI
 		UserId:    userID,
 		Amount:    amount,
 		UserEmail: email,
+		UserName:  "username",
 	}
 	return c.client.CreatePaymentSession(ctx, req)
 }

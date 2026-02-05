@@ -103,6 +103,9 @@ func (u *createOrderUseCase) Execute(ctx context.Context, userID uuid.UUID) (str
 	msg := &eventsProto.Message{
 		Type:        eventsProto.MessageType_ORDER_CREATED,
 		FromService: eventsProto.ServiceType_ORDER_SERVICE,
+		Critical:    true,
+		RetryCount:  5,
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_NOTIFICATION_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE},
 		Payload: &eventsProto.Message_OrderCreatedData{
 			OrderCreatedData: &eventsProto.OrderCreatedData{
 				OrderId:    orderID.String(),

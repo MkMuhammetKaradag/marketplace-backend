@@ -55,6 +55,8 @@ func (u *stripeWebhookUseCase) Execute(ctx context.Context, payload []byte, sigH
 
 	orderID := session.Metadata["order_id"]
 	userID := session.Metadata["user_id"]
+	userName := session.Metadata["user_name"]
+	userEmail := session.Metadata["user_email"]
 	amount := float64(session.AmountTotal)
 
 	if orderID == "" || userID == "" {
@@ -64,17 +66,17 @@ func (u *stripeWebhookUseCase) Execute(ctx context.Context, payload []byte, sigH
 	case "checkout.session.completed":
 
 		//return u.handleFailure(ctx, orderID, userID, string(event.Type))
-		return u.handleSuccessful(ctx, orderID, userID, amount)
+		return u.handleSuccessful(ctx, orderID, userID, userName, userEmail, amount)
 
 	case "checkout.session.expired", "checkout.session.async_payment_failed":
-		return u.handleFailure(ctx, orderID, userID, string(event.Type))
+		return u.handleFailure(ctx, orderID, userID, userName, userEmail, string(event.Type))
 	}
 
 	return nil
 
 }
 
-func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userID string, eventType string) error {
+func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userID, userName, userEmail, eventType string) error {
 	fmt.Printf("❌ Ödeme Başarısız veya Süre Doldu! Order ID: %s\n", orderID)
 
 	msg := &eventsProto.Message{
@@ -91,7 +93,7 @@ func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userI
 	return u.messaging.PublishMessage(ctx, msg)
 }
 
-func (u *stripeWebhookUseCase) handleSuccessful(ctx context.Context, orderID, userID string, amount float64) error {
+func (u *stripeWebhookUseCase) handleSuccessful(ctx context.Context, orderID, userID, userName, userEmail string, amount float64) error {
 	fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
 
 	msg := &eventsProto.Message{

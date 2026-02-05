@@ -1,0 +1,6 @@
+database:
+  port: '5432'
+  user: 'myuser'
+  password: 'mypassword'
+  db: 'notificationdb'
+  host: 'localhost'

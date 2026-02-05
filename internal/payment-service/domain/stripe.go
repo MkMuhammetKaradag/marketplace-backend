@@ -7,6 +7,7 @@ type CreatePaymentSessionRequest struct {
 	UserID    uuid.UUID `json:"user_id"`
 	Amount    float64   `json:"amount"`
 	UserEmail string    `json:"user_email"`
+	UserName  string    `json:"user_name"`
 }
 
 type CreatePaymentSessionResponse struct {

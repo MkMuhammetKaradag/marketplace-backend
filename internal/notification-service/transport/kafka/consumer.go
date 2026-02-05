@@ -94,9 +94,13 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		MaxConcurrentHandlers: 10,
 		AllowedMessageTypes: map[pb.ServiceType][]pb.MessageType{
 			pb.ServiceType_NOTIFICATION_SERVICE: {
+				pb.MessageType_USER_CREATED,
 				pb.MessageType_USER_ACTIVATION_EMAIL,
+				pb.MessageType_PAYMENT_SUCCESSFUL,
+				pb.MessageType_PAYMENT_FAILED,
+				pb.MessageType_ORDER_CREATED,
 			},
 		},
-		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_ACTIVATION_EMAIL},
+		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_ACTIVATION_EMAIL, pb.MessageType_USER_CREATED},
 	}
 }

@@ -14,6 +14,13 @@ import (
 type MessagingConfig struct {
 	Brokers []string `mapstructure:"brokers"`
 }
+type DatabaseConfig struct {
+	Port     string `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	DB       string `mapstructure:"db"`
+	Host     string `mapstructure:"host"`
+}
 type ServerConfig struct {
 	Port        string `mapstructure:"port"`
 	GrpcPort    string `mapstructure:"grpcPort"`
@@ -26,6 +33,7 @@ type EmailConfig struct {
 }
 
 type Config struct {
+	Database  DatabaseConfig  `mapstructure:"database"`
 	Server    ServerConfig    `mapstructure:"server"`
 	Messaging MessagingConfig `mapstructure:"messaging"`
 	Email     EmailConfig     `mapstructure:"email"`
@@ -40,7 +48,7 @@ func Read() Config {
 	v.AddConfigPath(configDir)
 	v.SetConfigType("yaml")
 
-	files := []string{"server.yaml", "messaging.yaml", "email.yaml"}
+	files := []string{"server.yaml", "messaging.yaml", "email.yaml", "database.yaml"}
 	for _, f := range files {
 		v.SetConfigFile(filepath.Join(configDir, f))
 		if err := v.MergeInConfig(); err == nil {

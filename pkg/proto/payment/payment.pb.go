@@ -27,6 +27,7 @@ type CreatePaymentRequest struct {
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Amount        float64                `protobuf:"fixed64,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	UserEmail     string                 `protobuf:"bytes,4,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
+	UserName      string                 `protobuf:"bytes,5,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -89,6 +90,13 @@ func (x *CreatePaymentRequest) GetUserEmail() string {
 	return ""
 }
 
+func (x *CreatePaymentRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
 type CreatePaymentResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PaymentUrl    string                 `protobuf:"bytes,1,opt,name=payment_url,json=paymentUrl,proto3" json:"payment_url,omitempty"`
@@ -145,20 +153,21 @@ var File_payment_proto protoreflect.FileDescriptor
 
 const file_payment_proto_rawDesc = "" +
 	"\n" +
-	"\rpayment.proto\x12\apayment\"\x81\x01\n" +
+	"\rpayment.proto\x12\apayment\"\x9e\x01\n" +
 	"\x14CreatePaymentRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x16\n" +
 	"\x06amount\x18\x03 \x01(\x01R\x06amount\x12\x1d\n" +
 	"\n" +
-	"user_email\x18\x04 \x01(\tR\tuserEmail\"W\n" +
+	"user_email\x18\x04 \x01(\tR\tuserEmail\x12\x1b\n" +
+	"\tuser_name\x18\x05 \x01(\tR\buserName\"W\n" +
 	"\x15CreatePaymentResponse\x12\x1f\n" +
 	"\vpayment_url\x18\x01 \x01(\tR\n" +
 	"paymentUrl\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\tR\tsessionId2g\n" +
 	"\x0ePaymentService\x12U\n" +
-	"\x14CreatePaymentSession\x12\x1d.payment.CreatePaymentRequest\x1a\x1e.payment.CreatePaymentResponseB\vZ\t./paymentb\x06proto3"
+	"\x14CreatePaymentSession\x12\x1d.payment.CreatePaymentRequest\x1a\x1e.payment.CreatePaymentResponseB\x1fZ\x1dmarketplace/pkg/proto/paymentb\x06proto3"
 
 var (
 	file_payment_proto_rawDescOnce sync.Once
