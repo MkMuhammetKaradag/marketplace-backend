@@ -65,7 +65,7 @@ func (u *stripeWebhookUseCase) Execute(ctx context.Context, payload []byte, sigH
 	switch event.Type {
 	case "checkout.session.completed":
 
-		//return u.handleFailure(ctx, orderID, userID, string(event.Type))
+		//return u.handleFailure(ctx, orderID, userID, userName, userEmail, string(event.Type))
 		return u.handleSuccessful(ctx, orderID, userID, userName, userEmail, amount)
 
 	case "checkout.session.expired", "checkout.session.async_payment_failed":
@@ -82,7 +82,7 @@ func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userI
 	msg := &eventsProto.Message{
 		Type:        eventsProto.MessageType_PAYMENT_FAILED,
 		FromService: eventsProto.ServiceType_PAYMENT_SERVICE,
-		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE},
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE, eventsProto.ServiceType_NOTIFICATION_SERVICE},
 		Payload: &eventsProto.Message_PaymentFailedData{PaymentFailedData: &eventsProto.PaymentFailedData{
 			OrderId:      orderID,
 			ErrorMessage: eventType,
