@@ -100,7 +100,7 @@ func (u *stripeWebhookUseCase) handleSuccessful(ctx context.Context, orderID, us
 		Type:        eventsProto.MessageType_PAYMENT_SUCCESSFUL,
 		FromService: eventsProto.ServiceType_PAYMENT_SERVICE,
 		RetryCount:  5,
-		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE},
+		ToServices:  []eventsProto.ServiceType{eventsProto.ServiceType_ORDER_SERVICE, eventsProto.ServiceType_BASKET_SERVICE, eventsProto.ServiceType_PRODUCT_SERVICE, eventsProto.ServiceType_NOTIFICATION_SERVICE},
 		Payload: &eventsProto.Message_PaymentSuccessfulData{PaymentSuccessfulData: &eventsProto.PaymentSuccessfulData{
 			OrderId:         orderID,
 			UserId:          userID,
