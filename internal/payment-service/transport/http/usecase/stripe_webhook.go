@@ -77,7 +77,7 @@ func (u *stripeWebhookUseCase) Execute(ctx context.Context, payload []byte, sigH
 }
 
 func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userID, userName, userEmail, eventType string) error {
-	fmt.Printf("❌ Ödeme Başarısız veya Süre Doldu! Order ID: %s\n", orderID)
+	fmt.Printf("❌ Payment Failed or Expired! Order ID: %s\n", orderID)
 
 	msg := &eventsProto.Message{
 		Type:        eventsProto.MessageType_PAYMENT_FAILED,
@@ -90,11 +90,15 @@ func (u *stripeWebhookUseCase) handleFailure(ctx context.Context, orderID, userI
 			FailureCode:  "",
 		}},
 	}
-	return u.messaging.PublishMessage(ctx, msg)
+	err := u.messaging.PublishMessage(ctx, msg)
+	if err != nil {
+		return err
+	}
+	return fmt.Errorf("payment failed or expired")
 }
 
 func (u *stripeWebhookUseCase) handleSuccessful(ctx context.Context, orderID, userID, userName, userEmail string, amount float64) error {
-	fmt.Printf("✅ Ödeme Başarılı! Order ID: %s, User ID: %s\n", orderID, userID)
+	fmt.Printf("✅ Payment Successful! Order ID: %s, User ID: %s\n", orderID, userID)
 
 	msg := &eventsProto.Message{
 		Type:        eventsProto.MessageType_PAYMENT_SUCCESSFUL,
@@ -109,5 +113,9 @@ func (u *stripeWebhookUseCase) handleSuccessful(ctx context.Context, orderID, us
 		}},
 	}
 
-	return u.messaging.PublishMessage(ctx, msg)
+	err := u.messaging.PublishMessage(ctx, msg)
+	if err != nil {
+		return err
+	}
+	return nil
 }

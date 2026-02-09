@@ -35,11 +35,15 @@ func SetupMessageHandlers(email domain.EmailProvider, repository domain.Notifica
 	paymentFailedUseCase := usecase.NewPaymentFailedUseCase(repository, email)
 	paymentFailedHandler := controller.NewPaymentFailedHandler(paymentFailedUseCase)
 
+	rejectSellerUseCase := usecase.NewRejectSellerUseCase(email, repository)
+	rejectSellerHandler := controller.NewRejectSellerHandler(rejectSellerUseCase)
+
 	return map[pb.MessageType]domain.MessageHandler{
 		pb.MessageType_USER_ACTIVATION_EMAIL: userActivationHandler,
 		pb.MessageType_USER_CREATED:          userCreatedHandler,
 		pb.MessageType_ORDER_CREATED:         orderCreatedHandler,
 		pb.MessageType_PAYMENT_SUCCESSFUL:    paymentSuccessHandler,
 		pb.MessageType_PAYMENT_FAILED:        paymentFailedHandler,
+		pb.MessageType_SELLER_REJECTED:       rejectSellerHandler,
 	}
 }
