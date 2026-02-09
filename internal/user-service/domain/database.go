@@ -19,6 +19,7 @@ type UserRepository interface {
 	UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarURL string) error
 }
 type ForgotPasswordResult struct {
+	UserID   uuid.UUID
 	Username string
 	Email    string
 	Token    string

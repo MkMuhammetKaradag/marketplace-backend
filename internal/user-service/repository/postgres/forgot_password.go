@@ -62,6 +62,7 @@ func (r *Repository) ForgotPassword(ctx context.Context, identifier string) (*do
 	}
 
 	return &domain.ForgotPasswordResult{
+		UserID: userID,
 		Username: username,
 		Email:    email,
 		Token:    tokenID.String(),

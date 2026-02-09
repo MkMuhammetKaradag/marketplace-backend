@@ -60,7 +60,7 @@ func (h *Handlers) CreateRole() *controller.CreateRoleController {
 }
 
 func (h *Handlers) ForgotPassword() *controller.ForgotPasswordController {
-	forgotPasswordUseCase := usecase.NewForgotPasswordUseCase(h.userRepository)
+	forgotPasswordUseCase := usecase.NewForgotPasswordUseCase(h.userRepository, h.messaging)
 	return controller.NewForgotPasswordController(forgotPasswordUseCase)
 }
 

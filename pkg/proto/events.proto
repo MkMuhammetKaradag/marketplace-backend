@@ -24,6 +24,7 @@ enum MessageType {
     PAYMENT_FAILED = 13;
     PAYMENT_SUCCESSFUL = 14;
     USER_ACTIVATION_EMAIL = 15;
+    USER_FORGOT_PASSWORD = 16;
     // Diğer mesaj tiplerini buraya ekleyin
 }
 
@@ -66,6 +67,7 @@ message Message {
         PaymentSuccessfulData payment_successful_data = 19;
         PaymentFailedData payment_failed_data = 20;
         UserActivationEmailData user_activation_email_data = 21;
+        UserForgotPasswordData user_forgot_password_data = 22;
         // Diğer olay tipleri için buraya payload'lar eklenecek
        
 
@@ -132,10 +134,14 @@ message PaymentFailedData {
     string error_message = 3;
     string failure_code = 4;
 }
-
+message UserForgotPasswordData {
+    string user_id = 1;
+    string token = 2;
+}
 
 
 
 // protoc komutu:
+///protoc -I pkg/proto ` --go_out=. --go_opt=module=marketplace ` --go-grpc_out=. --go-grpc_opt=module=marketplace ` pkg/proto/events.proto
 // protoc --go_out=. --go_opt=paths=source_relative --go-vtproto_out=. --go-vtproto_opt=paths=source_relative events.proto
 // protoc --go_out=events --go_opt=paths=source_relative events.proto

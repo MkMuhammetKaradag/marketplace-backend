@@ -42,7 +42,8 @@ const (
 	MessageType_PAYMENT_CREATED       MessageType = 12
 	MessageType_PAYMENT_FAILED        MessageType = 13
 	MessageType_PAYMENT_SUCCESSFUL    MessageType = 14
-	MessageType_USER_ACTIVATION_EMAIL MessageType = 15 // Diğer mesaj tiplerini buraya ekleyin
+	MessageType_USER_ACTIVATION_EMAIL MessageType = 15
+	MessageType_USER_FORGOT_PASSWORD  MessageType = 16 // Diğer mesaj tiplerini buraya ekleyin
 )
 
 // Enum value maps for MessageType.
@@ -64,6 +65,7 @@ var (
 		13: "PAYMENT_FAILED",
 		14: "PAYMENT_SUCCESSFUL",
 		15: "USER_ACTIVATION_EMAIL",
+		16: "USER_FORGOT_PASSWORD",
 	}
 	MessageType_value = map[string]int32{
 		"UNKNOWN_MESSAGE_TYPE":  0,
@@ -82,6 +84,7 @@ var (
 		"PAYMENT_FAILED":        13,
 		"PAYMENT_SUCCESSFUL":    14,
 		"USER_ACTIVATION_EMAIL": 15,
+		"USER_FORGOT_PASSWORD":  16,
 	}
 )
 
@@ -209,6 +212,7 @@ type Message struct {
 	//	*Message_PaymentSuccessfulData
 	//	*Message_PaymentFailedData
 	//	*Message_UserActivationEmailData
+	//	*Message_UserForgotPasswordData
 	Payload       isMessage_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -418,6 +422,15 @@ func (x *Message) GetUserActivationEmailData() *UserActivationEmailData {
 	return nil
 }
 
+func (x *Message) GetUserForgotPasswordData() *UserForgotPasswordData {
+	if x != nil {
+		if x, ok := x.Payload.(*Message_UserForgotPasswordData); ok {
+			return x.UserForgotPasswordData
+		}
+	}
+	return nil
+}
+
 type isMessage_Payload interface {
 	isMessage_Payload()
 }
@@ -459,7 +472,11 @@ type Message_PaymentFailedData struct {
 }
 
 type Message_UserActivationEmailData struct {
-	UserActivationEmailData *UserActivationEmailData `protobuf:"bytes,21,opt,name=user_activation_email_data,json=userActivationEmailData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
+	UserActivationEmailData *UserActivationEmailData `protobuf:"bytes,21,opt,name=user_activation_email_data,json=userActivationEmailData,proto3,oneof"`
+}
+
+type Message_UserForgotPasswordData struct {
+	UserForgotPasswordData *UserForgotPasswordData `protobuf:"bytes,22,opt,name=user_forgot_password_data,json=userForgotPasswordData,proto3,oneof"` // Diğer olay tipleri için buraya payload'lar eklenecek
 }
 
 func (*Message_UserCreatedData) isMessage_Payload() {}
@@ -481,6 +498,8 @@ func (*Message_PaymentSuccessfulData) isMessage_Payload() {}
 func (*Message_PaymentFailedData) isMessage_Payload() {}
 
 func (*Message_UserActivationEmailData) isMessage_Payload() {}
+
+func (*Message_UserForgotPasswordData) isMessage_Payload() {}
 
 type UserCreatedData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1082,12 +1101,63 @@ func (x *PaymentFailedData) GetFailureCode() string {
 	return ""
 }
 
+type UserForgotPasswordData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserForgotPasswordData) Reset() {
+	*x = UserForgotPasswordData{}
+	mi := &file_events_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserForgotPasswordData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserForgotPasswordData) ProtoMessage() {}
+
+func (x *UserForgotPasswordData) ProtoReflect() protoreflect.Message {
+	mi := &file_events_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserForgotPasswordData.ProtoReflect.Descriptor instead.
+func (*UserForgotPasswordData) Descriptor() ([]byte, []int) {
+	return file_events_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *UserForgotPasswordData) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UserForgotPasswordData) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
 var File_events_proto protoreflect.FileDescriptor
 
 const file_events_proto_rawDesc = "" +
 	"\n" +
-	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"\xd8\n" +
-	"\n" +
+	"\fevents.proto\x12\x06events\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\fcommon.proto\"\xb5\v\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x13.events.MessageTypeR\x04type\x124\n" +
@@ -1114,7 +1184,8 @@ const file_events_proto_rawDesc = "" +
 	"\x12order_created_data\x18\x12 \x01(\v2\x18.events.OrderCreatedDataH\x00R\x10orderCreatedData\x12W\n" +
 	"\x17payment_successful_data\x18\x13 \x01(\v2\x1d.events.PaymentSuccessfulDataH\x00R\x15paymentSuccessfulData\x12K\n" +
 	"\x13payment_failed_data\x18\x14 \x01(\v2\x19.events.PaymentFailedDataH\x00R\x11paymentFailedData\x12^\n" +
-	"\x1auser_activation_email_data\x18\x15 \x01(\v2\x1f.events.UserActivationEmailDataH\x00R\x17userActivationEmailData\x1a:\n" +
+	"\x1auser_activation_email_data\x18\x15 \x01(\v2\x1f.events.UserActivationEmailDataH\x00R\x17userActivationEmailData\x12[\n" +
+	"\x19user_forgot_password_data\x18\x16 \x01(\v2\x1e.events.UserForgotPasswordDataH\x00R\x16userForgotPasswordData\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
@@ -1164,7 +1235,10 @@ const file_events_proto_rawDesc = "" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12!\n" +
-	"\ffailure_code\x18\x04 \x01(\tR\vfailureCode*\xe4\x02\n" +
+	"\ffailure_code\x18\x04 \x01(\tR\vfailureCode\"G\n" +
+	"\x16UserForgotPasswordData\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token*\xfe\x02\n" +
 	"\vMessageType\x12\x18\n" +
 	"\x14UNKNOWN_MESSAGE_TYPE\x10\x00\x12\x10\n" +
 	"\fUSER_CREATED\x10\x01\x12\x10\n" +
@@ -1182,7 +1256,8 @@ const file_events_proto_rawDesc = "" +
 	"\x0fPAYMENT_CREATED\x10\f\x12\x12\n" +
 	"\x0ePAYMENT_FAILED\x10\r\x12\x16\n" +
 	"\x12PAYMENT_SUCCESSFUL\x10\x0e\x12\x19\n" +
-	"\x15USER_ACTIVATION_EMAIL\x10\x0f*\xdf\x01\n" +
+	"\x15USER_ACTIVATION_EMAIL\x10\x0f\x12\x18\n" +
+	"\x14USER_FORGOT_PASSWORD\x10\x10*\xdf\x01\n" +
 	"\vServiceType\x12\x13\n" +
 	"\x0fUNKNOWN_SERVICE\x10\x00\x12\x17\n" +
 	"\x13API_GATEWAY_SERVICE\x10\x01\x12\x10\n" +
@@ -1208,7 +1283,7 @@ func file_events_proto_rawDescGZIP() []byte {
 }
 
 var file_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_events_proto_goTypes = []any{
 	(MessageType)(0),                // 0: events.MessageType
 	(ServiceType)(0),                // 1: events.ServiceType
@@ -1223,17 +1298,18 @@ var file_events_proto_goTypes = []any{
 	(*OrderCreatedData)(nil),        // 10: events.OrderCreatedData
 	(*PaymentSuccessfulData)(nil),   // 11: events.PaymentSuccessfulData
 	(*PaymentFailedData)(nil),       // 12: events.PaymentFailedData
-	nil,                             // 13: events.Message.HeadersEntry
-	(*timestamppb.Timestamp)(nil),   // 14: google.protobuf.Timestamp
-	(*common.OrderItemData)(nil),    // 15: common.OrderItemData
+	(*UserForgotPasswordData)(nil),  // 13: events.UserForgotPasswordData
+	nil,                             // 14: events.Message.HeadersEntry
+	(*timestamppb.Timestamp)(nil),   // 15: google.protobuf.Timestamp
+	(*common.OrderItemData)(nil),    // 16: common.OrderItemData
 }
 var file_events_proto_depIdxs = []int32{
 	0,  // 0: events.Message.type:type_name -> events.MessageType
-	14, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
+	15, // 1: events.Message.created:type_name -> google.protobuf.Timestamp
 	1,  // 2: events.Message.from_service:type_name -> events.ServiceType
 	1,  // 3: events.Message.to_services:type_name -> events.ServiceType
-	13, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
-	14, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
+	14, // 4: events.Message.headers:type_name -> events.Message.HeadersEntry
+	15, // 5: events.Message.retry_after:type_name -> google.protobuf.Timestamp
 	3,  // 6: events.Message.user_created_data:type_name -> events.UserCreatedData
 	5,  // 7: events.Message.seller_approved_data:type_name -> events.SellerApprovedData
 	6,  // 8: events.Message.seller_rejected_data:type_name -> events.SellerRejectedData
@@ -1244,12 +1320,13 @@ var file_events_proto_depIdxs = []int32{
 	11, // 13: events.Message.payment_successful_data:type_name -> events.PaymentSuccessfulData
 	12, // 14: events.Message.payment_failed_data:type_name -> events.PaymentFailedData
 	4,  // 15: events.Message.user_activation_email_data:type_name -> events.UserActivationEmailData
-	15, // 16: events.OrderCreatedData.items:type_name -> common.OrderItemData
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	13, // 16: events.Message.user_forgot_password_data:type_name -> events.UserForgotPasswordData
+	16, // 17: events.OrderCreatedData.items:type_name -> common.OrderItemData
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_events_proto_init() }
@@ -1268,6 +1345,7 @@ func file_events_proto_init() {
 		(*Message_PaymentSuccessfulData)(nil),
 		(*Message_PaymentFailedData)(nil),
 		(*Message_UserActivationEmailData)(nil),
+		(*Message_UserForgotPasswordData)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1275,7 +1353,7 @@ func file_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_events_proto_rawDesc), len(file_events_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
