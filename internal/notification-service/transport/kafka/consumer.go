@@ -100,6 +100,7 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 				pb.MessageType_PAYMENT_FAILED,
 				pb.MessageType_ORDER_CREATED,
 				pb.MessageType_SELLER_REJECTED,
+				pb.MessageType_SELLER_APPROVED,
 			},
 		},
 		CriticalMessageTypes: []pb.MessageType{pb.MessageType_USER_ACTIVATION_EMAIL, pb.MessageType_USER_CREATED},

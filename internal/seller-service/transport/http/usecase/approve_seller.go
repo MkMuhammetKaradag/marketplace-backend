@@ -43,7 +43,7 @@ func (u *approveSellerUseCase) Execute(ctx context.Context, sellerId, approvedBy
 		Id:          uuid.New().String(),
 		Type:        pb.MessageType_SELLER_APPROVED,
 		FromService: pb.ServiceType_SELLER_SERVICE,
-		ToServices:  []pb.ServiceType{pb.ServiceType_USER_SERVICE, pb.ServiceType_PRODUCT_SERVICE},
+		ToServices:  []pb.ServiceType{pb.ServiceType_USER_SERVICE, pb.ServiceType_PRODUCT_SERVICE, pb.ServiceType_NOTIFICATION_SERVICE},
 		Payload:     &pb.Message_SellerApprovedData{SellerApprovedData: data},
 	}
 
