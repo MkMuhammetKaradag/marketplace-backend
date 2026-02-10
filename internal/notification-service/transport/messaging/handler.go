@@ -33,7 +33,7 @@ func SetupMessageHandlers(email domain.EmailProvider, templateMgr domain.Templat
 
 func (r *registry) registerUserHandlers() {
 	// User Activation
-	activationUC := usecase.NewUserActivationUseCase(r.email)
+	activationUC := usecase.NewUserActivationUseCase(r.email, r.templateMgr)
 	r.handlers[pb.MessageType_USER_ACTIVATION_EMAIL] = controller.NewUserActivationHandler(activationUC)
 
 	// User Created (Sync)
@@ -46,23 +46,23 @@ func (r *registry) registerUserHandlers() {
 }
 
 func (r *registry) registerOrderHandlers() {
-	orderUC := usecase.NewOrderCreatedUseCase(r.email, r.repo)
+	orderUC := usecase.NewOrderCreatedUseCase(r.email, r.repo, r.templateMgr)
 	r.handlers[pb.MessageType_ORDER_CREATED] = controller.NewOrderCreatedHandler(orderUC)
 }
 
 func (r *registry) registerPaymentHandlers() {
 	// Success
-	successUC := usecase.NewPaymentSuccessUseCase(r.repo, r.email)
+	successUC := usecase.NewPaymentSuccessUseCase(r.repo, r.email, r.templateMgr)
 	r.handlers[pb.MessageType_PAYMENT_SUCCESSFUL] = controller.NewPaymentSuccessHandler(successUC)
 
 	// Failed
-	failedUC := usecase.NewPaymentFailedUseCase(r.repo, r.email)
+	failedUC := usecase.NewPaymentFailedUseCase(r.repo, r.email, r.templateMgr)
 	r.handlers[pb.MessageType_PAYMENT_FAILED] = controller.NewPaymentFailedHandler(failedUC)
 }
 
 func (r *registry) registerSellerHandlers() {
 	// Reject
-	rejectUC := usecase.NewRejectSellerUseCase(r.email, r.repo)
+	rejectUC := usecase.NewRejectSellerUseCase(r.email, r.repo, r.templateMgr)
 	r.handlers[pb.MessageType_SELLER_REJECTED] = controller.NewRejectSellerHandler(rejectUC)
 
 	// Approve
