@@ -1,3 +1,4 @@
+// internal/notification-service/transport/messaging/usecase/user_activation.go
 package usecase
 
 import (

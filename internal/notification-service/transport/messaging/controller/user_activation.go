@@ -1,3 +1,4 @@
+// internal/notification-service/transport/messaging/controller/user_activation.go
 package controller
 
 import (

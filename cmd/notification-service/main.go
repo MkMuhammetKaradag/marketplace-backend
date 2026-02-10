@@ -1,21 +1,23 @@
 package main
 
 import (
-	"log"
-
-	application "marketplace/internal/notification-service/app"
-	"marketplace/internal/notification-service/config"
+    "log"
+    "marketplace/internal/notification-service/app" 
+    "marketplace/internal/notification-service/config"
 )
 
 func main() {
-	appConfig := config.Read()
+    // 1. Konfigürasyonu yükle
+    appConfig := config.Read()
 
-	app, err := application.NewApp(appConfig)
-	if err != nil {
-		log.Fatalf("failed to initialise app: %v", err)
-	}
+    // 2. Uygulamayı ayağa kaldır (NewApp kullanımı daha yaygındır)
+    application, err := app.NewApp(appConfig) 
+    if err != nil {
+        log.Fatalf("failed to initialise app: %v", err)
+    }
 
-	if err := app.Start(); err != nil {
-		log.Fatalf("server stopped with error: %v", err)
-	}
+    // 3. Uygulamayı başlat
+    if err := application.Start(); err != nil {
+        log.Fatalf("server stopped with error: %v", err)
+    }
 }

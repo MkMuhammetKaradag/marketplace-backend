@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px; }
+        .header { text-align: center; color: #28a745; }
+        .content { padding: 20px; text-align: center; }
+        .btn { background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; }
+        .footer { text-align: center; font-size: 12px; color: #888; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Satıcı İsteğiniz Onaylandı! 📦</h2>
+        </div>
+        <div class="content">
+            <p>Merhaba <strong>{{.Username}}</strong>,</p>
+            <p>Satıcı başvurunuz incelendi ve onaylandı. Artık Marketplace üzerinde satış yapmaya başlayabilirsiniz!</p>
+            <a href="https://localhost:8080/seller-dashboard" class="btn">Mağazama Git</a>
+        </div>
+        <div class="footer">
+            &copy; 2026 Marketplace Inc.
+        </div>
+    </div>
+</body>
+</html>

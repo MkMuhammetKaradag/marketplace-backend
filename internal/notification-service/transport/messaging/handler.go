@@ -4,53 +4,68 @@ import (
 	"marketplace/internal/notification-service/domain"
 	"marketplace/internal/notification-service/transport/messaging/controller"
 	"marketplace/internal/notification-service/transport/messaging/usecase"
-
 	pb "marketplace/pkg/proto/events"
 )
 
-// type Handlers struct {
-// 	emailProvider domain.EmailProvider
-// }
+type registry struct {
+	email       domain.EmailProvider
+	templateMgr domain.TemplateManager
+	repo        domain.NotificationRepository
+	handlers    map[pb.MessageType]domain.MessageHandler
+}
 
-// func NewMessageHandlers(email domain.EmailProvider) *Handlers {
-// 	return &Handlers{
-// 		emailProvider: email,
-// 	}
-// }
-
-func SetupMessageHandlers(email domain.EmailProvider, repository domain.NotificationRepository) map[pb.MessageType]domain.MessageHandler {
-
-	userActivatiomUseCase := usecase.NewUserActivationUseCase(email)
-	userActivationHandler := controller.NewUserActivationHandler(userActivatiomUseCase)
-
-	userCreatedUseCase := usecase.NewUserCreatedUseCase(repository)
-	userCreatedHandler := controller.NewUserCreatedHandler(userCreatedUseCase)
-
-	orderCreatedUseCase := usecase.NewOrderCreatedUseCase(email, repository)
-	orderCreatedHandler := controller.NewOrderCreatedHandler(orderCreatedUseCase)
-
-	paymentSuccessUseCase := usecase.NewPaymentSuccessUseCase(repository, email)
-	paymentSuccessHandler := controller.NewPaymentSuccessHandler(paymentSuccessUseCase)
-
-	paymentFailedUseCase := usecase.NewPaymentFailedUseCase(repository, email)
-	paymentFailedHandler := controller.NewPaymentFailedHandler(paymentFailedUseCase)
-
-	rejectSellerUseCase := usecase.NewRejectSellerUseCase(email, repository)
-	rejectSellerHandler := controller.NewRejectSellerHandler(rejectSellerUseCase)
-
-	approveSellerUseCase := usecase.NewApproveSellerUseCase(email, repository)
-	approveSellerHandler := controller.NewApproveSellerHandler(approveSellerUseCase)
-
-	forgotPasswordUseCase := usecase.NewForgotPasswordUseCase(email, repository)
-	forgotPasswordHandler := controller.NewForgotPasswordHandler(forgotPasswordUseCase)
-	return map[pb.MessageType]domain.MessageHandler{
-		pb.MessageType_USER_ACTIVATION_EMAIL: userActivationHandler,
-		pb.MessageType_USER_CREATED:          userCreatedHandler,
-		pb.MessageType_ORDER_CREATED:         orderCreatedHandler,
-		pb.MessageType_PAYMENT_SUCCESSFUL:    paymentSuccessHandler,
-		pb.MessageType_PAYMENT_FAILED:        paymentFailedHandler,
-		pb.MessageType_SELLER_REJECTED:       rejectSellerHandler,
-		pb.MessageType_USER_FORGOT_PASSWORD:  forgotPasswordHandler,
-		pb.MessageType_SELLER_APPROVED:       approveSellerHandler,
+func SetupMessageHandlers(email domain.EmailProvider, templateMgr domain.TemplateManager, repository domain.NotificationRepository) map[pb.MessageType]domain.MessageHandler {
+	r := &registry{
+		email:       email,
+		repo:        repository,
+		templateMgr: templateMgr,
+		handlers:    make(map[pb.MessageType]domain.MessageHandler),
 	}
+
+	//Grouped registration processes
+	r.registerUserHandlers()
+	r.registerOrderHandlers()
+	r.registerPaymentHandlers()
+	r.registerSellerHandlers()
+
+	return r.handlers
+}
+
+func (r *registry) registerUserHandlers() {
+	// User Activation
+	activationUC := usecase.NewUserActivationUseCase(r.email)
+	r.handlers[pb.MessageType_USER_ACTIVATION_EMAIL] = controller.NewUserActivationHandler(activationUC)
+
+	// User Created (Sync)
+	createdUC := usecase.NewUserCreatedUseCase(r.repo)
+	r.handlers[pb.MessageType_USER_CREATED] = controller.NewUserCreatedHandler(createdUC)
+
+	// Forgot Password
+	forgotUC := usecase.NewForgotPasswordUseCase(r.email, r.repo, r.templateMgr)
+	r.handlers[pb.MessageType_USER_FORGOT_PASSWORD] = controller.NewForgotPasswordHandler(forgotUC)
+}
+
+func (r *registry) registerOrderHandlers() {
+	orderUC := usecase.NewOrderCreatedUseCase(r.email, r.repo)
+	r.handlers[pb.MessageType_ORDER_CREATED] = controller.NewOrderCreatedHandler(orderUC)
+}
+
+func (r *registry) registerPaymentHandlers() {
+	// Success
+	successUC := usecase.NewPaymentSuccessUseCase(r.repo, r.email)
+	r.handlers[pb.MessageType_PAYMENT_SUCCESSFUL] = controller.NewPaymentSuccessHandler(successUC)
+
+	// Failed
+	failedUC := usecase.NewPaymentFailedUseCase(r.repo, r.email)
+	r.handlers[pb.MessageType_PAYMENT_FAILED] = controller.NewPaymentFailedHandler(failedUC)
+}
+
+func (r *registry) registerSellerHandlers() {
+	// Reject
+	rejectUC := usecase.NewRejectSellerUseCase(r.email, r.repo)
+	r.handlers[pb.MessageType_SELLER_REJECTED] = controller.NewRejectSellerHandler(rejectUC)
+
+	// Approve
+	approveUC := usecase.NewApproveSellerUseCase(r.email, r.templateMgr, r.repo)
+	r.handlers[pb.MessageType_SELLER_APPROVED] = controller.NewApproveSellerHandler(approveUC)
 }

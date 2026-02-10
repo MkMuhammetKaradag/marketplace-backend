@@ -1,3 +1,4 @@
+// internal/notification-service/transport/messaging/controller/payment_success.go
 package controller
 
 import (
@@ -32,11 +33,10 @@ func (h *PaymentSuccessHandler) Handle(ctx context.Context, msg *eventsProto.Mes
 	if err != nil {
 		return fmt.Errorf("invalid order id format: %w", err)
 	}
-	userIDUUID ,err := uuid.Parse(data.UserId)
+	userIDUUID, err := uuid.Parse(data.UserId)
 	if err != nil {
-		return fmt.Errorf("Invalid user id format:%w",err)
+		return fmt.Errorf("Invalid user id format:%w", err)
 	}
-	
 
-	return h.usecase.Execute(ctx, orderIDUUID,userIDUUID,data.Amount)
+	return h.usecase.Execute(ctx, orderIDUUID, userIDUUID, data.Amount)
 }
