@@ -24,7 +24,7 @@ func (r *Repository) ResetPassword(ctx context.Context, recordID uuid.UUID, newP
 		attemptCount int
 	)
 
-	// Token'ı kontrol et
+	// Token check
 	err := r.db.QueryRowContext(ctx, selectTokenQuery, recordID).Scan(&userID, &expiresAt, &attemptCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -33,13 +33,13 @@ func (r *Repository) ResetPassword(ctx context.Context, recordID uuid.UUID, newP
 		return userID, fmt.Errorf("select token error: %w", err)
 	}
 
-	// Token süresi dolmuş mu?
+	// Token expired check
 	if time.Now().After(expiresAt) {
 		_ = r.DeleteForgotPassword(ctx, recordID)
 		return userID, ErrTokenExpired
 	}
 
-	// 3 kez denediyse token geçersiz
+	// 3 attempt check
 	if attemptCount >= 3 {
 		_ = r.DeleteForgotPassword(ctx, recordID)
 		return userID, ErrMaxAttemptsReached
@@ -56,17 +56,17 @@ func (r *Repository) ResetPassword(ctx context.Context, recordID uuid.UUID, newP
 	}
 	defer tx.Rollback()
 
-	// Şifreyi güncelle
+	// Update password
 	if _, err := tx.ExecContext(ctx, updatePasswordQuery, hashedPassword, userID); err != nil {
 		return userID, fmt.Errorf("update password error: %w", err)
 	}
 
-	// Token'ı sil (Artık geçersiz kıl)
+	// Delete token
 	if _, err := tx.ExecContext(ctx, deleteTokenQuery, recordID); err != nil {
 		return userID, fmt.Errorf("failed to delete used token: %w", err)
 	}
 
-	// Her şey tamamsa onayla
+	// Commit
 	if err := tx.Commit(); err != nil {
 		return userID, err
 	}

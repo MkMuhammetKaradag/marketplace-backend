@@ -41,6 +41,8 @@ func SetupMessageHandlers(email domain.EmailProvider, repository domain.Notifica
 	approveSellerUseCase := usecase.NewApproveSellerUseCase(email, repository)
 	approveSellerHandler := controller.NewApproveSellerHandler(approveSellerUseCase)
 
+	forgotPasswordUseCase := usecase.NewForgotPasswordUseCase(email, repository)
+	forgotPasswordHandler := controller.NewForgotPasswordHandler(forgotPasswordUseCase)
 	return map[pb.MessageType]domain.MessageHandler{
 		pb.MessageType_USER_ACTIVATION_EMAIL: userActivationHandler,
 		pb.MessageType_USER_CREATED:          userCreatedHandler,
@@ -48,6 +50,7 @@ func SetupMessageHandlers(email domain.EmailProvider, repository domain.Notifica
 		pb.MessageType_PAYMENT_SUCCESSFUL:    paymentSuccessHandler,
 		pb.MessageType_PAYMENT_FAILED:        paymentFailedHandler,
 		pb.MessageType_SELLER_REJECTED:       rejectSellerHandler,
+		pb.MessageType_USER_FORGOT_PASSWORD:  forgotPasswordHandler,
 		pb.MessageType_SELLER_APPROVED:       approveSellerHandler,
 	}
 }
