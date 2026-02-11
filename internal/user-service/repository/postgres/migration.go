@@ -38,7 +38,11 @@ func runMigrations(db *sql.DB) error {
 		return fmt.Errorf("failed to create user_addresses table: %w", err)
 	}
 
-	
+	// 7. Sıra: Outbox Messages Tablosu
+	if _, err := db.Exec(createOutboxMessagesTable); err != nil {
+		return fmt.Errorf("failed to create outbox_messages table: %w", err)
+	}
+
 	log.Println("Database migration completed successfully")
 	return nil
 }

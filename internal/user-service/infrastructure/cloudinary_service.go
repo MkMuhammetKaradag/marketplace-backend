@@ -23,9 +23,7 @@ func NewCloudinaryService(cloudName, apiKey, apiSecret string) (*CloudinaryServi
 	return &CloudinaryService{client: cld}, nil
 }
 
-func (s *CloudinaryService) UploadAvatar(ctx context.Context, fileHeader *multipart.FileHeader, userID string) (string, error) {
-	file, _ := fileHeader.Open()
-	defer file.Close()
+func (s *CloudinaryService) UploadAvatar(ctx context.Context, file multipart.File, userID string) (string, error) {
 
 	uploadRes, err := s.client.Upload.Upload(ctx, file, uploader.UploadParams{
 		Folder:         "profile_pictures",

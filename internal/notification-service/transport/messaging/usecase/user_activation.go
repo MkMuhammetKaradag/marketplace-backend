@@ -28,9 +28,10 @@ func (u *userActivationUseCase) Execute(ctx context.Context, activationID uuid.U
 
 	data := map[string]interface{}{
 		"Username":       userName,
-		"ActivationID":   activationID,
+		"ActivationID":   activationID.String(),
 		"ActivationCode": userActivationCode,
 	}
+	fmt.Println("data", data)
 
 	html, err := u.templateMgr.Render("user_activation.html", data)
 	if err != nil {
@@ -40,6 +41,7 @@ func (u *userActivationUseCase) Execute(ctx context.Context, activationID uuid.U
 	if err != nil {
 		return fmt.Errorf("failed to send activation email: %w", err)
 	}
+	fmt.Println("email sent successfully!", userEmail)
 
 	return nil
 

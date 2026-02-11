@@ -6,5 +6,5 @@ import (
 )
 
 type ImageService interface {
-	UploadAvatar(ctx context.Context, file *multipart.FileHeader, userID string) (string, error)
+	UploadAvatar(ctx context.Context, file multipart.File, userID string) (string, error)
 }

@@ -1,7 +1,6 @@
 package postgres
 
 const (
-	
 	createUsersTable = `
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,6 +77,16 @@ const (
 			PRIMARY KEY (user_id, role_id)
 		)`
 
+	createOutboxMessagesTable = `
+		CREATE TABLE IF NOT EXISTS outbox_messages (
+    		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			payload BYTEA NOT NULL,       -- Protobuf mesajını binary (byte) olarak saklayacağız
+			topic TEXT NOT NULL,          -- Hangi topic'e gidecek
+			status TEXT DEFAULT 'PENDING',-- PENDING, PROCESSED, FAILED
+			created_at TIMESTAMP DEFAULT NOW(),
+			updated_at TIMESTAMP DEFAULT NOW()
+	)`
+
 	createDefaultRoles = `
 		INSERT INTO roles (name, color, created_by, is_mentionable, is_hoisted, permissions, is_managed)
 		VALUES
@@ -92,5 +101,8 @@ const (
 
 			-- 4. ADMIN (Tüm yetkiler: 4611686018427387904)
 			('Admin', '#E74C3C', NULL, TRUE, TRUE, 4611686018427387904, TRUE)ON CONFLICT (name) DO NOTHING
+		`
+	createIndexOutboxStatus = `
+		CREATE INDEX idx_outbox_status ON outbox_messages(status) WHERE status = 'PENDING';
 		`
 )

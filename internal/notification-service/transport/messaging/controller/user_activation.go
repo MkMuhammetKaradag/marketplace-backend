@@ -32,6 +32,7 @@ func (h *UserActivationHandler) Handle(ctx context.Context, msg *pb.Message) err
 	userEmail := data.Email
 	userName := data.Username
 	userActivationCode := data.ActivationCode
+	
 
 	activationIDUUID, err := uuid.Parse(data.ActivationId)
 	if err != nil {

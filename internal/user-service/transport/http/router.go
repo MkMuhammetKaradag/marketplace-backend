@@ -1,4 +1,3 @@
-// internal/user-service/transport/http/router.go
 package http
 
 import (
@@ -18,37 +17,44 @@ func NewRouter(handlers *Handlers) *Router {
 }
 
 func (r *Router) Register(app *fiber.App) {
-	//api := app.Group("/api/v1")
-	siginUpHandler := r.handlers.SignUp()
-	userActivateHandler := r.handlers.UserActivate()
-	signInHandler := r.handlers.SignIn()
-	signOutHandler := r.handlers.SignOut()
-	allSignOutHandler := r.handlers.AllSignOut()
-	addUserRoleHandler := r.handlers.AddUserRole()
-	createRoleHandler := r.handlers.CreateRole()
-	forgotPasswordHandler := r.handlers.ForgotPassword()
-	resetPasswordHandler := r.handlers.ResetPassword()
-	changePasswordHandler := r.handlers.ChangePassword()
-	uploadAvatarHandler := r.handlers.UploadAvatar()
-	app.Get("/hello", r.handlers.Hello)
-	app.Post("/signup", handler.HandleBasic[controller.SignUpRequest, controller.SignUpResponse](siginUpHandler))
-	app.Post("/user-activate", handler.HandleBasic[controller.UserActivateRequest, controller.UserActivateResponse](userActivateHandler))
-	app.Post("/signin", handler.HandleWithFiber[controller.SignInRequest, controller.SignInResponse](signInHandler))
-	app.Post("/signout", handler.HandleWithFiber[controller.SignOutRequest, controller.SignOutResponse](signOutHandler))
-	app.Post("/all-signout", handler.HandleWithFiber[controller.AllSignOutRequest, controller.AllSignOutResponse](allSignOutHandler))
-	app.Post("/add-user-role/:user_id", handler.HandleWithFiber[controller.AddUserRolerRequest, controller.AddUserRolerResponse](addUserRoleHandler))
-	app.Post("/create-role", handler.HandleWithFiber[controller.CreateRoleRequest, controller.CreateRoleResponse](createRoleHandler))
-	app.Post("/forgot-password", handler.HandleBasic[controller.ForgotPasswordRequest, controller.ForgotPasswordResponse](forgotPasswordHandler))
-	app.Post("/reset-password", handler.HandleBasic[controller.ResetPasswordRequest, controller.ResetPasswordResponse](resetPasswordHandler))
-	app.Post("/change-password", handler.HandleWithFiber[controller.ChangePasswordRequest, controller.ChangePasswordResponse](changePasswordHandler))
-	app.Post("/upload-avatar", handler.HandleWithFiber[controller.UploadAvatarRequest, controller.UploadAvatarResponse](uploadAvatarHandler))
-	app.Get("/profile", func(c *fiber.Ctx) error {
-		userIDStr := c.Get("X-User-ID")
-		if userIDStr == "" {
+	h := r.handlers
 
-			return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
-		}
-		fmt.Println("user id : " + userIDStr)
-		return c.SendString("Hello World " + userIDStr)
-	})
+	// Public Routes
+	app.Get("/hello", h.Hello)
+
+	// Auth Group
+	auth := app.Group("/")
+	{
+		auth.Post("/signup", handler.HandleBasic[controller.SignUpRequest, controller.SignUpResponse](h.Auth.SignUp))
+		auth.Post("/user-activate", handler.HandleBasic[controller.UserActivateRequest, controller.UserActivateResponse](h.Auth.UserActivate))
+		auth.Post("/signin", handler.HandleWithFiber[controller.SignInRequest, controller.SignInResponse](h.Auth.SignIn))
+		auth.Post("/signout", handler.HandleWithFiber[controller.SignOutRequest, controller.SignOutResponse](h.Auth.SignOut))
+		auth.Post("/all-signout", handler.HandleWithFiber[controller.AllSignOutRequest, controller.AllSignOutResponse](h.Auth.AllSignOut))
+		auth.Post("/forgot-password", handler.HandleBasic[controller.ForgotPasswordRequest, controller.ForgotPasswordResponse](h.Auth.ForgotPassword))
+		auth.Post("/reset-password", handler.HandleBasic[controller.ResetPasswordRequest, controller.ResetPasswordResponse](h.Auth.ResetPassword))
+		auth.Post("/change-password", handler.HandleWithFiber[controller.ChangePasswordRequest, controller.ChangePasswordResponse](h.Auth.ChangePassword))
+	}
+
+	// Role Management Group
+	roles := app.Group("/roles")
+	{
+		roles.Post("/create", handler.HandleWithFiber[controller.CreateRoleRequest, controller.CreateRoleResponse](h.Role.CreateRole))
+		roles.Post("/assign/:user_id", handler.HandleWithFiber[controller.AddUserRolerRequest, controller.AddUserRolerResponse](h.Role.AddRole))
+	}
+
+	// User Profile Group
+	user := app.Group("/user")
+	{
+		user.Post("/upload-avatar", handler.HandleWithFiber[controller.UploadAvatarRequest, controller.UploadAvatarResponse](h.User.UploadAvatar))
+		user.Get("/profile", r.profilePlaceholder)
+	}
+}
+
+func (r *Router) profilePlaceholder(c *fiber.Ctx) error {
+	userIDStr := c.Get("X-User-ID")
+	if userIDStr == "" {
+		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
+	}
+	fmt.Println("user id : " + userIDStr)
+	return c.SendString("Hello World " + userIDStr)
 }

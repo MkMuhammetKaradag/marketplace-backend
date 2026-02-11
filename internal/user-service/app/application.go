@@ -20,6 +20,8 @@ import (
 	pb "marketplace/pkg/proto/events"
 
 	"time"
+
+	"google.golang.org/protobuf/proto"
 )
 
 type App struct {
@@ -55,7 +57,7 @@ func (a *App) Start() error {
 
 	// Start Kafka consumer
 	a.consumer.Start(ctx)
-
+	go a.startOutboxRelay(ctx)
 	go graceful.WaitForShutdown(a.server.FiberApp(), 5*time.Second, ctx)
 
 	log.Printf("starting user-service on %s", a.server.Address())
@@ -65,6 +67,58 @@ func (a *App) Start() error {
 
 	log.Println("server stopped, closing repository")
 	return a.repository.Close()
+}
+
+func (a *App) startOutboxRelay(ctx context.Context) {
+	// Her 2 saniyede bir kontrol et (İhtiyaca göre 500ms de olabilir)
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	log.Println("Outbox Relay worker started...")
+
+	for {
+		select {
+		case <-ctx.Done(): // Uygulama kapanırken işçiyi de durdururuz
+			log.Println("Outbox Relay worker stopping...")
+			return
+		case <-ticker.C:
+			a.processOutboxMessages(ctx)
+		}
+	}
+}
+func (a *App) processOutboxMessages(ctx context.Context) {
+	// 1. Bekleyen mesajları çek (Örn: her seferinde 10 tane)
+	messages, err := a.repository.GetPendingOutboxMessages(ctx, 10)
+	if err != nil {
+		log.Printf("Relay: error fetching messages: %v", err)
+		return
+	}
+
+	if len(messages) == 0 {
+		return // Bekleyen mesaj yoksa bir sonraki ticker'ı bekle
+	}
+
+	for _, msg := range messages {
+		// 2. Mesajı Kafka'ya gönder
+		// msg.Payload zaten []byte olduğu için doğrudan gönderebiliriz
+		// Eğer PublishMessage metodun pb.Message istiyorsa Unmarshal etmen gerekir
+
+		var protoMsg pb.Message
+		if err := proto.Unmarshal(msg.Payload, &protoMsg); err != nil {
+			log.Printf("Relay: unmarshal error: %v", err)
+			continue
+		}
+
+		err := a.messaging.PublishMessage(ctx, &protoMsg)
+		if err != nil {
+			log.Printf("Relay: failed to publish message %s: %v", msg.ID, err)
+			continue // Bir sonrakine geç, bu PENDING kalmaya devam edecek
+		}
+		// 3. Başarılıysa DB'de PROCESSED yap
+		if err := a.repository.MarkOutboxAsProcessed(ctx, msg.ID); err != nil {
+			log.Printf("Relay: failed to mark message %s as processed: %v", msg.ID, err)
+		}
+	}
 }
 
 type container struct {
@@ -95,52 +149,68 @@ func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 	}
 }
 func buildContainer(cfg config.Config) (*container, error) {
-	repo, err := postgres.NewRepository(cfg)
+
+	repo, sessionRepo, err := initStorage(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("init postgres repository: %w", err)
-	}
-	sessionRepo, err := session.NewSessionRepository(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("init redis session manager: %w", err)
+		return nil, err
 	}
 
-	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
-	messagingConfig := createMessagingConfig(cfg.Messaging)
-	messaging, err := messaging.NewKafkaClient(messagingConfig)
+	cloudinarySvc, err := infrastructure.NewCloudinaryService(
+		cfg.Cloudinary.CloudName,
+		cfg.Cloudinary.APIKey,
+		cfg.Cloudinary.APISecret,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("init kafka messaging: %w", err)
+		return nil, fmt.Errorf("cloudinary init failed: %w", err)
 	}
-	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
+
+	messagingHandlers := messaginghandler.SetupMessageHandlers(repo)
+	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messagingHandlers)
 	if err != nil {
-		return nil, fmt.Errorf("init kafka consumer: %w", err)
+		return nil, fmt.Errorf("kafka init failed: %w", err)
 	}
+	msgClient := kafkaConsumer.Client()
 
-	cloudinarySvc, err := infrastructure.NewCloudinaryService(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
-	if err != nil {
-		return nil, fmt.Errorf("init cloudinary service: %w", err)
-	}
-	userService := domain.NewUserService(repo)
-	httpHandlers := httptransport.NewHandlers(userService, repo, sessionRepo, messaging, cloudinarySvc)
-
-	router := httptransport.NewRouter(httpHandlers)
-
-	serverCfg := server.Config{
-		Port:         cfg.Server.Port,
-		IdleTimeout:  5 * time.Second,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		GrpcPort:     cfg.Server.GrpcPort,
-	}
-
+	httpRouter := setupHttpRouter(cfg, repo, sessionRepo, msgClient, cloudinarySvc)
 	grpcHandler := grpctransport.NewAuthGrpcHandler(sessionRepo)
-	httpServer := server.New(serverCfg, router, grpcHandler)
 
 	return &container{
 		repo:          repo,
-		server:        httpServer,
 		sessionRepo:   sessionRepo,
-		messaging:     kafkaConsumer.Client(),
 		consumer:      kafkaConsumer,
 		cloudinarySvc: cloudinarySvc,
+		server:        server.New(getServerConfig(cfg), httpRouter, grpcHandler),
+		messaging:     msgClient,
 	}, nil
+}
+
+func getServerConfig(cfg config.Config) server.Config {
+	return server.Config{
+		Port:         cfg.Server.Port,
+		GrpcPort:     cfg.Server.GrpcPort,
+		IdleTimeout:  5 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+}
+
+func initStorage(cfg config.Config) (domain.UserRepository, domain.SessionRepository, error) {
+	repo, err := postgres.NewRepository(cfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("postgres init error: %w", err)
+	}
+
+	sessionRepo, err := session.NewSessionRepository(cfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("redis init error: %w", err)
+	}
+
+	return repo, sessionRepo, nil
+}
+
+func setupHttpRouter(cfg config.Config, r domain.UserRepository, s domain.SessionRepository, m domain.Messaging, c domain.ImageService) server.RouteRegistrar {
+	userService := domain.NewUserService(r)
+
+	httpHandlers := httptransport.NewHandlers(userService, r, s, m, c)
+	return httptransport.NewRouter(httpHandlers)
 }

@@ -26,19 +26,24 @@ func NewUploadAvatarController(usecase usecase.UploadAvatarUseCase) *UploadAvata
 
 func (h *UploadAvatarController) Handle(fbr *fiber.Ctx, req *UploadAvatarRequest) (*UploadAvatarResponse, error) {
 
-	userIDStr, err := uuid.Parse(fbr.Get("X-User-ID"))
-
+	userIDStr := fbr.Get("X-User-ID")
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		return nil, err
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "invalid or missing user id")
 	}
+
 	fileHeader, err := fbr.FormFile("avatar")
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Dosyayı aç
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-	if err := h.usecase.Execute(fbr.UserContext(), userIDStr, fileHeader); err != nil {
+	if err := h.usecase.Execute(fbr.UserContext(), userID, file); err != nil {
 		return nil, err
 	}
 

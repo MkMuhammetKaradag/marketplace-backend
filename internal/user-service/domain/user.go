@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserRole string
 
@@ -17,6 +21,7 @@ type User struct {
 	Password            string    `json:"password"`
 	Permissions         int64     `json:"permissions"`
 	ActivationCode      string    `json:"activationCode"`
+	ActivationID        uuid.UUID `json:"activationId"`
 	ActivationExpiry    time.Time `json:"activationExpiry"`
 	FailedLoginAttempts int       `json:"failedLoginAttempts"`
 	AccountLocked       bool      `json:"accountLocked"`

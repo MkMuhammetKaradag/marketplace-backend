@@ -1,85 +1,80 @@
-// internal/user-service/transport/http/handlers.go
 package http
 
 import (
-	"github.com/gofiber/fiber/v2"
-
 	"marketplace/internal/user-service/domain"
 	"marketplace/internal/user-service/transport/http/controller"
 	"marketplace/internal/user-service/transport/http/usecase"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Handlers struct {
-	userService       domain.UserService
-	userRepository    domain.UserRepository
-	sessionRepository domain.SessionRepository
-	messaging         domain.Messaging
-	cloudinary        domain.ImageService
+	// Artık repo veya servisleri değil, direkt hazır Controller'ları tutuyoruz
+	Auth    *authHandlers
+	User    *userHandlers
+	Role    *roleHandlers
+	General *generalHandlers
 }
 
-func NewHandlers(userService domain.UserService, repository domain.UserRepository, sessionRepo domain.SessionRepository, messaging domain.Messaging, cloudinary domain.ImageService) *Handlers {
-	return &Handlers{userService: userService, userRepository: repository, sessionRepository: sessionRepo, messaging: messaging, cloudinary: cloudinary}
+type authHandlers struct {
+	SignUp         *controller.SignUpController
+	SignIn         *controller.SignInController
+	SignOut        *controller.SignOutController
+	AllSignOut     *controller.AllSignOutController
+	UserActivate   *controller.UserActivateController
+	ForgotPassword *controller.ForgotPasswordController
+	ResetPassword  *controller.ResetPasswordController
+	ChangePassword *controller.ChangePasswordController
+}
+
+type userHandlers struct {
+	UploadAvatar *controller.UploadAvatarController
+}
+
+type roleHandlers struct {
+	CreateRole *controller.CreateRoleController
+	AddRole    *controller.AddUserRolerController
+}
+
+type generalHandlers struct {
+	userService domain.UserService
+}
+
+func NewHandlers(
+	userService domain.UserService,
+	repository domain.UserRepository,
+	sessionRepo domain.SessionRepository,
+	messaging domain.Messaging,
+	cloudinary domain.ImageService,
+) *Handlers {
+
+	return &Handlers{
+		Auth: &authHandlers{
+			SignUp:         controller.NewSignUpController(usecase.NewSignUpUseCase(repository, messaging)),
+			SignIn:         controller.NewSignInController(usecase.NewSignInUseCase(repository, sessionRepo)),
+			SignOut:        controller.NewSignOutController(usecase.NewSignOutUseCase(sessionRepo)),
+			AllSignOut:     controller.NewAllSignOutController(usecase.NewAllSignOutUseCase(sessionRepo)),
+			UserActivate:   controller.NewUserActivateController(usecase.NewUserActivateUseCase(repository, messaging)),
+			ForgotPassword: controller.NewForgotPasswordController(usecase.NewForgotPasswordUseCase(repository, messaging)),
+			ResetPassword:  controller.NewResetPasswordController(usecase.NewResetPasswordUseCase(repository)),
+			ChangePassword: controller.NewChangePasswordController(usecase.NewChangePasswordUseCase(repository, sessionRepo)),
+		},
+		User: &userHandlers{
+			UploadAvatar: controller.NewUploadAvatarController(usecase.NewUploadAvatarUseCase(repository, cloudinary)),
+		},
+		Role: &roleHandlers{
+			CreateRole: controller.NewCreateRoleController(usecase.NewCreateRoleUseCase(repository)),
+			AddRole:    controller.NewAddUserRolerController(usecase.NewAddUserRolerUseCase(repository)),
+		},
+		General: &generalHandlers{
+			userService: userService,
+		},
+	}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
-
-	resp := HelloResponse{
-		Message: h.userService.Greeting(c.UserContext()),
-		Info:    "Fiber handler connected to domain layer",
-	}
-	return c.JSON(resp)
-}
-func (h *Handlers) SignUp() *controller.SignUpController {
-	signUpUseCase := usecase.NewSignUpUseCase(h.userRepository, h.messaging)
-	return controller.NewSignUpController(signUpUseCase)
-}
-func (h *Handlers) UserActivate() *controller.UserActivateController {
-	userActivateUseCase := usecase.NewUserActivateUseCase(h.userRepository, h.messaging)
-	return controller.NewUserActivateController(userActivateUseCase)
-}
-func (h *Handlers) SignIn() *controller.SignInController {
-	userActivateUseCase := usecase.NewSignInUseCase(h.userRepository, h.sessionRepository)
-	return controller.NewSignInController(userActivateUseCase)
-}
-func (h *Handlers) SignOut() *controller.SignOutController {
-	logoutUseCase := usecase.NewSignOutUseCase(h.sessionRepository)
-	return controller.NewSignOutController(logoutUseCase)
-}
-func (h *Handlers) AllSignOut() *controller.AllSignOutController {
-	logoutUseCase := usecase.NewAllSignOutUseCase(h.sessionRepository)
-	return controller.NewAllSignOutController(logoutUseCase)
-}
-
-func (h *Handlers) AddUserRole() *controller.AddUserRolerController {
-	addUserRolerUseCase := usecase.NewAddUserRolerUseCase(h.userRepository)
-	return controller.NewAddUserRolerController(addUserRolerUseCase)
-}
-func (h *Handlers) CreateRole() *controller.CreateRoleController {
-	createRoleUseCase := usecase.NewCreateRoleUseCase(h.userRepository)
-	return controller.NewCreateRoleController(createRoleUseCase)
-}
-
-func (h *Handlers) ForgotPassword() *controller.ForgotPasswordController {
-	forgotPasswordUseCase := usecase.NewForgotPasswordUseCase(h.userRepository, h.messaging)
-	return controller.NewForgotPasswordController(forgotPasswordUseCase)
-}
-
-func (h *Handlers) ResetPassword() *controller.ResetPasswordController {
-	resetPasswordUseCase := usecase.NewResetPasswordUseCase(h.userRepository)
-	return controller.NewResetPasswordController(resetPasswordUseCase)
-}
-
-func (h *Handlers) ChangePassword() *controller.ChangePasswordController {
-	changePasswordUseCase := usecase.NewChangePasswordUseCase(h.userRepository, h.sessionRepository)
-	return controller.NewChangePasswordController(changePasswordUseCase)
-}
-
-func (h *Handlers) UploadAvatar() *controller.UploadAvatarController {
-	uploadAvatarUseCase := usecase.NewUploadAvatarUseCase(h.userRepository, h.cloudinary)
-	return controller.NewUploadAvatarController(uploadAvatarUseCase)
-}
-
-type HelloResponse struct {
-	Message string `json:"message"`
-	Info    string `json:"info"`
+	return c.JSON(fiber.Map{
+		"message": h.General.userService.Greeting(c.UserContext()),
+		"info":    "Fiber handler connected to domain layer",
+	})
 }

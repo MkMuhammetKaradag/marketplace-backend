@@ -24,7 +24,7 @@ func NewResendProvider(apiKey string) domain.EmailProvider {
 func (r *resendProvider) SendEmail(to string, subject string, htmlContent string) error {
 	params := &resend.SendEmailRequest{
 		From:    "Marketplace <onboarding@resend.dev>",
-		To:      []string{to},
+		To:      []string{"onboarding@resend.dev"}, //to
 		Subject: subject,
 		Html:    htmlContent,
 	}
