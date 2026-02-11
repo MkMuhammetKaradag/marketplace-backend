@@ -33,10 +33,11 @@ func NewApp(cfg config.Config) (*App, error) {
 	}
 
 	return &App{
-		cfg:        cfg,
-		server:     container.server,
-		repository: container.repo,
-		messaging:  container.messaging,
+		cfg:           cfg,
+		server:        container.server,
+		repository:    container.repo,
+		messaging:     container.messaging,
+		cloudinarySvc: container.cloudinarySvc,
 	}, nil
 }
 
@@ -46,7 +47,7 @@ func (a *App) Start() error {
 
 	go graceful.WaitForShutdown(a.server.FiberApp(), 5*time.Second, ctx)
 
-	log.Printf("starting user-service on %s", a.server.Address())
+	log.Printf("starting seller-service on %s", a.server.Address())
 	if err := a.server.Start(); err != nil {
 		return fmt.Errorf("server exited with error: %w", err)
 	}
@@ -62,14 +63,13 @@ type container struct {
 	cloudinarySvc domain.ImageService
 }
 
-func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
-	broker := cfg.Brokers[0]
-	if broker == "" {
-		broker = "localhost:29092"
+func getKafkaSettings(cfg config.MessagingConfig) messaging.KafkaConfig {
+	broker := "localhost:29092"
+	if len(cfg.Brokers) > 0 && cfg.Brokers[0] != "" {
+		broker = cfg.Brokers[0]
 	}
-	kafkaBrokers := []string{broker}
 	return messaging.KafkaConfig{
-		Brokers:              kafkaBrokers,
+		Brokers:              []string{broker},
 		Topic:                "main-events", // Ana olay topic'i
 		RetryTopic:           "main-events-retry",
 		DLQTopic:             "main-events-dlq",
@@ -82,36 +82,49 @@ func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
-	repo, err := postgres.NewRepository(cfg)
+	repo, err := initStorage(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("init postgres repository: %w", err)
 	}
 
-	messagingConfig := createMessagingConfig(cfg.Messaging)
-
-	messaging, err := messaging.NewKafkaClient(messagingConfig)
+	messagingConfig := getKafkaSettings(cfg.Messaging)
+	kafkaClient, err := messaging.NewKafkaClient(messagingConfig)
 	if err != nil {
-		return nil, fmt.Errorf("init kafka messaging: %w", err)
+		return nil, err
 	}
 	cloudinarySvc, err := infrastructure.NewCloudinaryService(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
 	if err != nil {
 		return nil, fmt.Errorf("init cloudinary service: %w", err)
 	}
-	httpHandlers := httptransport.NewHandlers(repo, messaging,cloudinarySvc)
-	router := httptransport.NewRouter(httpHandlers)
+	httpRouter := setupHttpRouter(cfg, repo, kafkaClient, cloudinarySvc)
 
-	serverCfg := server.Config{
+	return &container{
+		repo:          repo,
+		server:        server.New(getServerConfig(cfg), httpRouter),
+		messaging:     kafkaClient,
+		cloudinarySvc: cloudinarySvc,
+	}, nil
+}
+func initStorage(cfg config.Config) (domain.SellerRepository, error) {
+	repo, err := postgres.NewRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("postgres init error: %w", err)
+	}
+
+	return repo, nil
+}
+
+func setupHttpRouter(cfg config.Config, r domain.SellerRepository, m domain.Messaging, c domain.ImageService) server.RouteRegistrar {
+
+	httpHandlers := httptransport.NewHandlers(r, m, c)
+	return httptransport.NewRouter(httpHandlers)
+}
+
+func getServerConfig(cfg config.Config) server.Config {
+	return server.Config{
 		Port:         cfg.Server.Port,
 		IdleTimeout:  5 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-
-	httpServer := server.New(serverCfg, router)
-
-	return &container{
-		repo:      repo,
-		server:    httpServer,
-		messaging: messaging,
-	}, nil
 }

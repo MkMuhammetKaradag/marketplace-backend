@@ -108,22 +108,22 @@ func GetProtectedRoutes() map[string]RoutePolicy {
 		"/users/upload-avatar": {
 			Permissions: PermissionNone,
 		},
-		"/sellers/me": {
+		"/sellers/store/me": {
 			Permissions: PermissionNone,
 		},
-		"/sellers/onboard": {
+		"/sellers/store/onboard": {
 			Permissions: PermissionNone,
 		},
-		"/sellers/approve/:seller_id": {
+		"/sellers/admin/approve/:seller_id": {
 			Permissions: PermissionApproveOrRejectSeller | PermissionAdministrator,
 		},
-		"/sellers/reject/:seller_id": {
+		"/sellers/admin/reject/:seller_id": {
 			Permissions: PermissionApproveOrRejectSeller | PermissionAdministrator,
 		},
-		"/sellers/upload-store-logo/:seller_id": {
+		"/sellers/store/upload-logo/:seller_id": {
 			Permissions: PermissionManageOwnStore,
 		},
-		"/sellers/upload-store-banner/:seller_id": {
+		"/sellers/store/upload-banner/:seller_id": {
 			Permissions: PermissionManageOwnStore,
 		},
 		"/products/create": {
