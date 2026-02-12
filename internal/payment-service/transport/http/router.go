@@ -17,10 +17,16 @@ func NewRouter(handlers *Handlers) *Router {
 }
 
 func (r *Router) Register(app *fiber.App) {
+	h := r.handlers
 
-	webhookController := r.handlers.StripeWebhook()
-	app.Get("/hello", r.handlers.Hello)
+	// Public Routes
+	app.Get("/hello", h.Hello)
+	webhookController := r.handlers.Webhook.Stripe
+
+	webhook := app.Group("/")
+	{
+		webhook.Post("/payment/webhook", handler.HandleWithFiber[controller.StripeWebhookRequest, controller.StripeWebhookResponse](webhookController))
+	}
 	app.Post("/create-payment-session", r.handlers.CreatePaymentSession)
-	// app.Post("/payment/webhook", webhookController.Handle)
-	app.Post("/payment/webhook", handler.HandleWithFiber[controller.StripeWebhookRequest, controller.StripeWebhookResponse](webhookController))
+
 }

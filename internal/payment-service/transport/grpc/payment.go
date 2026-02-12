@@ -17,7 +17,7 @@ type PaymentGrpcHandler struct {
 	stripeService domain.StripeService
 }
 
-func NewProductGrpcHandler(repo domain.PaymentRepository, stripeService domain.StripeService) *PaymentGrpcHandler {
+func NewPaymentGrpcHandler(repo domain.PaymentRepository, stripeService domain.StripeService) *PaymentGrpcHandler {
 	return &PaymentGrpcHandler{
 		paymentRepo:   repo,
 		stripeService: stripeService,

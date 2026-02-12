@@ -8,19 +8,14 @@ import (
 	"marketplace/internal/payment-service/transport/http/usecase"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
 type Handlers struct {
-	stripeService domain.StripeService
-	messaging     domain.Messaging
+	Webhook *webhookHandlers
 }
 
-func NewHandlers(stripeService domain.StripeService, messaging domain.Messaging) *Handlers {
-	return &Handlers{
-		stripeService: stripeService,
-		messaging:     messaging,
-	}
+type webhookHandlers struct {
+	Stripe *controller.StripeWebhookController
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
@@ -34,28 +29,39 @@ func (h *Handlers) Hello(c *fiber.Ctx) error {
 
 func (h *Handlers) CreatePaymentSession(c *fiber.Ctx) error {
 	fmt.Println("CreatePaymentSession")
-	paymentSessionRequest := domain.CreatePaymentSessionRequest{
-		OrderID:   uuid.New(),
-		UserID:    uuid.New(),
-		Amount:    10,
-		UserEmail: "test@mail.com",
-	}
-	fmt.Println("paymentSessionRequest", paymentSessionRequest)
+	// paymentSessionRequest := domain.CreatePaymentSessionRequest{
+	// 	OrderID:   uuid.New(),
+	// 	UserID:    uuid.New(),
+	// 	Amount:    10,
+	// 	UserEmail: "test@mail.com",
+	// }
+	// fmt.Println("paymentSessionRequest", paymentSessionRequest)
 
-	paymentURL, err := h.stripeService.CreatePaymentSession(paymentSessionRequest)
-	if err != nil {
-		fmt.Println("error creating payment session", err)
-		return err
-	}
+	// paymentURL, err := h.stripeService.CreatePaymentSession(paymentSessionRequest)
+	// if err != nil {
+	// 	fmt.Println("error creating payment session", err)
+	// 	return err
+	// }
 
 	return c.JSON(fiber.Map{
-		"payment_url": paymentURL,
+		"payment_url": "paymentURL",
 	})
 }
-func (h *Handlers) StripeWebhook() *controller.StripeWebhookController {
-	usecase := usecase.NewStripeWebhookUseCase(h.stripeService, h.messaging)
-	return controller.NewStripeWebhookController(usecase)
 
+func NewHandlers(
+	repo domain.PaymentRepository,
+	stripeService domain.StripeService,
+	messaging domain.Messaging,
+) *Handlers {
+
+	webhookUC := usecase.NewStripeWebhookUseCase(stripeService, messaging)
+
+	return &Handlers{
+
+		Webhook: &webhookHandlers{
+			Stripe: controller.NewStripeWebhookController(webhookUC),
+		},
+	}
 }
 
 type HelloResponse struct {
