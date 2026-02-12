@@ -1,4 +1,3 @@
-// internal/user-service/transport/http/handlers.go
 package http
 
 import (
@@ -10,78 +9,76 @@ import (
 )
 
 type Handlers struct {
-	userService       domain.ProductService
-	productRepository domain.ProductRepository
-	cloudinarySvc     domain.ImageService
-	aiProvider        domain.AiProvider
-	worker            domain.Worker
-	messaging         domain.Messaging
+	Product  *productHandlers
+	Category *categoryHandlers
+	Favorite *favoriteHandlers
+	Search   *searchHandlers
+	General  *generalHandlers
 }
 
-func NewHandlers(userService domain.ProductService, repository domain.ProductRepository, cloudinarySvc domain.ImageService, aiProvider domain.AiProvider, worker domain.Worker, messaging domain.Messaging) *Handlers {
-	return &Handlers{userService: userService, productRepository: repository, cloudinarySvc: cloudinarySvc, aiProvider: aiProvider, worker: worker, messaging: messaging}
+type productHandlers struct {
+	Create      *controller.CreateProductController
+	Update      *controller.UpdateProductController
+	Delete      *controller.DeleteProductController
+	Get         *controller.GetProductController
+	UploadImage *controller.UploadProductImagesController
+}
+
+type categoryHandlers struct {
+	Create *controller.CreateCategoryController
+}
+
+type favoriteHandlers struct {
+	Toggle *controller.ToggleFavoriteController
+	Get    *controller.GetFavoritesController
+}
+
+type searchHandlers struct {
+	Search      *controller.SearchProductsController
+	Recommended *controller.GetRecommendationsController
+}
+
+type generalHandlers struct {
+	productService domain.ProductService
+}
+
+func NewHandlers(
+	ps domain.ProductService,
+	repo domain.ProductRepository,
+	imgSvc domain.ImageService,
+	ai domain.AiProvider,
+	wrk domain.Worker,
+	msg domain.Messaging,
+) *Handlers {
+	// Tüm UseCase ve Controller'lar uygulama ayağa kalkarken bir kez oluşturulur.
+	return &Handlers{
+		Product: &productHandlers{
+			Create:      controller.NewCreateProductController(usecase.NewCreateProductUseCase(repo, ai)),
+			Update:      controller.NewUpdateProductController(usecase.NewUpdateProductUseCase(repo, ai, msg)),
+			Delete:      controller.NewDeleteProductController(usecase.NewDeleteProductUseCase(repo)),
+			Get:         controller.NewGetProductController(usecase.NewGetProductUseCase(repo, wrk)),
+			UploadImage: controller.NewUploadProductImagesController(usecase.NewUploadProductImagesUseCase(repo, imgSvc, wrk)),
+		},
+		Category: &categoryHandlers{
+			Create: controller.NewCreateCategoryController(usecase.NewCreateCategoryUseCase(repo)),
+		},
+		Favorite: &favoriteHandlers{
+			Toggle: controller.NewToggleFavoriteController(usecase.NewToggleFavoriteUseCase(repo, wrk)),
+			Get:    controller.NewGetFavoritesController(usecase.NewGetFavoritesUseCase(repo)),
+		},
+		Search: &searchHandlers{
+			Search:      controller.NewSearchProductsController(usecase.NewSearchProductsUseCase(repo, ai)),
+			Recommended: controller.NewGetRecommendationsController(usecase.NewGetRecommendedProductsUseCase(repo)),
+		},
+		General: &generalHandlers{
+			productService: ps,
+		},
+	}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
-
-	resp := HelloResponse{
-		Message: h.userService.Greeting(c.UserContext()),
-		Info:    "Fiber handler connected to domain layer",
-	}
-	return c.JSON(resp)
-}
-
-func (h *Handlers) CreateProduct() *controller.CreateProductController {
-	usecase := usecase.NewCreateProductUseCase(h.productRepository, h.aiProvider)
-	return controller.NewCreateProductController(usecase)
-}
-
-func (h *Handlers) UploadProductImages() *controller.UploadProductImagesController {
-	usecase := usecase.NewUploadProductImagesUseCase(h.productRepository, h.cloudinarySvc, h.worker)
-	return controller.NewUploadProductImagesController(usecase)
-}
-
-func (h *Handlers) CreateCategory() *controller.CreateCategoryController {
-	usecase := usecase.NewCreateCategoryUseCase(h.productRepository)
-	return controller.NewCreateCategoryController(usecase)
-}
-
-func (h *Handlers) GetRecommendedProducts() *controller.GetRecommendationsController {
-	usecase := usecase.NewGetRecommendedProductsUseCase(h.productRepository)
-	return controller.NewGetRecommendationsController(usecase)
-}
-
-func (h *Handlers) GetProduct() *controller.GetProductController {
-	usecase := usecase.NewGetProductUseCase(h.productRepository, h.worker)
-	return controller.NewGetProductController(usecase)
-}
-
-func (h *Handlers) SearchProducts() *controller.SearchProductsController {
-	usecase := usecase.NewSearchProductsUseCase(h.productRepository, h.aiProvider)
-	return controller.NewSearchProductsController(usecase)
-}
-
-func (h *Handlers) ToggleFavorite() *controller.ToggleFavoriteController {
-	usecase := usecase.NewToggleFavoriteUseCase(h.productRepository, h.worker)
-	return controller.NewToggleFavoriteController(usecase)
-}
-
-func (h *Handlers) GetUserFavorites() *controller.GetFavoritesController {
-	usecase := usecase.NewGetFavoritesUseCase(h.productRepository)
-	return controller.NewGetFavoritesController(usecase)
-}
-
-func (h *Handlers) UpdateProduct() *controller.UpdateProductController {
-	usecase := usecase.NewUpdateProductUseCase(h.productRepository, h.aiProvider, h.messaging)
-	return controller.NewUpdateProductController(usecase)
-}
-
-func (h *Handlers) DeleteProduct() *controller.DeleteProductController {
-	usecase := usecase.NewDeleteProductUseCase(h.productRepository)
-	return controller.NewDeleteProductController(usecase)
-}
-
-type HelloResponse struct {
-	Message string `json:"message"`
-	Info    string `json:"info"`
+	return c.JSON(fiber.Map{
+		"message": h.General.productService.Greeting(c.UserContext()),
+		"info":    "Product Service Handlers connected to domain layer",
+	})
 }

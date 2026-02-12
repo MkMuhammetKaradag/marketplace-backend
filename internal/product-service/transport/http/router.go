@@ -1,4 +1,3 @@
-// internal/product-service/transport/http/router.go
 package http
 
 import (
@@ -20,28 +19,39 @@ func NewRouter(handlers *Handlers) *Router {
 }
 
 func (r *Router) Register(app *fiber.App) {
-	//api := app.Group("/api/v1")
-	app.Get("/swagger/*", swagger.HandlerDefault)
-	createProduct := r.handlers.CreateProduct()
-	uploadProductImages := r.handlers.UploadProductImages()
-	createCategory := r.handlers.CreateCategory()
-	getRecommendedProducts := r.handlers.GetRecommendedProducts()
-	getProduct := r.handlers.GetProduct()
-	searchProducts := r.handlers.SearchProducts()
-	toggleFavorite := r.handlers.ToggleFavorite()
-	getUserFavorites := r.handlers.GetUserFavorites()
-	updateProduct := r.handlers.UpdateProduct()
-	deleteProduct := r.handlers.DeleteProduct()
+	h := r.handlers
 
-	app.Get("/hello", r.handlers.Hello)
-	app.Post("/create", handler.HandleWithFiber[controller.CreateProductRequest, controller.CreateProductResponse](createProduct))
-	app.Post("/upload/:product_id", handler.HandleWithFiber[controller.UploadProductImagesRequest, controller.UploadProductImagesResponse](uploadProductImages))
-	app.Post("/category", handler.HandleWithFiber[controller.CreateCategoryRequest, controller.CreateCategoryResponse](createCategory))
-	app.Get("/recommended", handler.HandleWithFiber[controller.GetRecommendationsRequest, controller.GetRecommendationsResponse](getRecommendedProducts))
-	app.Get("/product/:product_id", handler.HandleWithFiber[controller.GetProductRequest, controller.GetProductResponse](getProduct))
-	app.Get("/search", handler.HandleWithFiber[controller.SearchProductsRequest, controller.SearchProductsResponse](searchProducts))
-	app.Post("/toggle-favorite/:product_id", handler.HandleWithFiber[controller.ToggleFavoriteRequest, controller.ToggleFavoriteResponse](toggleFavorite))
-	app.Get("/favorites", handler.HandleWithFiber[controller.GetFavoritesRequest, controller.GetFavoritesResponse](getUserFavorites))
-	app.Put("/update/:product_id", handler.HandleWithFiber[controller.UpdateProductRequest, controller.UpdateProductResponse](updateProduct))
-	app.Delete("/delete/:product_id", handler.HandleWithFiber[controller.DeleteProductRequest, controller.DeleteProductResponse](deleteProduct))
+	// Swagger & Health Check
+	app.Get("/swagger/*", swagger.HandlerDefault)
+	app.Get("/hello", h.Hello)
+
+	// --- PRODUCT GROUP ---
+	// Poliçe listendeki "/products/..." rotalarıyla uyumlu
+	products := app.Group("/")
+	{
+		products.Post("/create", handler.HandleWithFiber[controller.CreateProductRequest, controller.CreateProductResponse](h.Product.Create))
+		products.Post("/upload/:product_id", handler.HandleWithFiber[controller.UploadProductImagesRequest, controller.UploadProductImagesResponse](h.Product.UploadImage))
+		products.Post("/category", handler.HandleWithFiber[controller.CreateCategoryRequest, controller.CreateCategoryResponse](h.Category.Create))
+		products.Put("/update/:product_id", handler.HandleWithFiber[controller.UpdateProductRequest, controller.UpdateProductResponse](h.Product.Update))
+		products.Delete("/delete/:product_id", handler.HandleWithFiber[controller.DeleteProductRequest, controller.DeleteProductResponse](h.Product.Delete))
+
+		// Tekil ürün görüntüleme
+		products.Get("/product/:product_id", handler.HandleWithFiber[controller.GetProductRequest, controller.GetProductResponse](h.Product.Get))
+	}
+
+	// --- SEARCH & DISCOVERY ---
+	// Arama ve öneri rotaları
+	search := app.Group("/") // Genelde search işlemleri de ürünlerin altındadır
+	{
+		search.Get("/recommended", handler.HandleWithFiber[controller.GetRecommendationsRequest, controller.GetRecommendationsResponse](h.Search.Recommended))
+		search.Get("/search", handler.HandleWithFiber[controller.SearchProductsRequest, controller.SearchProductsResponse](h.Search.Search))
+	}
+
+	// --- FAVORITES ---
+	// Kullanıcı bazlı favori işlemleri
+	favorites := app.Group("/")
+	{
+		favorites.Post("/toggle-favorite/:product_id", handler.HandleWithFiber[controller.ToggleFavoriteRequest, controller.ToggleFavoriteResponse](h.Favorite.Toggle))
+		favorites.Get("/favorites", handler.HandleWithFiber[controller.GetFavoritesRequest, controller.GetFavoritesResponse](h.Favorite.Get))
+	}
 }

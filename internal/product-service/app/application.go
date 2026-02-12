@@ -57,15 +57,20 @@ func NewApp(cfg config.Config) (*App, error) {
 func (a *App) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	defer a.asynqClient.Close()
+
+	// 1. Kafka Consumer'ı başlat
 	a.consumer.Start(ctx)
-	log.Printf("starting user-service on %s", a.server.Address())
+
+	// 2. Transactional Outbox Relay'i başlat (Eğer Product DB'de outbox varsa)
+	// go a.startOutboxRelay(ctx)
+
+	log.Printf("starting product-service on %s (gRPC: %s)", a.cfg.Server.Port, a.cfg.Server.GrpcPort)
+
 	if err := a.server.Start(); err != nil {
 		return fmt.Errorf("server exited with error: %w", err)
 	}
 
-	log.Println("server stopped, closing repository")
-	return a.repository.Close()
+	return nil
 }
 
 type container struct {
@@ -79,14 +84,13 @@ type container struct {
 	worker        domain.Worker
 }
 
-func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
-	broker := cfg.Brokers[0]
-	if broker == "" {
-		broker = "localhost:29092"
+func getKafkaSettings(cfg config.MessagingConfig) messaging.KafkaConfig {
+	broker := "localhost:29092"
+	if len(cfg.Brokers) > 0 && cfg.Brokers[0] != "" {
+		broker = cfg.Brokers[0]
 	}
-	kafkaBrokers := []string{broker}
 	return messaging.KafkaConfig{
-		Brokers:              kafkaBrokers,
+		Brokers:              []string{broker},
 		Topic:                "main-events", // Ana olay topic'i
 		RetryTopic:           "main-events-retry",
 		DLQTopic:             "main-events-dlq",
@@ -98,66 +102,75 @@ func createMessagingConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 	}
 }
 func buildContainer(cfg config.Config) (*container, error) {
-	repo, err := postgres.NewRepository(cfg)
+	// Veritabanı
+	repo, err := initStorage(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("init postgres repository: %w", err)
+		return nil, err
 	}
 
+	// Dış Servisler (AI, Cloudinary)
 	aiProvider := ai.NewOllamaProvider()
 	cloudinarySvc, err := img.NewCloudinaryService(cfg.Cloudinary.CloudName, cfg.Cloudinary.APIKey, cfg.Cloudinary.APISecret)
 	if err != nil {
-		return nil, fmt.Errorf("init cloudinary service: %w", err)
-	}
-	productService := domain.NewProductService(repo)
-
-	redisOpt := asynq.RedisClientOpt{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       2,
+		return nil, err
 	}
 
-	// 2. Asynq Client'ı oluştur (Bu senin 'want *asynq.Client' kısmın)
+	// Redis & Asynq Yapılandırması
+	redisOpt := asynq.RedisClientOpt{Addr: "localhost:6379", DB: 2}
 	asynqClient := asynq.NewClient(redisOpt)
-
 	wrk := worker.NewWorker(asynqClient)
-	messsagingHnadlers := messaginghandler.SetupMessageHandlers(repo)
 
-	messagingConfig := createMessagingConfig(cfg.Messaging)
-	messaging, err := messaging.NewKafkaClient(messagingConfig)
-	if err != nil {
-		return nil, fmt.Errorf("init kafka messaging: %w", err)
-	}
-	httpHandlers := httptransport.NewHandlers(productService, repo, cloudinarySvc, aiProvider, wrk, messaging)
-
-	router := httptransport.NewRouter(httpHandlers)
-
-	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
-	if err != nil {
-		return nil, fmt.Errorf("init kafka consumer: %w", err)
-	}
+	// Buradaki Processor'ı ayrı bir goroutine'de başlatmak yerine container'a ekleyebiliriz
+	// veya Start metodunda tetikleyebiliriz.
 	processor := worker.NewTaskProcessor(redisOpt, repo, cloudinarySvc)
-
 	go func() {
 		if err := processor.Start(); err != nil {
-			log.Fatalf("Worker başlatılamadı: %v", err)
+			log.Printf("Task Processor error: %v", err)
 		}
 	}()
-	//defer asynqClient.Close()
-	serverCfg := server.Config{
+
+	// Messaging (Kafka)
+	msgHandlers := messaginghandler.SetupMessageHandlers(repo)
+	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, msgHandlers)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transport (HTTP & gRPC)
+	productService := domain.NewProductService(repo)
+	httpRouter := setupHttpRouter(cfg, productService, repo, cloudinarySvc, aiProvider, wrk, kafkaConsumer.Client())
+	grpcHandler := grpctransport.NewProductGrpcHandler(repo)
+
+	return &container{
+		repo:        repo,
+		server:      server.New(getServerConfig(cfg), httpRouter, grpcHandler),
+		messaging:   kafkaConsumer.Client(),
+		consumer:    kafkaConsumer,
+		asynqClient: asynqClient,
+		aiProvider:  aiProvider,
+		worker:      wrk,
+	}, nil
+}
+func initStorage(cfg config.Config) (domain.ProductRepository, error) {
+	repo, err := postgres.NewRepository(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("postgres init error: %w", err)
+	}
+
+	return repo, nil
+}
+func setupHttpRouter(cfg config.Config, p domain.ProductService, r domain.ProductRepository, c domain.ImageService, a domain.AiProvider, w domain.Worker, m domain.Messaging) server.RouteRegistrar {
+
+	httpHandlers := httptransport.NewHandlers(p, r, c, a, w, m)
+	return httptransport.NewRouter(httpHandlers)
+}
+
+func getServerConfig(cfg config.Config) server.Config {
+	return server.Config{
 		Port:         cfg.Server.Port,
 		IdleTimeout:  5 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		GrpcPort:     cfg.Server.GrpcPort,
 	}
-	grpcHandler := grpctransport.NewProductGrpcHandler(repo)
-	httpServer := server.New(serverCfg, router, grpcHandler)
-
-	return &container{
-		repo:        repo,
-		server:      httpServer,
-		messaging:   kafkaConsumer.Client(),
-		consumer:    kafkaConsumer,
-		asynqClient: asynqClient,
-	}, nil
 }
