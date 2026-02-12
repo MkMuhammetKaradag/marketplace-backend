@@ -1,4 +1,3 @@
-// internal/basket-service/transport/http/router.go
 package http
 
 import (
@@ -17,20 +16,26 @@ func NewRouter(handlers *Handlers) *Router {
 }
 
 func (r *Router) Register(app *fiber.App) {
+	h := r.handlers
 
-	addItem := r.handlers.AddItem()
-	removeItem := r.handlers.RemoveItem()
-	decrementItem := r.handlers.DecrementItem()
-	incrementItem := r.handlers.IncrementItem()
-	clearBasket := r.handlers.ClearBasket()
-	getBasket := r.handlers.GetBasket()
-	basketCount := r.handlers.BasketCount()
-	app.Get("/hello", r.handlers.Hello)
-	app.Post("/add-item", handler.HandleWithFiber[controller.AddItemRequest, controller.AddItemResponse](addItem))
-	app.Delete("/remove-item/:product_id", handler.HandleWithFiber[controller.RemoveItemRequest, controller.RemoveItemResponse](removeItem))
-	app.Patch("/decrement-item/:product_id", handler.HandleWithFiber[controller.DecrementItemRequest, controller.DecrementItemResponse](decrementItem))
-	app.Patch("/increment-item/:product_id", handler.HandleWithFiber[controller.IncrementItemRequest, controller.IncrementItemResponse](incrementItem))
-	app.Delete("/clear-basket", handler.HandleWithFiber[controller.ClearBasketRequest, controller.ClearBasketResponse](clearBasket))
-	app.Get("/basket", handler.HandleWithFiber[controller.GetBasketRequest, controller.GetBasketResponse](getBasket))
-	app.Get("/count", handler.HandleWithFiber[controller.BasketCountRequest, controller.BasketCountResponse](basketCount))
+	// Public / Test Route
+	app.Get("/hello", h.Hello)
+
+	// Basket Group
+
+	basket := app.Group("/")
+	{
+		// Ekleme ve Güncelleme
+		basket.Post("/add-item", handler.HandleWithFiber[controller.AddItemRequest, controller.AddItemResponse](h.Basket.AddItem))
+		basket.Patch("/increment-item/:product_id", handler.HandleWithFiber[controller.IncrementItemRequest, controller.IncrementItemResponse](h.Basket.IncrementItem))
+		basket.Patch("/decrement-item/:product_id", handler.HandleWithFiber[controller.DecrementItemRequest, controller.DecrementItemResponse](h.Basket.DecrementItem))
+
+		// Görüntüleme
+		basket.Get("/basket", handler.HandleWithFiber[controller.GetBasketRequest, controller.GetBasketResponse](h.Basket.GetBasket))
+		basket.Get("/count", handler.HandleWithFiber[controller.BasketCountRequest, controller.BasketCountResponse](h.Basket.Count))
+
+		// Silme
+		basket.Delete("/remove-item/:product_id", handler.HandleWithFiber[controller.RemoveItemRequest, controller.RemoveItemResponse](h.Basket.RemoveItem))
+		basket.Delete("/clear-basket", handler.HandleWithFiber[controller.ClearBasketRequest, controller.ClearBasketResponse](h.Basket.ClearBasket))
+	}
 }

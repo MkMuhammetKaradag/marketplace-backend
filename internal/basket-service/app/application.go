@@ -47,16 +47,20 @@ func (a *App) Start() error {
 	defer cancel()
 
 	go graceful.WaitForShutdown(a.server.FiberApp(), 5*time.Second, ctx)
+
+	// Kafka'yı başlat
 	a.consumer.Start(ctx)
-	log.Printf("starting user-service on %s", a.server.Address())
+
+	// Logu düzelttik
+	log.Printf("starting basket-service on %s (gRPC: %s)", a.cfg.Server.Port, a.cfg.Server.GrpcPort)
+
 	if err := a.server.Start(); err != nil {
 		return fmt.Errorf("server exited with error: %w", err)
 	}
 
-	log.Println("server stopped, closing repository")
-	if err := a.BasketRedisRepository.Close(); err != nil {
-		return fmt.Errorf("failed to close redis repository: %w", err)
-	}
+	log.Println("server stopped, closing repositories")
+	// Repoları güvenli kapatma
+	_ = a.BasketRedisRepository.Close()
 	return a.BasketPostgresRepository.Close()
 }
 
@@ -68,43 +72,53 @@ type container struct {
 }
 
 func buildContainer(cfg config.Config) (*container, error) {
-	repo, err := postgres.NewRepository(cfg)
+	// 1. Repositories
+	postgresRepo, err := postgres.NewRepository(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("init postgres repository: %w", err)
+		return nil, err
 	}
 
 	redisRepo, err := basket.NewBasketRedisRepository(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("init redis repository: %w", err)
+		return nil, err
 	}
-	grpcAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcProductPort)
-	grpcProductClient, err := grpc_client.NewProductClient(grpcAddress)
-	if err != nil {
-		log.Fatalf("failed to initialise gRPC client: %v", err)
-	}
-	httpHandlers := httptransport.NewHandlers(repo, redisRepo, grpcProductClient)
-	router := httptransport.NewRouter(httpHandlers)
 
-	serverCfg := server.Config{
-		GrpcPort:     cfg.Server.GrpcPort,
+	// 2. gRPC Client (Product Service'e bağlanmak için)
+	grpcAddress := fmt.Sprintf("localhost:%s", cfg.Server.GrpcProductPort)
+	productClient, err := grpc_client.NewProductClient(grpcAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init gRPC product client: %w", err)
+	}
+
+	// 3. Handlers & Router (Grup yapısına hazırlık)
+	// Diğer servislerdeki gibi NewHandlers içinde UseCase'leri kuracağız
+	h := httptransport.NewHandlers(postgresRepo, redisRepo, productClient)
+	router := httptransport.NewRouter(h)
+
+	// 4. Messaging
+	msgHandlers := messaginghandler.SetupMessageHandlers(redisRepo)
+	consumer, err := kafka.NewConsumer(cfg.Messaging, msgHandlers)
+	if err != nil {
+		return nil, err
+	}
+
+	// 5. Server
+	grpcHandler := grpctransport.NewBasketGrpcHandler(redisRepo)
+	s := server.New(getServerConfig(cfg), router, grpcHandler)
+
+	return &container{
+		BasketPostgresRepository: postgresRepo,
+		BasketRedisRepository:    redisRepo,
+		server:                   s,
+		consumer:                 consumer,
+	}, nil
+}
+func getServerConfig(cfg config.Config) server.Config {
+	return server.Config{
 		Port:         cfg.Server.Port,
+		GrpcPort:     cfg.Server.GrpcPort,
 		IdleTimeout:  5 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	messsagingHnadlers := messaginghandler.SetupMessageHandlers(redisRepo)
-	kafkaConsumer, err := kafka.NewConsumer(cfg.Messaging, messsagingHnadlers)
-	if err != nil {
-		return nil, fmt.Errorf("init kafka consumer: %w", err)
-	}
-
-	grpcHandler := grpctransport.NewBasketGrpcHandler(redisRepo)
-	httpServer := server.New(serverCfg, router, grpcProductClient, grpcHandler)
-
-	return &container{
-		BasketPostgresRepository: repo,
-		BasketRedisRepository:    redisRepo,
-		server:                   httpServer,
-		consumer:                 kafkaConsumer,
-	}, nil
 }

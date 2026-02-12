@@ -1,68 +1,49 @@
-// internal/basket-service/transport/http/handlers.go
 package http
 
 import (
-	"github.com/gofiber/fiber/v2"
-
 	"marketplace/internal/basket-service/domain"
 	"marketplace/internal/basket-service/transport/http/controller"
 	"marketplace/internal/basket-service/transport/http/usecase"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Handlers struct {
-	basketPostgresRepository domain.BasketPostgresRepository
-	basketRedisRepository    domain.BasketRedisRepository
-	grpcProductClient        domain.ProductClient
+	Basket *basketHandlers
 }
 
-func NewHandlers(postgresRepository domain.BasketPostgresRepository, redisRepository domain.BasketRedisRepository, grpcProductClient domain.ProductClient) *Handlers {
-	return &Handlers{basketPostgresRepository: postgresRepository, basketRedisRepository: redisRepository, grpcProductClient: grpcProductClient}
+type basketHandlers struct {
+	AddItem       *controller.AddItemController
+	RemoveItem    *controller.RemoveItemController
+	DecrementItem *controller.DecrementItemController
+	IncrementItem *controller.IncrementItemController
+	ClearBasket   *controller.ClearBasketController
+	GetBasket     *controller.GetBasketController
+	Count         *controller.BasketCountController
+}
+
+func NewHandlers(
+	postgresRepo domain.BasketPostgresRepository,
+	redisRepo domain.BasketRedisRepository,
+	grpcProductClient domain.ProductClient,
+) *Handlers {
+
+	return &Handlers{
+		Basket: &basketHandlers{
+			AddItem:       controller.NewAddItemController(usecase.NewAddItemUseCase(redisRepo, grpcProductClient)),
+			RemoveItem:    controller.NewRemoveItemController(usecase.NewRemoveItemUseCase(redisRepo)),
+			DecrementItem: controller.NewDecrementItemController(usecase.NewDecrementItemUseCase(redisRepo)),
+			IncrementItem: controller.NewIncrementItemController(usecase.NewIncrementItemUseCase(redisRepo, grpcProductClient)),
+			ClearBasket:   controller.NewClearBasketController(usecase.NewClearBasketUseCase(redisRepo)),
+			GetBasket:     controller.NewGetBasketController(usecase.NewGetBasketUseCase(redisRepo)),
+			Count:         controller.NewBasketCountController(usecase.NewBasketCountUseCase(redisRepo)),
+		},
+	}
 }
 
 func (h *Handlers) Hello(c *fiber.Ctx) error {
-
-	resp := HelloResponse{
-		Message: "hello basket service",
-		Info:    "Fiber handler connected to domain layer",
-	}
-	return c.JSON(resp)
-}
-
-func (h *Handlers) AddItem() *controller.AddItemController {
-	usecase := usecase.NewAddItemUseCase(h.basketRedisRepository, h.grpcProductClient)
-	return controller.NewAddItemController(usecase)
-
-}
-func (h *Handlers) RemoveItem() *controller.RemoveItemController {
-	usecase := usecase.NewRemoveItemUseCase(h.basketRedisRepository)
-	return controller.NewRemoveItemController(usecase)
-}
-
-func (h *Handlers) DecrementItem() *controller.DecrementItemController {
-	usecase := usecase.NewDecrementItemUseCase(h.basketRedisRepository)
-	return controller.NewDecrementItemController(usecase)
-}
-
-func (h *Handlers) IncrementItem() *controller.IncrementItemController {
-	usecase := usecase.NewIncrementItemUseCase(h.basketRedisRepository, h.grpcProductClient)
-	return controller.NewIncrementItemController(usecase)
-}
-func (h *Handlers) ClearBasket() *controller.ClearBasketController {
-	usecase := usecase.NewClearBasketUseCase(h.basketRedisRepository)
-	return controller.NewClearBasketController(usecase)
-}
-
-func (h *Handlers) GetBasket() *controller.GetBasketController {
-	usecase := usecase.NewGetBasketUseCase(h.basketRedisRepository)
-	return controller.NewGetBasketController(usecase)
-}
-
-func (h *Handlers) BasketCount() *controller.BasketCountController {
-	usecase := usecase.NewBasketCountUseCase(h.basketRedisRepository)
-	return controller.NewBasketCountController(usecase)
-}
-
-type HelloResponse struct {
-	Message string `json:"message"`
-	Info    string `json:"info"`
+	return c.JSON(fiber.Map{
+		"message": "hello basket service",
+		"info":    "Fiber handler connected to domain layer",
+	})
 }
