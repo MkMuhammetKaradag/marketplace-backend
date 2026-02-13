@@ -1,3 +1,4 @@
+// internal/product-service/transport/messaging/handler.go
 package messaginghandler
 
 import (
@@ -9,33 +10,36 @@ import (
 )
 
 type Handlers struct {
-	productRepository domain.ProductRepository
+	SellerApproved domain.MessageHandler
+	UserCreated    domain.MessageHandler
+	PaymentSuccess domain.MessageHandler
+	PaymentFailure domain.MessageHandler
 }
 
-func NewMessageHandlers(repository domain.ProductRepository) *Handlers {
-	return &Handlers{productRepository: repository}
+func NewMessageHandlers(repo domain.ProductRepository) *Handlers {
+	return &Handlers{
+		SellerApproved: controller.NewSellerApprovedHandler(
+			usecase.NewSellerApprovedUseCase(repo),
+		),
+		UserCreated: controller.NewUserCreatedHandler(
+			usecase.NewUserCreatedUseCase(repo),
+		),
+		PaymentSuccess: controller.NewPaymentSuccessHandler(
+			usecase.NewPaymentSuccessUseCase(repo),
+		),
+		PaymentFailure: controller.NewPaymentFailureHandler(
+			usecase.NewPaymentFailureUseCase(repo),
+		),
+	}
 }
 
-func SetupMessageHandlers(repository domain.ProductRepository) map[pb.MessageType]domain.MessageHandler {
-	sellerApprovedUseCase := usecase.NewSellerApprovedUseCase(repository)
-	sellerApprovedHandler := controller.NewSellerApprovedHandler(sellerApprovedUseCase)
+func SetupMessageHandlers(repo domain.ProductRepository) map[pb.MessageType]domain.MessageHandler {
+	h := NewMessageHandlers(repo)
 
-	userCreatedUseCase := usecase.NewUserCreatedUseCase(repository)
-	userCreatedHandler := controller.NewUserCreatedHandler(userCreatedUseCase)
-
-	// orderCreatedUseCase := usecase.NewOrderCreatedUseCase(repository)
-	// orderCreatedHandler := controller.NewOrderCreatedHandler(orderCreatedUseCase)
-
-	paymentSuccessUseCase := usecase.NewPaymentSuccessUseCase(repository)
-	paymentSuccessHandler := controller.NewPaymentSuccessHandler(paymentSuccessUseCase)
-
-	paymentFailureUseCase := usecase.NewPaymentFailureUseCase(repository)
-	paymentFailureHandler := controller.NewPaymentFailureHandler(paymentFailureUseCase)
 	return map[pb.MessageType]domain.MessageHandler{
-		pb.MessageType_SELLER_APPROVED: sellerApprovedHandler,
-		pb.MessageType_USER_CREATED:    userCreatedHandler,
-		// pb.MessageType_ORDER_CREATED:      orderCreatedHandler,
-		pb.MessageType_PAYMENT_SUCCESSFUL: paymentSuccessHandler,
-		pb.MessageType_PAYMENT_FAILED:     paymentFailureHandler,
+		pb.MessageType_SELLER_APPROVED:    h.SellerApproved,
+		pb.MessageType_USER_CREATED:       h.UserCreated,
+		pb.MessageType_PAYMENT_SUCCESSFUL: h.PaymentSuccess,
+		pb.MessageType_PAYMENT_FAILED:     h.PaymentFailure,
 	}
 }

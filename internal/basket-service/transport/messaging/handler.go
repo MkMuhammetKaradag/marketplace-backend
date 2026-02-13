@@ -9,22 +9,26 @@ import (
 )
 
 type Handlers struct {
-	basketRepository domain.BasketRedisRepository
+	ProductPriceUpdated domain.MessageHandler
+	PaymentSuccess      domain.MessageHandler
 }
 
-func NewMessageHandlers(repository domain.BasketRedisRepository) *Handlers {
-	return &Handlers{basketRepository: repository}
+func NewHandlers(repository domain.BasketRedisRepository) *Handlers {
+	return &Handlers{
+		ProductPriceUpdated: controller.NewProductPriceUpdatedHandler(
+			usecase.NewProductPriceUpdatedUseCase(repository),
+		),
+		PaymentSuccess: controller.NewPaymentSuccessHandler(
+			usecase.NewPaymentSuccessUseCase(repository),
+		),
+	}
 }
 
 func SetupMessageHandlers(repository domain.BasketRedisRepository) map[pb.MessageType]domain.MessageHandler {
+	h := NewHandlers(repository)
 
-	productPriceUpdatedUseCase := usecase.NewProductPriceUpdatedUseCase(repository)
-	productPriceUpdatedHandler := controller.NewProductPriceUpdatedHandler(productPriceUpdatedUseCase)
-
-	paymentSuccessUseCase := usecase.NewPaymentSuccessUseCase(repository)
-	paymentSuccessHandler := controller.NewPaymentSuccessHandler(paymentSuccessUseCase)
 	return map[pb.MessageType]domain.MessageHandler{
-		pb.MessageType_PRODUCT_PRICE_UPDATED: productPriceUpdatedHandler,
-		pb.MessageType_PAYMENT_SUCCESSFUL:    paymentSuccessHandler,
+		pb.MessageType_PRODUCT_PRICE_UPDATED: h.ProductPriceUpdated,
+		pb.MessageType_PAYMENT_SUCCESSFUL:    h.PaymentSuccess,
 	}
 }

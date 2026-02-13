@@ -1,3 +1,4 @@
+// internal/user-service/transport/messaging/handler.go
 package messaginghandler
 
 import (
@@ -9,18 +10,22 @@ import (
 )
 
 type Handlers struct {
-	userRepository domain.UserRepository
+	SellerApproved domain.MessageHandler
 }
 
-func NewMessageHandlers(repository domain.UserRepository) *Handlers {
-	return &Handlers{userRepository: repository}
+func NewHandlers(repo domain.UserRepository) *Handlers {
+
+	return &Handlers{
+		SellerApproved: controller.NewSellerApprovedHandler(
+			usecase.NewSellerApprovedUseCase(repo),
+		),
+	}
 }
 
-func SetupMessageHandlers(repository domain.UserRepository) map[pb.MessageType]domain.MessageHandler {
-	sellerApprovedUseCase := usecase.NewSellerApprovedUseCase(repository)
-	sellerApprovedHandler := controller.NewSellerApprovedHandler(sellerApprovedUseCase)
+func SetupMessageHandlers(repo domain.UserRepository) map[pb.MessageType]domain.MessageHandler {
+	h := NewHandlers(repo)
 
 	return map[pb.MessageType]domain.MessageHandler{
-		pb.MessageType_SELLER_APPROVED: sellerApprovedHandler,
+		pb.MessageType_SELLER_APPROVED: h.SellerApproved,
 	}
 }
