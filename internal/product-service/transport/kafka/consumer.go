@@ -89,7 +89,7 @@ func createKafkaConfig(cfg config.MessagingConfig) messaging.KafkaConfig {
 		DLQTopic:              "dlq-events",
 		ServiceType:           pb.ServiceType_PRODUCT_SERVICE,
 		EnableRetry:           true,
-		MaxRetries:            10,
+		MaxRetries:            3,
 		ConnectionTimeout:     10 * time.Second,
 		MaxConcurrentHandlers: 10,
 		AllowedMessageTypes: map[pb.ServiceType][]pb.MessageType{

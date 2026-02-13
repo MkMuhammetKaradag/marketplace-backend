@@ -22,11 +22,11 @@ func NewUserCreatedUseCase(repository domain.ProductRepository) UserCreatedUseCa
 }
 
 func (u *userCreatedUseCase) Execute(ctx context.Context, userID uuid.UUID, username string, email string) error {
+	return fmt.Errorf("failed to add user:12")
+	// err := u.repository.AddUser(ctx, userID, username, email)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to add user: %w", err)
+	// }
 
-	err := u.repository.AddUser(ctx, userID, username, email)
-	if err != nil {
-		return fmt.Errorf("failed to add user: %w", err)
-	}
-
-	return nil
+	// return nil
 }

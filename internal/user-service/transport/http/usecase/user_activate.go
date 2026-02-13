@@ -41,7 +41,7 @@ func (u *UseractivateUseCase) Execute(ctx context.Context, activationID uuid.UUI
 		Type:        pb.MessageType_USER_CREATED,
 		FromService: pb.ServiceType_USER_SERVICE,
 		Critical:    true,
-		RetryCount:  5,
+		RetryCount:  0,
 		ToServices:  []pb.ServiceType{pb.ServiceType_SELLER_SERVICE, pb.ServiceType_PRODUCT_SERVICE, pb.ServiceType_NOTIFICATION_SERVICE},
 		Payload:     &pb.Message_UserCreatedData{UserCreatedData: data},
 	}
